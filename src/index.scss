@@ -18,25 +18,70 @@ table {
 .board {
   display: inline-block;
   flex-direction: column;
-  border: 1px solid #000;
+  // border: 1px solid #000;
+  background-color: #3b4252;
 
   .board-top {
     .lane {
+      justify-content: flex-start;
       &:nth-child(even) {
-        background-color: #eee;
+        &:before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 0;
+          height: 0;
+          border-top: 230px solid #5e81ac;
+          border-right: 25px solid transparent;
+          border-left: 25px solid transparent;
+        }
       }
       &:nth-child(odd) {
-        background-color: #fff;
+        &:before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 0;
+          height: 0;
+          border-top: 230px solid #bf616a;
+          border-right: 25px solid transparent;
+          border-left: 25px solid transparent;
+        }
       }
     }
   }
   .board-bottom {
     .lane {
+      justify-content: flex-end;
       &:nth-child(even) {
-        background-color: #fff;
+        &:before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 0;
+          height: 0;
+          border-top: 50px solid transparent;
+          border-bottom: 230px solid #bf616a;
+          border-right: 25px solid transparent;
+          border-left: 25px solid transparent;
+        }
       }
       &:nth-child(odd) {
-        background-color: #eee;
+        &:before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 0;
+          height: 0;
+          border-top: 50px solid transparent;
+          border-bottom: 230px solid #5e81ac;
+          border-right: 25px solid transparent;
+          border-left: 25px solid transparent;
+        }
       }
     }
   }
@@ -45,22 +90,30 @@ table {
     display: flex;
     flex-direction: row;
     .lane {
-      border: 1px solid #000;
+      position: relative;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      // border: 1px solid #000;
       height: 280px;
       width: 50px;
 
       .checker {
+        z-index: 2;
         box-sizing: border-box;
         border: 1px solid #000;
-        margin: 5px;
         border-radius: 50%;
-        height: 40px;
-        width: 40px;
-        &[data-player="1"] {
-          background-color: red;
+        margin: 0 2px;
+        height: 46px;
+        width: 46px;
+        text-align: center;
+        line-height: 46px;
+        cursor: pointer;
+        &[data-player="playerOne"] {
+          background-color: #5e81ac;
         }
-        &[data-player="2"] {
-          background-color: green;
+        &[data-player="playerTwo"] {
+          background-color: #bf616a;
         }
       }
     }

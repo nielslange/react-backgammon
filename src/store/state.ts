@@ -1,4 +1,4 @@
-interface Checker {
+export interface CheckerProps {
   id: number;
   player: string;
   row: number;
@@ -7,49 +7,53 @@ interface Checker {
 
 export interface State {
   count: number;
-  dice: {
-    one: number;
-    two: number;
-  };
-  bonus: {
-    one: number;
-    two: number;
-  };
+  dice: number[];
   currentPlayer: string;
   scores: {
     playerOne: number;
     playerTwo: number;
   };
-  checkers: {
-    one: Checker;
-    two: Checker;
-    three: Checker;
-    four: Checker;
-    five: Checker;
-    six: Checker;
-    seven: Checker;
-    eight: Checker;
-    nine: Checker;
-    ten: Checker;
-    eleven: Checker;
-    twelve: Checker;
-    thirteen: Checker;
-    fourteen: Checker;
-    fifteen: Checker;
-    sixteen: Checker;
-    seventeen: Checker;
-    eighteen: Checker;
-    nineteen: Checker;
-    twenty: Checker;
-    twentyOne: Checker;
-    twentyTwo: Checker;
-    twentyThree: Checker;
-    twentyFour: Checker;
-    twentyFive: Checker;
-    twentySix: Checker;
-    twentySeven: Checker;
-    twentyEight: Checker;
-    twentyNine: Checker;
-    thirty: Checker;
-  };
+  checkers: CheckerProps[];
 }
+
+export const initialState: State = {
+  count: 0,
+  dice: [],
+  currentPlayer: "playerOne",
+  scores: {
+    playerOne: 0,
+    playerTwo: 0,
+  },
+  checkers: [
+    { id: 1, player: "playerOne", row: 1, state: "active" },
+    { id: 2, player: "playerOne", row: 1, state: "active" },
+    { id: 3, player: "playerOne", row: 12, state: "active" },
+    { id: 4, player: "playerOne", row: 12, state: "active" },
+    { id: 5, player: "playerOne", row: 12, state: "active" },
+    { id: 6, player: "playerOne", row: 12, state: "active" },
+    { id: 7, player: "playerOne", row: 12, state: "active" },
+    { id: 8, player: "playerOne", row: 17, state: "active" },
+    { id: 9, player: "playerOne", row: 17, state: "active" },
+    { id: 10, player: "playerOne", row: 17, state: "active" },
+    { id: 11, player: "playerOne", row: 19, state: "active" },
+    { id: 12, player: "playerOne", row: 19, state: "active" },
+    { id: 13, player: "playerOne", row: 19, state: "active" },
+    { id: 14, player: "playerOne", row: 19, state: "active" },
+    { id: 15, player: "playerOne", row: 19, state: "active" },
+    { id: 16, player: "playerTwo", row: 24, state: "active" },
+    { id: 17, player: "playerTwo", row: 24, state: "active" },
+    { id: 18, player: "playerTwo", row: 13, state: "active" },
+    { id: 19, player: "playerTwo", row: 13, state: "active" },
+    { id: 20, player: "playerTwo", row: 13, state: "active" },
+    { id: 21, player: "playerTwo", row: 13, state: "active" },
+    { id: 22, player: "playerTwo", row: 13, state: "active" },
+    { id: 23, player: "playerTwo", row: 8, state: "active" },
+    { id: 24, player: "playerTwo", row: 8, state: "active" },
+    { id: 25, player: "playerTwo", row: 8, state: "active" },
+    { id: 26, player: "playerTwo", row: 6, state: "active" },
+    { id: 27, player: "playerTwo", row: 6, state: "active" },
+    { id: 28, player: "playerTwo", row: 6, state: "active" },
+    { id: 29, player: "playerTwo", row: 6, state: "active" },
+    { id: 30, player: "playerTwo", row: 6, state: "active" },
+  ],
+};

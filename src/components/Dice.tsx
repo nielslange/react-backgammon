@@ -1,12 +1,13 @@
 import { useDispatch, useSelector } from "react-redux";
-import { rollDice, swapDice } from "../store/actions";
+import { rollDice, swapDice, shiftDice } from "../store/actions";
 
 const Dice = () => {
   const dispatch = useDispatch();
-  const diceOne = useSelector((state: any) => state.dice.one);
-  const diceTwo = useSelector((state: any) => state.dice.two);
-  const bonusOne = useSelector((state: any) => state.bonus.one);
-  const bonusTwo = useSelector((state: any) => state.bonus.two);
+  const dice = useSelector((state: any) => state.dice);
+  const diceOne = useSelector((state: any) => state.dice[0]);
+  const diceTwo = useSelector((state: any) => state.dice[1]);
+  const bonusOne = useSelector((state: any) => state.dice[2]);
+  const bonusTwo = useSelector((state: any) => state.dice[3]);
 
   return (
     <div>
@@ -14,6 +15,11 @@ const Dice = () => {
 
       <table>
         <tbody>
+          <tr>
+            <td>Dice</td>
+            <td>:</td>
+            <td>{dice}</td>
+          </tr>
           <tr>
             <td>Dice one</td>
             <td>:</td>
@@ -40,6 +46,8 @@ const Dice = () => {
       <button onClick={() => dispatch(rollDice())}>Roll dice</button>
       <br />
       <button onClick={() => dispatch(swapDice())}>Swap dice</button>
+      <br />
+      <button onClick={() => dispatch(shiftDice())}>Shift dice</button>
     </div>
   );
 };

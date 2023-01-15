@@ -1,29 +1,25 @@
-export type Action =
+export type ActionTypes =
   | { type: "INCREMENT" }
   | { type: "DECREMENT" }
   | { type: "RESET" }
   | { type: "ROLL_DICE" }
   | { type: "SWAP_DICE" }
-  | {
-      type: "UPDATE_SCORE";
-      currentPlayer: string;
-      score: number;
-    }
-  | {
-      type: "SET_CURRENT_PLAYER";
-      currentPlayer: string;
-    }
-  | {
-      type: "TOGGLE_CURRENT_PLAYER";
-    };
+  | { type: "SHIFT_DICE" }
+  | { type: "UPDATE_SCORE"; currentPlayer: string; score: number }
+  | { type: "SET_CURRENT_PLAYER"; currentPlayer: string }
+  | { type: "TOGGLE_CURRENT_PLAYER" }
+  | { type: "MOVE_CHECKER" };
 
 export const INCREMENT = "INCREMENT";
 export const DECREMENT = "DECREMENT";
 export const ROLL_DICE = "ROLL_DICE";
 export const SWAP_DICE = "SWAP_DICE";
+export const SHIFT_DICE = "SHIFT_DICE";
+
 export const UPDATE_SCORE = "UPDATE_SCORE";
 export const SET_CURRENT_PLAYER = "SET_CURRENT_PLAYER";
 export const TOGGLE_CURRENT_PLAYER = "TOGGLE_CURRENT_PLAYER";
+export const MOVE_CHECKER = "MOVE_CHECKER";
 
 export const increment = () => {
   return { type: INCREMENT };
@@ -41,6 +37,10 @@ export const swapDice = () => {
   return { type: "SWAP_DICE" };
 };
 
+export const shiftDice = () => {
+  return { type: "SHIFT_DICE" };
+};
+
 export const updateScore = (currentPlayer: string, score: number) => {
   return { type: "UPDATE_SCORE", currentPlayer, score };
 };
@@ -51,4 +51,8 @@ export const setCurrentPlayer = (currentPlayer: string) => {
 
 export const toggleCurrentPlayer = () => {
   return { type: "TOGGLE_CURRENT_PLAYER" };
+};
+
+export const moveChecker = ({ player, id }: { player: string; id: number }) => {
+  return { type: "MOVE_CHECKER", player, id };
 };
