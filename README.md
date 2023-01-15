@@ -5,7 +5,7 @@ React implementation of Backgammon.
 ## Rules
 
 - The game has two players: white and black.
-- Each player has 15 checker.
+- Each player has 15 checkers.
 - The board is a regular backgammon board.
 - All checkers are are placed in the initial position (see below).
 - The game uses two dice.

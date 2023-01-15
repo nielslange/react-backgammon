@@ -10,7 +10,7 @@ const Dice = () => {
 
   return (
     <div>
-      <h2>Counter.tsx</h2>
+      <h2>Dice.tsx</h2>
 
       <table>
         <tbody>

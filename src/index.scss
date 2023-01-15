@@ -14,3 +14,55 @@ button {
 table {
   margin-bottom: 10px;
 }
+
+.board {
+  display: inline-block;
+  flex-direction: column;
+  border: 1px solid #000;
+
+  .board-top {
+    .lane {
+      &:nth-child(even) {
+        background-color: #eee;
+      }
+      &:nth-child(odd) {
+        background-color: #fff;
+      }
+    }
+  }
+  .board-bottom {
+    .lane {
+      &:nth-child(even) {
+        background-color: #fff;
+      }
+      &:nth-child(odd) {
+        background-color: #eee;
+      }
+    }
+  }
+  .board-top,
+  .board-bottom {
+    display: flex;
+    flex-direction: row;
+    .lane {
+      border: 1px solid #000;
+      height: 280px;
+      width: 50px;
+
+      .checker {
+        box-sizing: border-box;
+        border: 1px solid #000;
+        margin: 5px;
+        border-radius: 50%;
+        height: 40px;
+        width: 40px;
+        &[data-player="1"] {
+          background-color: red;
+        }
+        &[data-player="2"] {
+          background-color: green;
+        }
+      }
+    }
+  }
+}
