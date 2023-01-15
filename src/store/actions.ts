@@ -3,6 +3,7 @@ export type Action =
   | { type: "DECREMENT" }
   | { type: "RESET" }
   | { type: "ROLL_DICE" }
+  | { type: "SWAP_DICE" }
   | {
       type: "UPDATE_SCORE";
       currentPlayer: string;
@@ -19,6 +20,7 @@ export type Action =
 export const INCREMENT = "INCREMENT";
 export const DECREMENT = "DECREMENT";
 export const ROLL_DICE = "ROLL_DICE";
+export const SWAP_DICE = "SWAP_DICE";
 export const UPDATE_SCORE = "UPDATE_SCORE";
 export const SET_CURRENT_PLAYER = "SET_CURRENT_PLAYER";
 export const TOGGLE_CURRENT_PLAYER = "TOGGLE_CURRENT_PLAYER";
@@ -33,6 +35,10 @@ export const decrement = () => {
 
 export const rollDice = () => {
   return { type: "ROLL_DICE" };
+};
+
+export const swapDice = () => {
+  return { type: "SWAP_DICE" };
 };
 
 export const updateScore = (currentPlayer: string, score: number) => {

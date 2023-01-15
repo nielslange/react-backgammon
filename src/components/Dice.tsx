@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { rollDice } from "../store/actions";
+import { rollDice, swapDice } from "../store/actions";
 
 const Dice = () => {
   const dispatch = useDispatch();
@@ -37,7 +37,9 @@ const Dice = () => {
         </tbody>
       </table>
 
-      <button onClick={() => dispatch(rollDice())}>Roll Dice</button>
+      <button onClick={() => dispatch(rollDice())}>Roll dice</button>
+      <br />
+      <button onClick={() => dispatch(swapDice())}>Swap dice</button>
     </div>
   );
 };

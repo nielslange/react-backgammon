@@ -3,6 +3,7 @@ import {
   INCREMENT,
   DECREMENT,
   ROLL_DICE,
+  SWAP_DICE,
   UPDATE_SCORE,
   SET_CURRENT_PLAYER,
   TOGGLE_CURRENT_PLAYER,
@@ -82,6 +83,15 @@ const reducer = (state = initialState, action: Action) => {
         bonus: {
           one: diceOne === diceTwo ? diceOne : 0,
           two: diceOne === diceTwo ? diceOne : 0,
+        },
+      };
+
+    case SWAP_DICE:
+      return {
+        ...state,
+        dice: {
+          one: state.dice.two,
+          two: state.dice.one,
         },
       };
     case UPDATE_SCORE:
