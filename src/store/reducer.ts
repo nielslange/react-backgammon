@@ -85,7 +85,6 @@ const reducer = (state = initialState, action: Action) => {
           two: diceOne === diceTwo ? diceOne : 0,
         },
       };
-
     case SWAP_DICE:
       return {
         ...state,
