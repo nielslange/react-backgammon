@@ -1,12 +1,9 @@
-import { createStore, compose } from "redux";
+import { configureStore } from "@reduxjs/toolkit";
 import reducer from "../store/reducer";
 
-// Store
-declare global {
-  interface Window {
-    __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
-  }
-}
-const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-const store = createStore(reducer, composeEnhancers());
+const store = configureStore({
+  reducer,
+  devTools: process.env.NODE_ENV !== "production",
+});
+
 export default store;
