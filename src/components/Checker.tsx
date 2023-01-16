@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { moveChecker } from "../store/actions";
+import { moveChecker, shiftDice } from "../data/actions";
 
 interface CheckerProps {
   className: string;
@@ -11,11 +11,39 @@ interface CheckerProps {
 const Checker = (props: CheckerProps) => {
   const dispatch = useDispatch();
   const currentPlayer = useSelector((state: any) => state.currentPlayer);
+  const dice = useSelector((state: any) => state.dice);
   const { className, id, player } = props;
+
   const handleClick = (event: any) => {
-    console.log(currentPlayer);
-    console.log(event.target);
+    // Check if dice is rolled.
+    if (dice.length === 0) {
+      alert("❌ Roll the dice first!");
+      return;
+    }
+
+    // Check if the checker belongs to the current player.
+    const player = event.target.dataset.player;
+    if (player !== currentPlayer) {
+      alert("❌ Not your turn!");
+      return;
+    }
+
+    // Check if any checker is on the bar and the current checker is not on the bar.
+    if (player === "player1" && id > 24) {
+      alert("❌ You have a checker on the bar!");
+      return;
+    }
+
+    // Check if the checker is on the board.
+    // Check if the checker can be moved.
+    // Check if the checker can be hit.
+    // Check if the checker can be moved to the bar.
+    // Check if the checker can be moved to the home.
+    // Check if the checker can be moved to the board.
+
+    alert("✅ Your turn!");
     dispatch(moveChecker(props));
+    dispatch(shiftDice([]));
   };
 
   return (

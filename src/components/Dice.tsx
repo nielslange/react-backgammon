@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { rollDice, swapDice, shiftDice } from "../store/actions";
+import { rollDice, swapDice, shiftDice } from "../data/actions";
 
 const Dice = () => {
   const dispatch = useDispatch();
@@ -8,6 +8,39 @@ const Dice = () => {
   const diceTwo = useSelector((state: any) => state.dice[1]);
   const bonusOne = useSelector((state: any) => state.dice[2]);
   const bonusTwo = useSelector((state: any) => state.dice[3]);
+
+  const handleRollDice = () => {
+    const diceOne = Math.floor(Math.random() * 6) + 1;
+    const diceTwo = Math.floor(Math.random() * 6) + 1;
+    const bonusOne = diceOne === diceTwo ? diceOne : 0;
+    const bonusTwo = diceOne === diceTwo ? diceOne : 0;
+
+    if (diceOne === diceTwo) {
+      return dispatch(rollDice([diceOne, diceTwo, bonusOne, bonusTwo]));
+    }
+
+    return dispatch(rollDice([diceOne, diceTwo]));
+  };
+
+  const handleSwapDice = () => {
+    if (dice.length === 2) {
+      return dispatch(swapDice([diceTwo, diceOne]));
+    }
+    return dispatch(swapDice([...dice]));
+  };
+
+  const handleShiftDice = () => {
+    switch (dice.length) {
+      case 4:
+        return dispatch(shiftDice([diceTwo, bonusOne, bonusTwo]));
+      case 3:
+        return dispatch(shiftDice([diceTwo, bonusOne]));
+      case 2:
+        return dispatch(shiftDice([diceTwo]));
+      default:
+        return dispatch(shiftDice([]));
+    }
+  };
 
   return (
     <div>
@@ -43,11 +76,11 @@ const Dice = () => {
         </tbody>
       </table>
 
-      <button onClick={() => dispatch(rollDice())}>Roll dice</button>
+      <button onClick={handleRollDice}>Roll dice</button>
       <br />
-      <button onClick={() => dispatch(swapDice())}>Swap dice</button>
+      <button onClick={handleSwapDice}>Swap dice</button>
       <br />
-      <button onClick={() => dispatch(shiftDice())}>Shift dice</button>
+      <button onClick={handleShiftDice}>Shift dice</button>
     </div>
   );
 };

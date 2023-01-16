@@ -1,5 +1,5 @@
 import { Provider } from "react-redux";
-import store from "../store/store";
+import store from "../data/store";
 import Counter from "./Counter";
 import Dice from "./Dice";
 import Players from "./Players";

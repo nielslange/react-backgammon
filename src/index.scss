@@ -26,12 +26,6 @@ table {
       justify-content: flex-start;
       &:nth-child(even) {
         &:before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 0;
-          height: 0;
           border-top: 230px solid #5e81ac;
           border-right: 25px solid transparent;
           border-left: 25px solid transparent;
@@ -39,15 +33,15 @@ table {
       }
       &:nth-child(odd) {
         &:before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 0;
-          height: 0;
           border-top: 230px solid #bf616a;
           border-right: 25px solid transparent;
           border-left: 25px solid transparent;
+        }
+      }
+      &:nth-child(13) {
+        background-color: #3b4252;
+        &:before {
+          border: none;
         }
       }
     }
@@ -57,12 +51,6 @@ table {
       justify-content: flex-end;
       &:nth-child(even) {
         &:before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 0;
-          height: 0;
           border-top: 50px solid transparent;
           border-bottom: 230px solid #bf616a;
           border-right: 25px solid transparent;
@@ -71,16 +59,16 @@ table {
       }
       &:nth-child(odd) {
         &:before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 0;
-          height: 0;
           border-top: 50px solid transparent;
           border-bottom: 230px solid #5e81ac;
           border-right: 25px solid transparent;
           border-left: 25px solid transparent;
+        }
+      }
+      &:nth-child(13) {
+        background-color: #3b4252;
+        &:before {
+          border: none;
         }
       }
     }
@@ -90,6 +78,14 @@ table {
     display: flex;
     flex-direction: row;
     .lane {
+      &:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+      }
       position: relative;
       box-sizing: border-box;
       display: flex;

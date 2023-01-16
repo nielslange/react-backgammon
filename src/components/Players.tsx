@@ -3,7 +3,7 @@ import {
   setCurrentPlayer,
   toggleCurrentPlayer,
   updateScore,
-} from "../store/actions";
+} from "../data/actions";
 
 const Players = () => {
   const dispatch = useDispatch();
