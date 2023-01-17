@@ -49,14 +49,13 @@ React implementation of Backgammon.
 - BEAR_OFF_PIECE: This action type would be used when a piece is borne off the board.
 - UNDO_MOVE: This action type would be used when the player wants to undo the last move.
 - REDO_MOVE: Reverses the previous move and allows the player to make a different move.
+- SURRENDER_GAME: This action type would be used when the player wants to surrender the game.
+- RESTART_GAME: Begins a new game with the same players and settings as the previous game.
 - SAVE_GAME: This action type would be used when the player wants to save the current game state.
 - LOAD_GAME: This action type would be used when the player wants to load a previously saved game state.
-- SURRENDER_GAME: This action type would be used when the player wants to surrender the game.
-- SHOW_HISTORY: This action type would be used when the player wants to see the history of moves that have been made in the game.
-- SHOW_STATISTICS: This action type would be used when the player wants to see statistics such as the number of moves made, the number of pieces hit, etc.
-- ERROR: This action type would be used when an error occurs in the game.
-- RESTART_GAME: Begins a new game with the same players and settings as the previous game.
-- UPDATE_PIP_COUNT: Allows the game to update the pip count for each player, typically after a move has been made or a piece has been borne off.
+- SHOW_GAME_HISTORY: This action type would be used when the player wants to see the history of moves that have been made in the game.
+- SHOW_GAME_STATISTICS: This action type would be used when the player wants to see statistics such as the number of moves made, the number of pieces hit, etc.
+- SHOW_PLAYER_STATISTICS: Provides information about a player's performance in past games, such as win-loss record and average score.
 - SHOW_PIP_COUNT: Displays the number of points (also known as "pips") that each player has accumulated on the board.
-- SHOW_USER_STATISTICS: Provides information about a player's performance in past games, such as win-loss record and average score.
+- UPDATE_PIP_COUNT: Allows the game to update the pip count for each player, typically after a move has been made or a piece has been borne off.
 - OFFER_DOUBLING_CUBE: A cube with the numbers 2, 4, 8, 16, 32, and 64 on its faces. It is used in the game of Backgammon to increase the stakes of the game. A player can offer to double the .stakes of the game by turning the cube to the next number and presenting it to their opponent. If the opponent accepts, the cube is placed on the board with the number facing up, indicating the new stakes of the game. If the opponent declines, they forfeit the game.

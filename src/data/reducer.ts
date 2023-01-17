@@ -1,41 +1,28 @@
-import { initialState } from "./state";
-import TYPES from "./action-types";
+import { initialState } from './state';
+import TYPES from './action-types';
+const { ROLL_DICE, SWAP_DICE, SHIFT_DICE, TOGGLE_CURRENT_PLAYER, MOVE_PIECE } =
+	TYPES;
 
-const reducer = (state = initialState, action: any) => {
-  switch (action.type) {
-    case TYPES.INCREMENT:
-      return { ...state, count: state.count + 1 };
+const reducer = ( state = initialState, action: any ) => {
+	switch ( action.type ) {
+		case ROLL_DICE:
+			return { ...state, dice: [ ...action.dice ] };
 
-    case TYPES.DECREMENT:
-      return { ...state, count: state.count - 1 };
+		case SWAP_DICE:
+			return { ...state, dice: [ ...action.dice ] };
 
-    case TYPES.ROLL_DICE:
-      return { ...state, dice: [...action.dice] };
+		case SHIFT_DICE:
+			return { ...state, dice: [ ...action.dice ] };
 
-    case TYPES.SWAP_DICE:
-      return { ...state, dice: [...action.dice] };
+		case TOGGLE_CURRENT_PLAYER:
+			return { ...state, currentPlayer: action.player };
 
-    case TYPES.SHIFT_DICE:
-      return { ...state, dice: [...action.dice] };
+		case MOVE_PIECE:
+			return state;
 
-    case TYPES.UPDATE_SCORE:
-      return {
-        ...state,
-        scores: { ...state.scores, [action.player]: action.score },
-      };
-
-    case TYPES.SET_CURRENT_PLAYER:
-      return { ...state, currentPlayer: action.currentPlayer };
-
-    case TYPES.TOGGLE_CURRENT_PLAYER:
-      return { ...state, currentPlayer: action.player };
-
-    case TYPES.MOVE_CHECKER:
-      return state;
-
-    default:
-      return state;
-  }
+		default:
+			return state;
+	}
 };
 
 export default reducer;

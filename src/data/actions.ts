@@ -1,37 +1,30 @@
-import TYPES from "./action-types";
+import { Player } from '../data/state';
+import TYPES from './action-types';
+const { ROLL_DICE, SWAP_DICE, SHIFT_DICE, TOGGLE_CURRENT_PLAYER, MOVE_PIECE } =
+	TYPES;
 
-export const increment = () => {
-  return { type: TYPES.INCREMENT };
+export const rollDice = ( dice: number[] ) => {
+	return { type: ROLL_DICE, dice };
 };
 
-export const decrement = () => {
-  return { type: TYPES.DECREMENT };
+export const swapDice = ( dice: number[] ) => {
+	return { type: SWAP_DICE, dice };
 };
 
-export const rollDice = (dice: number[]) => {
-  return { type: TYPES.ROLL_DICE, dice };
+export const shiftDice = ( dice: number[] ) => {
+	return { type: SHIFT_DICE, dice };
 };
 
-export const swapDice = (dice: number[]) => {
-  return { type: TYPES.SWAP_DICE, dice };
+export const toggleCurrentPlayer = ( { player }: { player: Player } ) => {
+	return { type: TOGGLE_CURRENT_PLAYER, player };
 };
 
-export const shiftDice = (dice: number[]) => {
-  return { type: TYPES.SHIFT_DICE, dice };
-};
-
-export const updateScore = (currentPlayer: string, score: number) => {
-  return { type: TYPES.UPDATE_SCORE, currentPlayer, score };
-};
-
-export const setCurrentPlayer = (currentPlayer: string) => {
-  return { type: TYPES.SET_CURRENT_PLAYER, currentPlayer };
-};
-
-export const toggleCurrentPlayer = ({ player }: { player: string }) => {
-  return { type: TYPES.TOGGLE_CURRENT_PLAYER, player };
-};
-
-export const moveChecker = ({ player, id }: { player: string; id: number }) => {
-  return { type: TYPES.MOVE_CHECKER, player, id };
+export const moveChecker = ( {
+	player,
+	id,
+}: {
+	player: Player;
+	id: number;
+} ) => {
+	return { type: MOVE_PIECE, player, id };
 };
