@@ -20,7 +20,6 @@ const Dice = () => {
 				rollDice( [ diceOne, diceTwo, bonusOne, bonusTwo ] )
 			);
 		}
-
 		return dispatch( rollDice( [ diceOne, diceTwo ] ) );
 	};
 

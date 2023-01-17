@@ -48,8 +48,8 @@ const Checker = ( props: CustomCheckerProps ) => {
 
 	return (
 		<div
-			className={ className }
 			key={ id }
+			className={ className }
 			data-checker={ id }
 			data-player={ player }
 			onClick={ handleClick }
