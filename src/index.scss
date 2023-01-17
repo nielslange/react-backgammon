@@ -105,10 +105,10 @@ table {
         text-align: center;
         line-height: 46px;
         cursor: pointer;
-        &[data-player="playerOne"] {
+        &[data-player="PLAYER_ONE"] {
           background-color: #5e81ac;
         }
-        &[data-player="playerTwo"] {
+        &[data-player="PLAYER_TWO"] {
           background-color: #bf616a;
         }
       }

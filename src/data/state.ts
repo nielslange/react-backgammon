@@ -1,17 +1,19 @@
+type Player = "PLAYER_ONE" | "PLAYER_TWO";
+
 export interface CheckerProps {
   id: number;
-  player: string;
+  player: Player;
   row: number;
-  state: string;
+  state: "PROGRESS" | "THROWN" | "BEAR_OFF";
 }
 
-export interface State {
+interface State {
   count: number;
   dice: number[];
-  currentPlayer: string;
+  currentPlayer: Player;
   scores: {
-    playerOne: number;
-    playerTwo: number;
+    PLAYER_ONE: number;
+    PLAYER_TWO: number;
   };
   checkers: CheckerProps[];
 }
@@ -19,41 +21,41 @@ export interface State {
 export const initialState: State = {
   count: 0,
   dice: [],
-  currentPlayer: "playerOne",
+  currentPlayer: "PLAYER_ONE",
   scores: {
-    playerOne: 0,
-    playerTwo: 0,
+    PLAYER_ONE: 0,
+    PLAYER_TWO: 0,
   },
   checkers: [
-    { id: 1, player: "playerOne", row: 1, state: "active" },
-    { id: 2, player: "playerOne", row: 1, state: "active" },
-    { id: 3, player: "playerOne", row: 12, state: "active" },
-    { id: 4, player: "playerOne", row: 12, state: "active" },
-    { id: 5, player: "playerOne", row: 12, state: "active" },
-    { id: 6, player: "playerOne", row: 12, state: "active" },
-    { id: 7, player: "playerOne", row: 12, state: "active" },
-    { id: 8, player: "playerOne", row: 17, state: "active" },
-    { id: 9, player: "playerOne", row: 17, state: "active" },
-    { id: 10, player: "playerOne", row: 17, state: "active" },
-    { id: 11, player: "playerOne", row: 19, state: "active" },
-    { id: 12, player: "playerOne", row: 19, state: "active" },
-    { id: 13, player: "playerOne", row: 19, state: "active" },
-    { id: 14, player: "playerOne", row: 19, state: "active" },
-    { id: 15, player: "playerOne", row: 19, state: "active" },
-    { id: 16, player: "playerTwo", row: 24, state: "active" },
-    { id: 17, player: "playerTwo", row: 24, state: "active" },
-    { id: 18, player: "playerTwo", row: 13, state: "active" },
-    { id: 19, player: "playerTwo", row: 13, state: "active" },
-    { id: 20, player: "playerTwo", row: 13, state: "active" },
-    { id: 21, player: "playerTwo", row: 13, state: "active" },
-    { id: 22, player: "playerTwo", row: 13, state: "active" },
-    { id: 23, player: "playerTwo", row: 8, state: "active" },
-    { id: 24, player: "playerTwo", row: 8, state: "active" },
-    { id: 25, player: "playerTwo", row: 8, state: "active" },
-    { id: 26, player: "playerTwo", row: 6, state: "active" },
-    { id: 27, player: "playerTwo", row: 6, state: "active" },
-    { id: 28, player: "playerTwo", row: 6, state: "active" },
-    { id: 29, player: "playerTwo", row: 6, state: "active" },
-    { id: 30, player: "playerTwo", row: 6, state: "active" },
+    { id: 1, player: "PLAYER_ONE", row: 1, state: "PROGRESS" },
+    { id: 2, player: "PLAYER_ONE", row: 1, state: "PROGRESS" },
+    { id: 3, player: "PLAYER_ONE", row: 12, state: "PROGRESS" },
+    { id: 4, player: "PLAYER_ONE", row: 12, state: "PROGRESS" },
+    { id: 5, player: "PLAYER_ONE", row: 12, state: "PROGRESS" },
+    { id: 6, player: "PLAYER_ONE", row: 12, state: "PROGRESS" },
+    { id: 7, player: "PLAYER_ONE", row: 12, state: "PROGRESS" },
+    { id: 8, player: "PLAYER_ONE", row: 17, state: "PROGRESS" },
+    { id: 9, player: "PLAYER_ONE", row: 17, state: "PROGRESS" },
+    { id: 10, player: "PLAYER_ONE", row: 17, state: "PROGRESS" },
+    { id: 11, player: "PLAYER_ONE", row: 19, state: "PROGRESS" },
+    { id: 12, player: "PLAYER_ONE", row: 19, state: "PROGRESS" },
+    { id: 13, player: "PLAYER_ONE", row: 19, state: "PROGRESS" },
+    { id: 14, player: "PLAYER_ONE", row: 19, state: "PROGRESS" },
+    { id: 15, player: "PLAYER_ONE", row: 19, state: "PROGRESS" },
+    { id: 16, player: "PLAYER_TWO", row: 24, state: "PROGRESS" },
+    { id: 17, player: "PLAYER_TWO", row: 24, state: "PROGRESS" },
+    { id: 18, player: "PLAYER_TWO", row: 13, state: "PROGRESS" },
+    { id: 19, player: "PLAYER_TWO", row: 13, state: "PROGRESS" },
+    { id: 20, player: "PLAYER_TWO", row: 13, state: "PROGRESS" },
+    { id: 21, player: "PLAYER_TWO", row: 13, state: "PROGRESS" },
+    { id: 22, player: "PLAYER_TWO", row: 13, state: "PROGRESS" },
+    { id: 23, player: "PLAYER_TWO", row: 8, state: "PROGRESS" },
+    { id: 24, player: "PLAYER_TWO", row: 8, state: "PROGRESS" },
+    { id: 25, player: "PLAYER_TWO", row: 8, state: "PROGRESS" },
+    { id: 26, player: "PLAYER_TWO", row: 6, state: "PROGRESS" },
+    { id: 27, player: "PLAYER_TWO", row: 6, state: "PROGRESS" },
+    { id: 28, player: "PLAYER_TWO", row: 6, state: "PROGRESS" },
+    { id: 29, player: "PLAYER_TWO", row: 6, state: "PROGRESS" },
+    { id: 30, player: "PLAYER_TWO", row: 6, state: "PROGRESS" },
   ],
 };

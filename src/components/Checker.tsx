@@ -1,14 +1,13 @@
+import { Omit } from "utility-types";
 import { useDispatch, useSelector } from "react-redux";
 import { moveChecker, shiftDice } from "../data/actions";
+import { CheckerProps } from "../data/state";
 
-interface CheckerProps {
+interface CustomCheckerProps extends Omit<CheckerProps, "row"> {
   className: string;
-  id: number;
-  player: string;
-  currentPlayer: string;
 }
 
-const Checker = (props: CheckerProps) => {
+const Checker = (props: CustomCheckerProps) => {
   const dispatch = useDispatch();
   const currentPlayer = useSelector((state: any) => state.currentPlayer);
   const dice = useSelector((state: any) => state.dice);

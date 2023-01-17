@@ -8,11 +8,11 @@ import {
 const Players = () => {
   const dispatch = useDispatch();
   const currentPlayer = useSelector((state: any) => state.currentPlayer);
-  const playerOneScore = useSelector((state: any) => state.scores.playerOne);
-  const playerTwoScore = useSelector((state: any) => state.scores.playerTwo);
+  const PLAYER_ONEScore = useSelector((state: any) => state.scores.PLAYER_ONE);
+  const PLAYER_TWOScore = useSelector((state: any) => state.scores.PLAYER_TWO);
 
   const handleToggleCurrentPlayer = () => {
-    const player = currentPlayer === "playerOne" ? "playerTwo" : "playerOne";
+    const player = currentPlayer === "PLAYER_ONE" ? "PLAYER_TWO" : "PLAYER_ONE";
     return dispatch(toggleCurrentPlayer({ player }));
   };
 
@@ -22,9 +22,9 @@ const Players = () => {
 
   const handleUpdateScore = (player: string, increase: number) => {
     const score =
-      player === "playerOne"
-        ? playerOneScore + increase
-        : playerTwoScore + increase;
+      player === "PLAYER_ONE"
+        ? PLAYER_ONEScore + increase
+        : PLAYER_TWOScore + increase;
     console.log({ player, score });
     return dispatch(updateScore(player, score));
   };
@@ -43,31 +43,31 @@ const Players = () => {
           <tr>
             <td>Player 1 score</td>
             <td>:</td>
-            <td>{playerOneScore}</td>
+            <td>{PLAYER_ONEScore}</td>
           </tr>
           <tr>
             <td>Player 2 score</td>
             <td>:</td>
-            <td>{playerTwoScore}</td>
+            <td>{PLAYER_TWOScore}</td>
           </tr>
         </tbody>
       </table>
 
       <button onClick={handleToggleCurrentPlayer}>Toggle current player</button>
       <br />
-      <button onClick={() => handleSetCurrentPlayer("playerOne")}>
+      <button onClick={() => handleSetCurrentPlayer("PLAYER_ONE")}>
         Change to player one
       </button>
       <br />
-      <button onClick={() => handleSetCurrentPlayer("playerTwo")}>
+      <button onClick={() => handleSetCurrentPlayer("PLAYER_TWO")}>
         Change to player two
       </button>
       <br />
-      <button onClick={() => handleUpdateScore("playerOne", 1)}>
+      <button onClick={() => handleUpdateScore("PLAYER_ONE", 1)}>
         Increase score of player one
       </button>
       <br />
-      <button onClick={() => handleUpdateScore("playerTwo", 1)}>
+      <button onClick={() => handleUpdateScore("PLAYER_TWO", 1)}>
         Increase score of player two
       </button>
     </div>
