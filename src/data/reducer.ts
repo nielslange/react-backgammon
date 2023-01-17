@@ -19,22 +19,16 @@ const reducer = (state = initialState, action: any) => {
       return { ...state, dice: [...action.dice] };
 
     case TYPES.UPDATE_SCORE:
-      const player = action.currentPlayer;
-      const updatedScore =
-        player === "playerOne"
-          ? state.scores.playerOne + 1
-          : state.scores.playerTwo + 1;
-      return { ...state, scores: { ...state.scores, [player]: updatedScore } };
+      return {
+        ...state,
+        scores: { ...state.scores, [action.player]: action.score },
+      };
 
     case TYPES.SET_CURRENT_PLAYER:
       return { ...state, currentPlayer: action.currentPlayer };
 
     case TYPES.TOGGLE_CURRENT_PLAYER:
-      return {
-        ...state,
-        currentPlayer:
-          state.currentPlayer === "playerOne" ? "playerTwo" : "playerOne",
-      };
+      return { ...state, currentPlayer: action.player };
 
     case TYPES.MOVE_CHECKER:
       return state;

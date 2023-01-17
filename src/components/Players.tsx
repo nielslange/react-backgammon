@@ -11,6 +11,24 @@ const Players = () => {
   const playerOneScore = useSelector((state: any) => state.scores.playerOne);
   const playerTwoScore = useSelector((state: any) => state.scores.playerTwo);
 
+  const handleToggleCurrentPlayer = () => {
+    const player = currentPlayer === "playerOne" ? "playerTwo" : "playerOne";
+    return dispatch(toggleCurrentPlayer({ player }));
+  };
+
+  const handleSetCurrentPlayer = (player: string) => {
+    return dispatch(setCurrentPlayer(player));
+  };
+
+  const handleUpdateScore = (player: string, increase: number) => {
+    const score =
+      player === "playerOne"
+        ? playerOneScore + increase
+        : playerTwoScore + increase;
+    console.log({ player, score });
+    return dispatch(updateScore(player, score));
+  };
+
   return (
     <div>
       <h2>Player.tsx</h2>
@@ -35,27 +53,21 @@ const Players = () => {
         </tbody>
       </table>
 
-      <button onClick={() => dispatch(toggleCurrentPlayer())}>
-        Toggle current player
-      </button>
+      <button onClick={handleToggleCurrentPlayer}>Toggle current player</button>
       <br />
-      <button onClick={() => dispatch(setCurrentPlayer("playerOne"))}>
+      <button onClick={() => handleSetCurrentPlayer("playerOne")}>
         Change to player one
       </button>
       <br />
-      <button onClick={() => dispatch(setCurrentPlayer("playerTwo"))}>
+      <button onClick={() => handleSetCurrentPlayer("playerTwo")}>
         Change to player two
       </button>
       <br />
-      <button
-        onClick={() => dispatch(updateScore("playerOne", playerOneScore + 1))}
-      >
+      <button onClick={() => handleUpdateScore("playerOne", 1)}>
         Increase score of player one
       </button>
       <br />
-      <button
-        onClick={() => dispatch(updateScore("playerTwo", playerTwoScore + 1))}
-      >
+      <button onClick={() => handleUpdateScore("playerTwo", 1)}>
         Increase score of player two
       </button>
     </div>

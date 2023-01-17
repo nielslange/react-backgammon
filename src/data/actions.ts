@@ -28,8 +28,8 @@ export const setCurrentPlayer = (currentPlayer: string) => {
   return { type: TYPES.SET_CURRENT_PLAYER, currentPlayer };
 };
 
-export const toggleCurrentPlayer = () => {
-  return { type: TYPES.TOGGLE_CURRENT_PLAYER };
+export const toggleCurrentPlayer = ({ player }: { player: string }) => {
+  return { type: TYPES.TOGGLE_CURRENT_PLAYER, player };
 };
 
 export const moveChecker = ({ player, id }: { player: string; id: number }) => {
