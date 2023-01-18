@@ -1,117 +1,121 @@
 body {
-  margin: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	margin: 20px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+		"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+		"Helvetica Neue", sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 button {
-  margin: 5px auto;
+	margin: 5px auto;
 }
 
 table {
-  margin-bottom: 10px;
+	margin-bottom: 10px;
 }
 
 .board {
-  display: inline-block;
-  flex-direction: column;
-  // border: 1px solid #000;
-  background-color: #3b4252;
+	display: inline-block;
+	flex-direction: column;
+	// border: 1px solid #000;
+	background-color: #3b4252;
 
-  .board-top {
-    .lane {
-      justify-content: flex-start;
-      &:nth-child(even) {
-        &:before {
-          border-top: 230px solid #5e81ac;
-          border-right: 25px solid transparent;
-          border-left: 25px solid transparent;
-        }
-      }
-      &:nth-child(odd) {
-        &:before {
-          border-top: 230px solid #bf616a;
-          border-right: 25px solid transparent;
-          border-left: 25px solid transparent;
-        }
-      }
-      &:nth-child(13) {
-        background-color: #3b4252;
-        &:before {
-          border: none;
-        }
-      }
-    }
-  }
-  .board-bottom {
-    .lane {
-      justify-content: flex-end;
-      &:nth-child(even) {
-        &:before {
-          border-top: 50px solid transparent;
-          border-bottom: 230px solid #bf616a;
-          border-right: 25px solid transparent;
-          border-left: 25px solid transparent;
-        }
-      }
-      &:nth-child(odd) {
-        &:before {
-          border-top: 50px solid transparent;
-          border-bottom: 230px solid #5e81ac;
-          border-right: 25px solid transparent;
-          border-left: 25px solid transparent;
-        }
-      }
-      &:nth-child(13) {
-        background-color: #3b4252;
-        &:before {
-          border: none;
-        }
-      }
-    }
-  }
-  .board-top,
-  .board-bottom {
-    display: flex;
-    flex-direction: row;
-    .lane {
-      &:before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 0;
-        height: 0;
-      }
-      position: relative;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      // border: 1px solid #000;
-      height: 280px;
-      width: 50px;
+	.board-top {
+		.lane {
+			justify-content: flex-start;
+			&:nth-child(even) {
+				&:before {
+					border-top: 230px solid #5e81ac;
+					border-right: 25px solid transparent;
+					border-left: 25px solid transparent;
+				}
+			}
+			&:nth-child(odd) {
+				&:before {
+					border-top: 230px solid #bf616a;
+					border-right: 25px solid transparent;
+					border-left: 25px solid transparent;
+				}
+			}
+			&:nth-child(1),
+			&:nth-child(14) {
+				background-color: #3b4252;
+				border: 1px solid #000;
+				&:before {
+					border: none;
+				}
+			}
+		}
+	}
+	.board-bottom {
+		.lane {
+			justify-content: flex-end;
+			&:nth-child(even) {
+				&:before {
+					border-top: 50px solid transparent;
+					border-bottom: 230px solid #bf616a;
+					border-right: 25px solid transparent;
+					border-left: 25px solid transparent;
+				}
+			}
+			&:nth-child(odd) {
+				&:before {
+					border-top: 50px solid transparent;
+					border-bottom: 230px solid #5e81ac;
+					border-right: 25px solid transparent;
+					border-left: 25px solid transparent;
+				}
+			}
+			&:nth-child(1),
+			&:nth-child(14) {
+				background-color: #3b4252;
+				border: 1px solid #000;
+				&:before {
+					border: none;
+				}
+			}
+		}
+	}
+	.board-top,
+	.board-bottom {
+		display: flex;
+		flex-direction: row;
+		.lane {
+			&:before {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 0;
+				height: 0;
+			}
+			position: relative;
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			// border: 1px solid #000;
+			height: 280px;
+			width: 50px;
 
-      .checker {
-        z-index: 2;
-        box-sizing: border-box;
-        border: 1px solid #000;
-        border-radius: 50%;
-        margin: 0 2px;
-        height: 46px;
-        width: 46px;
-        text-align: center;
-        line-height: 46px;
-        cursor: pointer;
-        &[data-player="PLAYER_ONE"] {
-          background-color: #5e81ac;
-        }
-        &[data-player="PLAYER_TWO"] {
-          background-color: #bf616a;
-        }
-      }
-    }
-  }
+			.checker {
+				z-index: 2;
+				box-sizing: border-box;
+				border: 1px solid #000;
+				border-radius: 50%;
+				margin: 0 2px;
+				height: 46px;
+				width: 46px;
+				text-align: center;
+				line-height: 46px;
+				cursor: pointer;
+				&[data-player="PLAYER_ONE"] {
+					background-color: #5e81ac;
+				}
+				&[data-player="PLAYER_TWO"] {
+					background-color: #bf616a;
+				}
+			}
+		}
+	}
 }

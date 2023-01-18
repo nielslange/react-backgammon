@@ -27,7 +27,7 @@ export const initialState: State = {
 		PLAYER_TWO: 0,
 	},
 	checkers: [
-		{ id: 1, player: 'PLAYER_ONE', row: 1, state: 'PROGRESS' },
+		{ id: 1, player: 'PLAYER_ONE', row: 25, state: 'PROGRESS' },
 		{ id: 2, player: 'PLAYER_ONE', row: 1, state: 'PROGRESS' },
 		{ id: 3, player: 'PLAYER_ONE', row: 12, state: 'PROGRESS' },
 		{ id: 4, player: 'PLAYER_ONE', row: 12, state: 'PROGRESS' },
@@ -55,7 +55,7 @@ export const initialState: State = {
 		{ id: 26, player: 'PLAYER_TWO', row: 6, state: 'PROGRESS' },
 		{ id: 27, player: 'PLAYER_TWO', row: 6, state: 'PROGRESS' },
 		{ id: 28, player: 'PLAYER_TWO', row: 6, state: 'PROGRESS' },
-		{ id: 29, player: 'PLAYER_TWO', row: 6, state: 'PROGRESS' },
-		{ id: 30, player: 'PLAYER_TWO', row: 6, state: 'PROGRESS' },
+		{ id: 29, player: 'PLAYER_TWO', row: 25, state: 'PROGRESS' },
+		{ id: 30, player: 'PLAYER_TWO', row: 25, state: 'PROGRESS' },
 	],
 };
