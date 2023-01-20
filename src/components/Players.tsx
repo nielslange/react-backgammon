@@ -1,9 +1,14 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleCurrentPlayer } from '../data/actions';
+import { toggleCurrentPlayer, rollDice } from '../data/actions';
 
 const Players = () => {
 	const dispatch = useDispatch();
 	const currentPlayer = useSelector( ( state: any ) => state.currentPlayer );
+
+	const handleToggleCurrentPlayer = () => {
+		dispatch( toggleCurrentPlayer( { currentPlayer } ) );
+		dispatch( rollDice() );
+	};
 
 	return (
 		<div>
@@ -19,7 +24,9 @@ const Players = () => {
 				</tbody>
 			</table>
 
-			<button onClick={ () => dispatch( toggleCurrentPlayer( { currentPlayer } ) ) }>Toggle current player</button>
+			<button onClick={ handleToggleCurrentPlayer }>
+				Toggle current player
+			</button>
 		</div>
 	);
 };

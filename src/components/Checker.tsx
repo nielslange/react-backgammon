@@ -18,6 +18,7 @@ import {
 	isTargetOccupiedByOtherPlayer,
 	willHitOpponent,
 	getTargetLane,
+	getHitCheckerId,
 } from '../data/selectors';
 
 interface CustomCheckerProps extends Omit< CheckerProps, 'lane' > {
@@ -98,6 +99,11 @@ const Checker = ( props: CustomCheckerProps ) => {
 			hasWaitingChecker( { checkers, currentPlayer } ) &&
 			willHitOpponent( { checkers, currentPlayer, lane, die } )
 		) {
+			const hitCheckerId = getHitCheckerId( {
+				checkers,
+				lane: tagetLane,
+			} );
+			newCheckers[ hitCheckerId - 1 ].lane = 0;
 			newCheckers[ id - 1 ].lane = tagetLane;
 			newDice.shift();
 			message.push(
@@ -105,8 +111,8 @@ const Checker = ( props: CustomCheckerProps ) => {
 			);
 
 			dispatch( moveChecker( { checkers: newCheckers } ) );
-			dispatch( setDice( newDice ) );
 			dispatch( setMessage( message ) );
+			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
 				dispatch( toggleCurrentPlayer( { currentPlayer } ) );
@@ -122,8 +128,8 @@ const Checker = ( props: CustomCheckerProps ) => {
 			message.push( '✅ Move waiting checker to the game!' );
 
 			dispatch( moveChecker( { checkers: newCheckers } ) );
-			dispatch( setDice( newDice ) );
 			dispatch( setMessage( message ) );
+			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
 				dispatch( toggleCurrentPlayer( { currentPlayer } ) );
@@ -146,12 +152,38 @@ const Checker = ( props: CustomCheckerProps ) => {
 		}
 
 		if ( willHitOpponent( { checkers, currentPlayer, lane, die } ) ) {
+			const hitCheckerId = getHitCheckerId( {
+				checkers,
+				lane: tagetLane,
+			} );
+			newCheckers[ hitCheckerId - 1 ].lane = 0;
+			newCheckers[ id - 1 ].lane = tagetLane;
+			newDice.shift();
 			message.push( "✅ Move checker and hit your opponent's checker!" );
-			return dispatch( setMessage( message ) );
+			dispatch( moveChecker( { checkers: newCheckers } ) );
+			dispatch( setMessage( message ) );
+			dispatch( setDice( newDice ) );
+
+			if ( ! newDice.length ) {
+				dispatch( toggleCurrentPlayer( { currentPlayer } ) );
+				dispatch( rollDice() );
+			}
+
+			return;
 		}
 
-		message.push( '✅ Your turn!' );
+		newCheckers[ id - 1 ].lane = tagetLane;
+		newDice.shift();
+		message.push( '✅ Move checker!' );
+
+		dispatch( moveChecker( { checkers: newCheckers } ) );
 		dispatch( setMessage( message ) );
+		dispatch( setDice( newDice ) );
+
+		if ( ! newDice.length ) {
+			dispatch( toggleCurrentPlayer( { currentPlayer } ) );
+			dispatch( rollDice() );
+		}
 	};
 
 	return (

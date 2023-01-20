@@ -7,12 +7,18 @@ import Message from './Message';
 
 const Game = () => {
 	return (
-		<Provider store={ store }>
-			<Dice />
-			<Players />
-			<Message />
-			<Board />
-		</Provider>
+		<div className="game">
+			<Provider store={ store }>
+				<div>
+					<Board />
+				</div>
+				<div>
+					<Dice />
+					<Players />
+					<Message />
+				</div>
+			</Provider>
+		</div>
 	);
 };
 
