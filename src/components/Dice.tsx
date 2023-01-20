@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { rollDice, swapDice, shiftDice } from '../data/actions';
+import { rollDice, swapDice, setDice } from '../data/actions';
 
 const Dice = () => {
 	const dispatch = useDispatch();
@@ -9,20 +9,6 @@ const Dice = () => {
 	const bonusOne = useSelector( ( state: any ) => state.dice[ 2 ] );
 	const bonusTwo = useSelector( ( state: any ) => state.dice[ 3 ] );
 
-	const handleRollDice = () => {
-		const diceOne = Math.floor( Math.random() * 6 ) + 1;
-		const diceTwo = Math.floor( Math.random() * 6 ) + 1;
-		const bonusOne = diceOne === diceTwo ? diceOne : 0;
-		const bonusTwo = diceOne === diceTwo ? diceOne : 0;
-
-		if ( diceOne === diceTwo ) {
-			return dispatch(
-				rollDice( [ diceOne, diceTwo, bonusOne, bonusTwo ] )
-			);
-		}
-		return dispatch( rollDice( [ diceOne, diceTwo ] ) );
-	};
-
 	const handleSwapDice = () => {
 		if ( dice.length === 2 ) {
 			return dispatch( swapDice( [ diceTwo, diceOne ] ) );
@@ -30,16 +16,16 @@ const Dice = () => {
 		return dispatch( swapDice( [ ...dice ] ) );
 	};
 
-	const handleShiftDice = () => {
+	const handlesetDice = () => {
 		switch ( dice.length ) {
 			case 4:
-				return dispatch( shiftDice( [ diceTwo, bonusOne, bonusTwo ] ) );
+				return dispatch( setDice( [ diceTwo, bonusOne, bonusTwo ] ) );
 			case 3:
-				return dispatch( shiftDice( [ diceTwo, bonusOne ] ) );
+				return dispatch( setDice( [ diceTwo, bonusOne ] ) );
 			case 2:
-				return dispatch( shiftDice( [ diceTwo ] ) );
+				return dispatch( setDice( [ diceTwo ] ) );
 			default:
-				return dispatch( shiftDice( [] ) );
+				return dispatch( setDice( [] ) );
 		}
 	};
 
@@ -77,11 +63,11 @@ const Dice = () => {
 				</tbody>
 			</table>
 
-			<button onClick={ handleRollDice }>Roll dice</button>
+			<button onClick={ () => dispatch( rollDice() ) }>Roll dice</button>
 			<br />
 			<button onClick={ handleSwapDice }>Swap dice</button>
 			<br />
-			<button onClick={ handleShiftDice }>Shift dice</button>
+			<button onClick={ handlesetDice }>Shift dice</button>
 		</div>
 	);
 };

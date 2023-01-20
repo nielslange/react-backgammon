@@ -35,18 +35,16 @@ React implementation of Backgammon.
 ## Checker states
 
 - PROGRESS: Indicates that the game is in progress and players are actively making moves.
-- THROWN: Indicates that the dice have been rolled and the results have been determined.
+- WAITING: Indicates that the dice have been rolled and the results have been determined.
 - BEAR_OFF: Indicates that a player is in the process of bearing off, or removing, their pieces from the board.
 
 ## Actions types
 
 - ROLL_DICE: This action type would be used when the dice are rolled.
 - SWAP_DICE: Allows the player to swap the positions of the two dice after they have been rolled.
-- SHIFT_DICE: Allows the player to change the values of the two dice by a certain amount, such as adding or subtracting one.
+- SET_DICE: Allows the player to set the dice to a specific value.
 - TOGGLE_CURRENT_PLAYER: Allows the game to switch the current player from one player to another, typically after a move has been made.
-- MOVE_PIECE: This action type would be used when a piece is moved on the board.
-- REMOVE_PIECE: This action type would be used when a piece is removed from the board.
-- BEAR_OFF_PIECE: This action type would be used when a piece is borne off the board.
+- MOVE_CHECKER: This action type would be used when a piece is moved to or on the board.
 - UNDO_MOVE: This action type would be used when the player wants to undo the last move.
 - REDO_MOVE: Reverses the previous move and allows the player to make a different move.
 - SURRENDER_GAME: This action type would be used when the player wants to surrender the game.

@@ -8,15 +8,15 @@ const Board = () => {
 			<div className="board">
 				<div className="board-top">
 					<Lane from={ 13 } to={ 18 } />
-					<Lane from={ -1 } to={ -1 } player="PLAYER_TWO" />
+					<Lane from={ 0 } to={ 0 } player="PLAYER_RED" />
 					<Lane from={ 19 } to={ 24 } />
-					<Lane from={ 25 } to={ 25 } player="PLAYER_ONE" />
+					<Lane from={ 25 } to={ 25 } player="PLAYER_BLUE" />
 				</div>
 				<div className="board-bottom">
 					<Lane from={ 12 } to={ 7 } />
-					<Lane from={ -1 } to={ -1 } player="PLAYER_ONE" />
+					<Lane from={ 0 } to={ 0 } player="PLAYER_BLUE" />
 					<Lane from={ 6 } to={ 1 } />
-					<Lane from={ 25 } to={ 25 } player="PLAYER_TWO" />
+					<Lane from={ 25 } to={ 25 } player="PLAYER_RED" />
 				</div>
 			</div>
 		</div>

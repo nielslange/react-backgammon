@@ -1,8 +1,7 @@
 body {
 	margin: 20px;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-		"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
-		"Helvetica Neue", sans-serif;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+		"Droid Sans", "Helvetica Neue", sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
@@ -52,6 +51,7 @@ table {
 			}
 			&:nth-child(14) {
 				width: 150px;
+				align-content: flex-start;
 			}
 		}
 	}
@@ -88,13 +88,13 @@ table {
 			}
 			&:nth-child(14) {
 				width: 150px;
+				align-content: flex-end;
 			}
 		}
 	}
 	.board-top,
 	.board-bottom {
 		display: flex;
-		flex-direction: row;
 		.lane {
 			&:before {
 				content: "";
@@ -108,7 +108,6 @@ table {
 			box-sizing: border-box;
 			display: flex;
 			flex-direction: column;
-			// border: 1px solid #000;
 			height: 280px;
 			width: 50px;
 
@@ -123,10 +122,10 @@ table {
 				text-align: center;
 				line-height: 46px;
 				cursor: pointer;
-				&[data-player="PLAYER_ONE"] {
+				&[data-player="PLAYER_BLUE"] {
 					background-color: #5e81ac;
 				}
-				&[data-player="PLAYER_TWO"] {
+				&[data-player="PLAYER_RED"] {
 					background-color: #bf616a;
 				}
 			}

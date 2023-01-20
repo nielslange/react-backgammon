@@ -5,12 +5,6 @@ const Players = () => {
 	const dispatch = useDispatch();
 	const currentPlayer = useSelector( ( state: any ) => state.currentPlayer );
 
-	const handleToggleCurrentPlayer = () => {
-		const player =
-			currentPlayer === 'PLAYER_ONE' ? 'PLAYER_TWO' : 'PLAYER_ONE';
-		return dispatch( toggleCurrentPlayer( { player } ) );
-	};
-
 	return (
 		<div>
 			<h2>Player.tsx</h2>
@@ -25,9 +19,7 @@ const Players = () => {
 				</tbody>
 			</table>
 
-			<button onClick={ handleToggleCurrentPlayer }>
-				Toggle current player
-			</button>
+			<button onClick={ () => dispatch( toggleCurrentPlayer( { currentPlayer } ) ) }>Toggle current player</button>
 		</div>
 	);
 };
