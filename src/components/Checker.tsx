@@ -11,10 +11,13 @@ interface CustomCheckerProps extends Omit< CheckerProps, 'row' | 'state' > {
 const Checker = ( props: CustomCheckerProps ) => {
 	const dispatch = useDispatch();
 	const currentPlayer = useSelector( ( state: any ) => state.currentPlayer );
+	const checkers = useSelector( ( state: any ) => state.checkers );
 	const dice = useSelector( ( state: any ) => state.dice );
 	const { className, id, player } = props;
 
 	const handleClick = ( event: any ) => {
+		const lane = event.target.closest( '.lane' );
+
 		// Check if dice is rolled.
 		if ( dice.length === 0 ) {
 			alert( '❌ Roll the dice first!' );
@@ -28,8 +31,14 @@ const Checker = ( props: CustomCheckerProps ) => {
 			return;
 		}
 
+		// console.log( player );
+		// console.log( currentPlayer );
+		// console.log( id );
+		console.log( checkers );
+		console.log( lane.dataset.lane );
+
 		// Check if any checker is on the bar and the current checker is not on the bar.
-		if ( player === 'player1' && id > 24 ) {
+		if ( player === currentPlayer && lane.dataset.lane < 0 ) {
 			alert( '❌ You have a checker on the bar!' );
 			return;
 		}
@@ -43,7 +52,9 @@ const Checker = ( props: CustomCheckerProps ) => {
 
 		alert( '✅ Your turn!' );
 		dispatch( moveChecker( props ) );
-		dispatch( shiftDice( [] ) );
+		const diceValue = [ ...dice ];
+		// diceValue.shift();
+		dispatch( shiftDice( diceValue ) );
 	};
 
 	return (
