@@ -24,6 +24,25 @@ table {
 	}
 }
 
+.notice {
+	border-width: 1px;
+	border-style: solid;
+	border-radius: 3px;
+	padding: 10px;
+
+	&.success {
+		border-color: #a3be8c;
+		background-color: lighten(#a3be8c, 10%);
+		color: #2e3440;
+	}
+
+	&.error {
+		border-color: #bf616a;
+		background-color: lighten(#bf616a, 10%);
+		color: #eceff4;
+	}
+}
+
 .board {
 	display: inline-block;
 	flex-direction: column;

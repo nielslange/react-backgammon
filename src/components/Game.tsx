@@ -3,7 +3,7 @@ import store from '../data/store';
 import Dice from './Dice';
 import Players from './Players';
 import Board from './Board';
-import Message from './Message';
+import Notice from './Notice';
 
 const Game = () => {
 	return (
@@ -15,7 +15,7 @@ const Game = () => {
 				<div>
 					<Dice />
 					<Players />
-					<Message />
+					<Notice />
 				</div>
 			</Provider>
 		</div>

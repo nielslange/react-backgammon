@@ -7,7 +7,10 @@ export interface CheckerProps {
 }
 
 interface State {
-	message: string;
+	notice: {
+		message: string;
+		type: 'error' | 'success';
+	};
 	count: number;
 	dice: number[];
 	currentPlayer: Player;
@@ -19,7 +22,10 @@ interface State {
 }
 
 export const initialState: State = {
-	message: '🐈 🐈 🐈',
+	notice: {
+		message: '🐈 🐈 🐈',
+		type: 'success',
+	},
 	count: 0,
 	dice: [],
 	currentPlayer: 'PLAYER_BLUE',

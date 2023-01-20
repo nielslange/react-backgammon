@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { rollDice, swapDice, setDice } from '../data/actions';
+import { rollDice, flipDice, setDice } from '../data/actions';
 
 const Dice = () => {
 	const dispatch = useDispatch();
@@ -9,11 +9,11 @@ const Dice = () => {
 	const bonusOne = useSelector( ( state: any ) => state.dice[ 2 ] );
 	const bonusTwo = useSelector( ( state: any ) => state.dice[ 3 ] );
 
-	const handleSwapDice = () => {
+	const handleFlipDice = () => {
 		if ( dice.length === 2 ) {
-			return dispatch( swapDice( [ diceTwo, diceOne ] ) );
+			return dispatch( flipDice( [ diceTwo, diceOne ] ) );
 		}
-		return dispatch( swapDice( [ ...dice ] ) );
+		return dispatch( flipDice( [ ...dice ] ) );
 	};
 
 	const handlesetDice = () => {
@@ -65,7 +65,7 @@ const Dice = () => {
 
 			<button onClick={ () => dispatch( rollDice() ) }>Roll dice</button>
 			<br />
-			<button onClick={ handleSwapDice }>Swap dice</button>
+			<button onClick={ handleFlipDice }>Flip dice</button>
 			<br />
 			<button onClick={ handlesetDice }>Shift dice</button>
 		</div>

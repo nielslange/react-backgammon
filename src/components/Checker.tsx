@@ -4,7 +4,7 @@ import {
 	moveChecker,
 	rollDice,
 	setDice,
-	setMessage,
+	setNotice,
 	toggleCurrentPlayer,
 } from '../data/actions';
 import { CheckerProps, Player } from '../data/state';
@@ -35,7 +35,10 @@ const Checker = ( props: CustomCheckerProps ) => {
 	const die = dice[ 0 ];
 
 	const handleClick = ( event: any ) => {
-		let message: string[] = [];
+		let notice = {
+			type: '',
+			message: '',
+		};
 		const lane = parseInt( event.target.closest( '.lane' ).dataset.lane );
 		const player = event.target.dataset.player;
 		const tagetLane = getTargetLane( { currentPlayer, lane, die } );
@@ -44,55 +47,75 @@ const Checker = ( props: CustomCheckerProps ) => {
 		const playerObject = { checkers, currentPlayer, lane, die };
 
 		if ( ! hasDiceBeenRolled( dice ) ) {
-			message.push( '❌ You need to roll the dice first!' );
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message: 'You need to roll the dice first!',
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if ( ! isCurrentPlayer( { player, currentPlayer } ) ) {
-			message.push( '❌ This is not your checker!' );
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message: 'This is not your checker!',
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if (
 			hasWaitingChecker( { checkers, currentPlayer } ) &&
 			isFinishedChecker( lane )
 		) {
-			message.push( '❌ You cannot add a finished checker to the game!' );
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message: 'You cannot add a finished checker to the game!',
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if (
 			hasWaitingChecker( { checkers, currentPlayer } ) &&
 			isActiveChecker( lane )
 		) {
-			message.push( '❌ You need to add the waiting checker first!' );
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message: 'You need to add the waiting checker first!',
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if (
 			hasWaitingChecker( { checkers, currentPlayer } ) &&
 			isFinishedChecker( lane )
 		) {
-			message.push( '❌ You cannot add a finished checker to the game!' );
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message: 'You cannot add a finished checker to the game!',
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if (
 			hasWaitingChecker( { checkers, currentPlayer } ) &&
 			isTargetOccupiedByCurrentPlayer( playerObject )
 		) {
-			message.push( '❌ The target lane is occupied by your checkers!' );
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message: 'The target lane is occupied by your checkers!',
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if (
 			hasWaitingChecker( { checkers, currentPlayer } ) &&
 			isTargetOccupiedByOtherPlayer( playerObject )
 		) {
-			message.push(
-				"❌ The target lane is occupied by your opponent's checkers!"
-			);
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message:
+					"The target lane is occupied by your opponent's checkers!",
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if (
@@ -106,12 +129,14 @@ const Checker = ( props: CustomCheckerProps ) => {
 			newCheckers[ hitCheckerId - 1 ].lane = 0;
 			newCheckers[ id - 1 ].lane = tagetLane;
 			newDice.shift();
-			message.push(
-				"✅ Move waiting checker to the game and hit your opponent's checker!"
-			);
+			notice = {
+				type: 'success',
+				message:
+					"Move waiting checker to the game and hit your opponent's checker!",
+			};
 
 			dispatch( moveChecker( { checkers: newCheckers } ) );
-			dispatch( setMessage( message ) );
+			dispatch( setNotice( notice ) );
 			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
@@ -125,10 +150,13 @@ const Checker = ( props: CustomCheckerProps ) => {
 		if ( hasWaitingChecker( { checkers, currentPlayer } ) ) {
 			newCheckers[ id - 1 ].lane = tagetLane;
 			newDice.shift();
-			message.push( '✅ Move waiting checker to the game!' );
+			notice = {
+				type: 'success',
+				message: 'Move waiting checker to the game!',
+			};
 
 			dispatch( moveChecker( { checkers: newCheckers } ) );
-			dispatch( setMessage( message ) );
+			dispatch( setNotice( notice ) );
 			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
@@ -140,15 +168,20 @@ const Checker = ( props: CustomCheckerProps ) => {
 		}
 
 		if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
-			message.push( '❌ The target lane is occupied by your checkers!' );
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message: 'The target lane is occupied by your checkers!',
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if ( isTargetOccupiedByOtherPlayer( playerObject ) ) {
-			message.push(
-				"❌ The target lane is occupied by your opponent's checkers!"
-			);
-			return dispatch( setMessage( message ) );
+			notice = {
+				type: 'error',
+				message:
+					"The target lane is occupied by your opponent's checkers!",
+			};
+			return dispatch( setNotice( notice ) );
 		}
 
 		if ( willHitOpponent( { checkers, currentPlayer, lane, die } ) ) {
@@ -159,9 +192,12 @@ const Checker = ( props: CustomCheckerProps ) => {
 			newCheckers[ hitCheckerId - 1 ].lane = 0;
 			newCheckers[ id - 1 ].lane = tagetLane;
 			newDice.shift();
-			message.push( "✅ Move checker and hit your opponent's checker!" );
+			notice = {
+				type: 'success',
+				message: "Move checker and hit your opponent's checker!",
+			};
 			dispatch( moveChecker( { checkers: newCheckers } ) );
-			dispatch( setMessage( message ) );
+			dispatch( setNotice( notice ) );
 			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
@@ -174,10 +210,13 @@ const Checker = ( props: CustomCheckerProps ) => {
 
 		newCheckers[ id - 1 ].lane = tagetLane;
 		newDice.shift();
-		message.push( '✅ Move checker!' );
+		notice = {
+			type: 'success',
+			message: 'Move checker!',
+		};
 
 		dispatch( moveChecker( { checkers: newCheckers } ) );
-		dispatch( setMessage( message ) );
+		dispatch( setNotice( notice ) );
 		dispatch( setDice( newDice ) );
 
 		if ( ! newDice.length ) {

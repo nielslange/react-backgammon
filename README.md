@@ -41,7 +41,7 @@ React implementation of Backgammon.
 ## Actions types
 
 - ROLL_DICE: This action type would be used when the dice are rolled.
-- SWAP_DICE: Allows the player to swap the positions of the two dice after they have been rolled.
+- FLIP_DICE: Allows the player to flip the positions of the two dice after they have been rolled.
 - SET_DICE: Allows the player to set the dice to a specific value.
 - TOGGLE_CURRENT_PLAYER: Allows the game to switch the current player from one player to another, typically after a move has been made.
 - MOVE_CHECKER: This action type would be used when a piece is moved to or on the board.
