@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { rollDice, flipDice, setDice } from '../data/actions';
+import { rollDice } from '../data/actions';
 import { StateType } from '../types';
+import { swapDice, shiftDice } from '../helpers/diceHelpers';
 
 export const Dice = () => {
 	const dispatch = useDispatch();
@@ -9,27 +10,6 @@ export const Dice = () => {
 	const diceTwo = useSelector( ( state: StateType ) => state.dice[ 1 ] );
 	const bonusOne = useSelector( ( state: StateType ) => state.dice[ 2 ] );
 	const bonusTwo = useSelector( ( state: StateType ) => state.dice[ 3 ] );
-
-	const handleFlipDice = () => {
-		if ( dice.length === 2 ) {
-			return dispatch( flipDice( [ diceTwo, diceOne ] ) );
-		}
-
-		return dispatch( flipDice( [ ...dice ] ) );
-	};
-
-	const handlesetDice = () => {
-		switch ( dice.length ) {
-			case 4:
-				return dispatch( setDice( [ diceTwo, bonusOne, bonusTwo ] ) );
-			case 3:
-				return dispatch( setDice( [ diceTwo, bonusOne ] ) );
-			case 2:
-				return dispatch( setDice( [ diceTwo ] ) );
-			default:
-				return dispatch( setDice( [] ) );
-		}
-	};
 
 	return (
 		<div>
@@ -67,9 +47,13 @@ export const Dice = () => {
 
 			<button onClick={ () => dispatch( rollDice() ) }>Roll dice</button>
 			<br />
-			<button onClick={ handleFlipDice }>Flip dice</button>
+			<button onClick={ () => swapDice( dispatch, dice ) }>
+				Flip dice
+			</button>
 			<br />
-			<button onClick={ handlesetDice }>Shift dice</button>
+			<button onClick={ () => shiftDice( dispatch, dice ) }>
+				Shift dice
+			</button>
 		</div>
 	);
 };

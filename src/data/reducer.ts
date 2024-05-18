@@ -9,9 +9,6 @@ export const reducer = ( state = initialState, action: any ) => {
 		case ActionTypes.ROLL_DICE:
 			return { ...state, dice: [ ...action.dice ] };
 
-		case ActionTypes.FLIP_DICE:
-			return { ...state, dice: [ ...action.dice ] };
-
 		case ActionTypes.SET_DICE:
 			return { ...state, dice: [ ...action.dice ] };
 

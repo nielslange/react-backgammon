@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
  * Internal dependencies
  */
 import { toggleCurrentPlayer, rollDice } from '../data/actions';
+import { PlayerType } from '../types';
 
 export const Players = () => {
 	const dispatch = useDispatch();
@@ -26,7 +27,11 @@ export const Players = () => {
 					<tr>
 						<td>Current player</td>
 						<td>:</td>
-						<td>{ currentPlayer }</td>
+						<td>
+							{ currentPlayer === PlayerType.PLAYER_BLUE
+								? '🔵 ' + PlayerType.PLAYER_BLUE
+								: '🔴 ' + PlayerType.PLAYER_RED }
+						</td>
 					</tr>
 				</tbody>
 			</table>

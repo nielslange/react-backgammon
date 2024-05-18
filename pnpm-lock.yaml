@@ -23,6 +23,9 @@ importers:
       react-redux:
         specifier: 9.1.2
         version: 9.1.2(@types/react@18.3.2)(react@18.3.1)(redux@5.0.1)
+      redux:
+        specifier: 5.0.1
+        version: 5.0.1
     devDependencies:
       '@types/node':
         specifier: 20.12.12

@@ -26,7 +26,6 @@ interface LaneParams {
 	lane: number;
 }
 
-// Get the target lane based on the current player and die roll
 export const getTargetLane = ( {
 	currentPlayer,
 	die,
@@ -43,7 +42,6 @@ export const getTargetLane = ( {
 		: lane - die;
 };
 
-// Get the ID of the checker to be hit on the target lane
 export const getHitCheckerId = ( {
 	checkers,
 	lane,
@@ -53,7 +51,6 @@ export const getHitCheckerId = ( {
 	return checker?.id;
 };
 
-// Count the checkers of the current player on the target lane
 const currentPlayerCheckerCount = ( {
 	checkers,
 	currentPlayer,
@@ -68,7 +65,6 @@ const currentPlayerCheckerCount = ( {
 	}, 0 );
 };
 
-// Count the checkers of the opponent player on the target lane
 const otherPlayerCheckerCount = ( {
 	checkers,
 	currentPlayer,
@@ -83,12 +79,10 @@ const otherPlayerCheckerCount = ( {
 	}, 0 );
 };
 
-// Check if the dice have been rolled
 export const hasDiceBeenRolled = ( dice: number[] ): boolean => {
 	return dice.length > 0;
 };
 
-// Check if the player is the current player
 export const isCurrentPlayer = ( {
 	player,
 	currentPlayer,
@@ -96,7 +90,6 @@ export const isCurrentPlayer = ( {
 	return player === currentPlayer;
 };
 
-// Check if there are waiting checkers for the current player
 export const hasWaitingChecker = ( {
 	checkers,
 	currentPlayer,
@@ -109,17 +102,14 @@ export const hasWaitingChecker = ( {
 	);
 };
 
-// Check if the checker is finished
 export const isFinishedChecker = ( lane: number ): boolean => {
 	return lane === 25;
 };
 
-// Check if the checker is active (in play)
 export const isActiveChecker = ( lane: number ): boolean => {
 	return lane > 0 && lane < 25;
 };
 
-// Check if the target lane is occupied by the current player's checkers
 export const isTargetOccupiedByCurrentPlayer = ( {
 	checkers,
 	currentPlayer,
@@ -132,7 +122,6 @@ export const isTargetOccupiedByCurrentPlayer = ( {
 	);
 };
 
-// Check if the target lane is occupied by the opponent's checkers
 export const isTargetOccupiedByOtherPlayer = ( {
 	checkers,
 	currentPlayer,
@@ -144,7 +133,6 @@ export const isTargetOccupiedByOtherPlayer = ( {
 	);
 };
 
-// Check if the move will hit an opponent's checker
 export const willHitOpponent = ( {
 	checkers,
 	currentPlayer,

@@ -12,26 +12,16 @@ import { ActionTypes, PlayerType } from '../types';
  * @returns An action object with the type "ROLL_DICE" and the rolled dice.
  */
 export const rollDice = () => {
-	// const dieOne = Math.floor( Math.random() * 6 ) + 1;
-	// const dieTwo = Math.floor( Math.random() * 6 ) + 1;
-	const dieOne = 2;
-	const dieTwo = 2;
+	const dieOne = Math.floor( Math.random() * 6 ) + 1;
+	const dieTwo = Math.floor( Math.random() * 6 ) + 1;
+	// const dieOne = 2;
+	// const dieTwo = 2;
 	const isDouble = dieOne === dieTwo;
 	const dice = isDouble
 		? [ dieOne, dieTwo, dieOne, dieTwo ]
 		: [ dieOne, dieTwo ];
 
 	return { type: ActionTypes.ROLL_DICE, dice };
-};
-
-/**
- * Flips the dice.
- *
- * @param dice - An array of numbers representing the dice.
- * @returns An action object with the type "FLIP_DICE" and the dice values.
- */
-export const flipDice = ( dice: number[] ) => {
-	return { type: ActionTypes.FLIP_DICE, dice };
 };
 
 /**
