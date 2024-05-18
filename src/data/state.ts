@@ -1,7 +1,7 @@
 /**
  * Internal dependencies
  */
-import { PlayerType, MessageType, NoticeType, StateType } from '../types';
+import { PlayerType, MessageType, NoticeStatusType, StateType } from '../types';
 
 export const initialState: StateType = {
 	checkers: [
@@ -40,7 +40,7 @@ export const initialState: StateType = {
 	dice: [],
 	notice: {
 		message: MessageType.WELCOME,
-		type: NoticeType.INFO,
+		status: NoticeStatusType.INFO,
 	},
 	scores: {
 		[ PlayerType.PLAYER_BLUE ]: 0,

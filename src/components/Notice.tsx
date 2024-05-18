@@ -10,7 +10,7 @@ export const Notice = () => {
 	return (
 		<>
 			<h2>Notice.tsx</h2>
-			<div className={ classnames( 'notice', notice.type ) }>
+			<div className={ classnames( 'notice', notice.status ) }>
 				{ notice.message }
 			</div>
 		</>

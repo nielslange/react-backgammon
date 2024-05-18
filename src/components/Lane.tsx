@@ -10,7 +10,7 @@ import { Checker } from './Checker';
 import type { LaneType, StateType } from '../types';
 
 export const Lane = ( { from, to, player }: LaneType ): JSX.Element => {
-	const checkers = useSelector( ( state: any ) => state.checkers );
+	const checkers = useSelector( ( state: StateType ) => state.checkers );
 	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
 	);

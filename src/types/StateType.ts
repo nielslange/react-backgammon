@@ -1,12 +1,20 @@
-import { MessageType, NoticeType, PlayerType } from '../types';
+/**
+ * Internal dependencies
+ */
+import {
+	CheckerType,
+	MessageType,
+	NoticeStatusType,
+	PlayerType,
+} from '../types';
 
 export type StateType = {
-	checkers: any;
+	checkers: CheckerType;
 	currentPlayer: PlayerType;
 	dice: number[];
 	notice: {
 		message: MessageType;
-		type: NoticeType;
+		type: NoticeStatusType;
 	};
 	scores: {
 		[ PlayerType.PLAYER_BLUE ]: number;

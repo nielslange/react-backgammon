@@ -13,8 +13,6 @@ import {
 	setNotice,
 	toggleCurrentPlayer,
 } from '../data/actions';
-import type { StateType } from '../types';
-import { MessageType, NoticeType } from '../types';
 import {
 	hasDiceBeenRolled,
 	isCurrentPlayer,
@@ -27,22 +25,21 @@ import {
 	getTargetLane,
 	getHitCheckerId,
 } from '../data/selectors';
+import type { NoticeType, PlayerType, StateType } from '../types';
+import { MessageType, NoticeStatusType } from '../types';
 
 export const Checker = ( props: any ) => {
 	const { className, id, player } = props;
 	const dispatch = useDispatch();
 	const dice = useSelector( ( state: StateType ) => state.dice );
-	const currentPlayer = useSelector(
+	const currentPlayer: PlayerType = useSelector(
 		( state: StateType ) => state.currentPlayer
 	);
 	const checkers = useSelector( ( state: StateType ) => state.checkers );
 	const die = dice[ 0 ];
 
 	const handleClick = ( event: any ) => {
-		let notice = {
-			type: '',
-			message: '',
-		};
+		let notice: NoticeType;
 		const lane = parseInt( event.target.closest( '.lane' ).dataset.lane );
 		const player = event.target.dataset.player;
 		const tagetLane = getTargetLane( { currentPlayer, lane, die } );
@@ -52,7 +49,7 @@ export const Checker = ( props: any ) => {
 
 		if ( ! hasDiceBeenRolled( dice ) ) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.ROLL_DICE_FIRST,
 			};
 			return dispatch( setNotice( notice ) );
@@ -60,7 +57,7 @@ export const Checker = ( props: any ) => {
 
 		if ( ! isCurrentPlayer( { player, currentPlayer } ) ) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.NOT_YOUR_CHECKER,
 			};
 			return dispatch( setNotice( notice ) );
@@ -71,7 +68,7 @@ export const Checker = ( props: any ) => {
 			isFinishedChecker( lane )
 		) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.FINISHED_CHECKER,
 			};
 			return dispatch( setNotice( notice ) );
@@ -82,7 +79,7 @@ export const Checker = ( props: any ) => {
 			isActiveChecker( lane )
 		) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.WAITING_CHECKER,
 			};
 			return dispatch( setNotice( notice ) );
@@ -93,7 +90,7 @@ export const Checker = ( props: any ) => {
 			isTargetOccupiedByCurrentPlayer( playerObject )
 		) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.OCCUPIED_BY_YOU,
 			};
 			return dispatch( setNotice( notice ) );
@@ -104,7 +101,7 @@ export const Checker = ( props: any ) => {
 			isTargetOccupiedByOtherPlayer( playerObject )
 		) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.OCCUPIED_BY_OPPONENT,
 			};
 			return dispatch( setNotice( notice ) );
@@ -118,11 +115,12 @@ export const Checker = ( props: any ) => {
 				checkers,
 				lane: tagetLane,
 			} );
+
 			newCheckers[ hitCheckerId - 1 ].lane = 0;
 			newCheckers[ id - 1 ].lane = tagetLane;
 			newDice.shift();
 			notice = {
-				type: NoticeType.SUCCESS,
+				status: NoticeStatusType.SUCCESS,
 				message: MessageType.MOVE_WAITING_CHECKER_AND_HIT,
 			};
 
@@ -131,7 +129,7 @@ export const Checker = ( props: any ) => {
 			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
-				dispatch( toggleCurrentPlayer( { currentPlayer } ) );
+				dispatch( toggleCurrentPlayer( currentPlayer ) );
 				dispatch( rollDice() );
 			}
 
@@ -142,8 +140,8 @@ export const Checker = ( props: any ) => {
 			newCheckers[ id - 1 ].lane = tagetLane;
 			newDice.shift();
 			notice = {
-				type: NoticeType.SUCCESS,
 				message: MessageType.MOVE_CHECKER_TO_GAME,
+				status: NoticeStatusType.SUCCESS,
 			};
 
 			dispatch( moveChecker( { checkers: newCheckers } ) );
@@ -151,7 +149,7 @@ export const Checker = ( props: any ) => {
 			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
-				dispatch( toggleCurrentPlayer( { currentPlayer } ) );
+				dispatch( toggleCurrentPlayer( currentPlayer ) );
 				dispatch( rollDice() );
 			}
 
@@ -160,7 +158,7 @@ export const Checker = ( props: any ) => {
 
 		if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.OCCUPIED_BY_YOU,
 			};
 			return dispatch( setNotice( notice ) );
@@ -168,7 +166,7 @@ export const Checker = ( props: any ) => {
 
 		if ( isTargetOccupiedByOtherPlayer( playerObject ) ) {
 			notice = {
-				type: NoticeType.ERROR,
+				status: NoticeStatusType.ERROR,
 				message: MessageType.OCCUPIED_BY_OPPONENT,
 			};
 			return dispatch( setNotice( notice ) );
@@ -183,7 +181,7 @@ export const Checker = ( props: any ) => {
 			newCheckers[ id - 1 ].lane = tagetLane;
 			newDice.shift();
 			notice = {
-				type: NoticeType.SUCCESS,
+				status: NoticeStatusType.SUCCESS,
 				message: MessageType.MOVE_CHECKER_AND_HIT,
 			};
 			dispatch( moveChecker( { checkers: newCheckers } ) );
@@ -191,7 +189,7 @@ export const Checker = ( props: any ) => {
 			dispatch( setDice( newDice ) );
 
 			if ( ! newDice.length ) {
-				dispatch( toggleCurrentPlayer( { currentPlayer } ) );
+				dispatch( toggleCurrentPlayer( currentPlayer ) );
 				dispatch( rollDice() );
 			}
 
@@ -201,7 +199,7 @@ export const Checker = ( props: any ) => {
 		newCheckers[ id - 1 ].lane = tagetLane;
 		newDice.shift();
 		notice = {
-			type: NoticeType.SUCCESS,
+			status: NoticeStatusType.SUCCESS,
 			message: MessageType.MOVE_CHECKER,
 		};
 
@@ -210,7 +208,7 @@ export const Checker = ( props: any ) => {
 		dispatch( setDice( newDice ) );
 
 		if ( ! newDice.length ) {
-			dispatch( toggleCurrentPlayer( { currentPlayer } ) );
+			dispatch( toggleCurrentPlayer( currentPlayer ) );
 			dispatch( rollDice() );
 		}
 	};

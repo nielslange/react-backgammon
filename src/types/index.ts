@@ -3,6 +3,7 @@ export * from './ActionTypes';
 export * from './CheckerType';
 export * from './MessageType';
 export * from './NoticeType';
+export * from './NoticeStatusType';
 export * from './LaneType';
 export * from './PlayerType';
 export * from './StateType';

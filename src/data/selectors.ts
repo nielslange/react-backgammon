@@ -49,7 +49,8 @@ export const getHitCheckerId = ( {
 	lane,
 }: LaneParams ): number | undefined => {
 	const checker = checkers.find( ( checker ) => checker.lane === lane );
-	return checker ? checker.id : undefined;
+
+	return checker?.id;
 };
 
 // Count the checkers of the current player on the target lane

@@ -1,3 +1,6 @@
+/**
+ * Internal dependencies
+ */
 import { initialState } from './state';
 import { ActionTypes } from '../types';
 
@@ -17,7 +20,7 @@ export const reducer = ( state = initialState, action: any ) => {
 				...state,
 				notice: {
 					message: action.notice.message,
-					type: action.notice.type,
+					status: action.notice.status,
 				},
 			};
 

@@ -1,15 +1,15 @@
 /**
  * Internal dependencies
  */
-import type { NoticeType, PlayerType } from '.';
+import type { CheckerType, NoticeStatusType, PlayerType } from '.';
 import { ActionTypes } from '.';
 
 export type ActionType = {
-	checkers: any;
+	checkers: CheckerType;
 	dice: number[];
 	notice: {
 		message: string;
-		type: NoticeType;
+		type: NoticeStatusType;
 	};
 	player: PlayerType;
 	type: ActionTypes;
