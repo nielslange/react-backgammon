@@ -12,15 +12,10 @@ import { ActionTypes, PlayerType } from '../types';
  * @returns An action object with the type "ROLL_DICE" and the rolled dice.
  */
 export const rollDice = () => {
-	// const dieOne = Math.floor( Math.random() * 6 ) + 1;
-	// const dieTwo = Math.floor( Math.random() * 6 ) + 1;
-	const dieOne = 1;
-	const dieTwo = 5;
-	// const isDouble = dieOne === dieTwo;
-	const isDouble = false;
-	const dice = isDouble
-		? [ dieOne, dieTwo, dieOne, dieTwo ]
-		: [ dieOne, dieTwo ];
+	const dieOne = Math.floor( Math.random() * 6 ) + 1;
+	const dieTwo = Math.floor( Math.random() * 6 ) + 1;
+	const isDouble = dieOne === dieTwo;
+	const dice = isDouble ? [ dieOne, dieOne, dieOne, dieTwo ] : [ dieOne, dieTwo ]; // prettier-ignore
 
 	return { type: ActionTypes.SET_DICE, dice };
 };
@@ -34,11 +29,9 @@ export const rollDice = () => {
  * @returns An object with the flipped dice array.
  */
 export const flipDice = ( dice: number[] ) => {
-	if ( dice.length === 2 ) {
-		return { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ], dice[ 0 ] ] };
-	}
-
-	return { type: ActionTypes.SET_DICE, dice };
+	return dice.length === 2
+		? { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ], dice[ 0 ] ] }
+		: { type: ActionTypes.SET_DICE, dice };
 };
 
 /**
@@ -49,26 +42,15 @@ export const flipDice = ( dice: number[] ) => {
  */
 export const shiftDice = ( dice: number[] ) => {
 	switch ( dice.length ) {
-		case 4:
-			return {
-				type: ActionTypes.SET_DICE,
-				dice: [ dice[ 1 ], dice[ 2 ], dice[ 3 ] ],
-			};
-		case 3:
-			return {
-				type: ActionTypes.SET_DICE,
-				dice: [ dice[ 1 ], dice[ 2 ] ],
-			};
-		case 2:
-			return { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ] ] };
-		default:
-			return { type: ActionTypes.SET_DICE, dice: [] };
+		case 4: return { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ], dice[ 2 ], dice[ 3 ] ], }; // prettier-ignore
+		case 3: return { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ], dice[ 2 ] ], }; // prettier-ignore
+		case 2: return { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ] ] }; // prettier-ignore
+		default: return { type: ActionTypes.SET_DICE, dice: [] }; // prettier-ignore
 	}
 };
 
 /**
  * Sets the dice values.
- *
  * @param dice - An array of numbers representing the dice values.
  * @returns An action object with the type "SET_DICE" and the dice values.
  */
@@ -87,25 +69,24 @@ export const setNotice = ( notice: NoticeType ) => {
 
 /**
  * Toggles the current player between blue and red.
- *
  * @param currentPlayer - The current player.
  * @returns An action object with the type "TOGGLE_CURRENT_PLAYER" and the new player.
  */
 export const toggleCurrentPlayer = ( currentPlayer: PlayerType ) => {
-	const player =
-		currentPlayer === PlayerType.PLAYER_BLUE
-			? PlayerType.PLAYER_RED
-			: PlayerType.PLAYER_BLUE;
+	const player = currentPlayer === PlayerType.PLAYER_BLUE ? PlayerType.PLAYER_RED : PlayerType.PLAYER_BLUE; // prettier-ignore
 
 	return { type: ActionTypes.TOGGLE_CURRENT_PLAYER, player };
 };
 
 /**
  * Moves a checker on the game board.
- *
  * @param checkers - An array of checker objects.
  * @returns An action object with the type "MOVE_CHECKER" and the updated checkers array.
  */
 export const moveChecker = ( { checkers }: { checkers: CheckerType[] } ) => {
 	return { type: ActionTypes.MOVE_CHECKER, checkers };
+};
+
+export const setGameOver = () => {
+	return { type: ActionTypes.SET_GAME_OVER, gameOver: true };
 };

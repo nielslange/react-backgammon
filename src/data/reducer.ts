@@ -24,6 +24,9 @@ export const reducer = ( state = initialState, action: any ) => {
 		case ActionTypes.MOVE_CHECKER:
 			return { ...state, checkers: action.checkers };
 
+		case ActionTypes.SET_GAME_OVER:
+			return { ...state, gameOver: true };
+
 		default:
 			return state;
 	}

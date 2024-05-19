@@ -36,9 +36,11 @@ export const Players = () => {
 				</tbody>
 			</table>
 
-			<button onClick={ handleToggleCurrentPlayer }>
-				Toggle current player
-			</button>
+			<div className="button-group">
+				<button onClick={ handleToggleCurrentPlayer }>
+					Toggle current player
+				</button>
+			</div>
 		</div>
 	);
 };

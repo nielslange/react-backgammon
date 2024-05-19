@@ -1,3 +1,6 @@
+/**
+ * Internal dependencies
+ */
 import { useDispatch, useSelector } from 'react-redux';
 import { flipDice, rollDice, shiftDice } from '../data/actions';
 import { StateType } from '../types';
@@ -42,13 +45,16 @@ export const Dice = () => {
 					</tr>
 				</tbody>
 			</table>
-			<button onClick={ () => dispatch( rollDice() ) }>Roll dice</button>
-			<button onClick={ () => dispatch( flipDice( dice ) ) }>
-				Flip dice
-			</button>
-			<button onClick={ () => dispatch( shiftDice( dice ) ) }>
-				Shift dice
-			</button>
+
+			<div className="button-group">
+				<button onClick={ () => dispatch( rollDice() ) }>Roll</button>
+				<button onClick={ () => dispatch( flipDice( dice ) ) }>
+					Flip
+				</button>
+				<button onClick={ () => dispatch( shiftDice( dice ) ) }>
+					Shift
+				</button>
+			</div>
 		</div>
 	);
 };

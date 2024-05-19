@@ -14,10 +14,23 @@ import {
 	getTargetLane,
 	getHitCheckerId,
 	hasCheckoutsOutsideEndzone,
+	wouldClearOffChecker,
 } from '../data/selectors';
 import { MessageType, NoticeStatusType, PlayerType } from '../types';
-import { updateGame, createNotice } from '.';
+import { updateGame, createNotice, checkForWin } from '../helpers';
 
+/**
+ * Handles the click event on a game board lane.
+ *
+ * @param event - The click event object.
+ * @param id - The ID of the clicked lane.
+ * @param player - The player object.
+ * @param dice - The array of dice values.
+ * @param currentPlayer - The current player.
+ * @param checkers - The array of checkers on the board.
+ * @param die - The current die value.
+ * @param dispatch - The dispatch function for updating the game state.
+ */
 export const handleClick = (
 	event: any,
 	{ id, player, dice, currentPlayer, checkers, die, dispatch }: any
@@ -29,7 +42,6 @@ export const handleClick = (
 	const playerObject = { checkers, currentPlayer, lane, die };
 
 	if ( ! hasDiceBeenRolled( dice ) ) {
-		console.log( 'hasDiceBeenRolled' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -41,7 +53,6 @@ export const handleClick = (
 	}
 
 	if ( ! isCurrentPlayer( { player, currentPlayer } ) ) {
-		console.log( 'isCurrentPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -53,7 +64,6 @@ export const handleClick = (
 	}
 
 	if ( isCheckerClearedOff( { lane, currentPlayer } ) ) {
-		console.log( 'isCheckerClearedOff' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -68,7 +78,6 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		isCheckerOnTheBoard( { lane } )
 	) {
-		console.log( 'hasWaitingChecker && isCheckerOnTheBoard' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -83,7 +92,6 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		isCheckerOnTheBoard( { lane } )
 	) {
-		console.log( 'hasWaitingChecker && isCheckerOnTheBoard' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -98,7 +106,6 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		isTargetOccupiedByCurrentPlayer( playerObject )
 	) {
-		console.log( 'hasWaitingChecker && isTargetOccupiedByCurrentPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -113,7 +120,6 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		isTargetOccupiedByOtherPlayer( playerObject )
 	) {
-		console.log( 'hasWaitingChecker && isTargetOccupiedByOtherPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -125,7 +131,6 @@ export const handleClick = (
 	}
 
 	if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
-		console.log( 'isTargetOccupiedByCurrentPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -137,7 +142,6 @@ export const handleClick = (
 	}
 
 	if ( isTargetOccupiedByOtherPlayer( playerObject ) ) {
-		console.log( 'isTargetOccupiedByOtherPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -152,8 +156,12 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		willHitOpponent( { checkers, currentPlayer, lane, die } )
 	) {
-		console.log( 'hasWaitingChecker && willHitOpponent' );
 		const hitCheckerId = getHitCheckerId( { checkers, lane: targetLane } );
+
+		if ( hitCheckerId === undefined ) {
+			throw new Error( 'No checker found on target lane' );
+		}
+
 		newCheckers[ hitCheckerId - 1 ].lane =
 			currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0;
 		newCheckers[ id - 1 ].lane = targetLane;
@@ -163,13 +171,10 @@ export const handleClick = (
 			NoticeStatusType.SUCCESS,
 			MessageType.MOVE_WAITING_CHECKER_AND_HIT
 		);
-		return updateGame(
-			dispatch,
-			newCheckers,
-			newDice,
-			notice,
-			currentPlayer
-		);
+
+		updateGame( dispatch, newCheckers, newDice, notice, currentPlayer );
+		checkForWin( dispatch, newCheckers, currentPlayer );
+		return;
 	}
 
 	if ( hasWaitingChecker( { checkers, currentPlayer } ) ) {
@@ -181,20 +186,15 @@ export const handleClick = (
 			NoticeStatusType.SUCCESS,
 			MessageType.MOVE_CHECKER_TO_BOARD
 		);
-		return updateGame(
-			dispatch,
-			newCheckers,
-			newDice,
-			notice,
-			currentPlayer
-		);
+
+		updateGame( dispatch, newCheckers, newDice, notice, currentPlayer );
+		checkForWin( dispatch, newCheckers, currentPlayer );
+		return;
 	}
 
 	if ( willHitOpponent( { checkers, currentPlayer, lane, die } ) ) {
-		console.log( 'willHitOpponent' );
 		const hitCheckerId = getHitCheckerId( { checkers, lane: targetLane } );
-		newCheckers[ hitCheckerId - 1 ].lane =
-			currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0;
+		newCheckers[ hitCheckerId - 1 ].lane = currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0; // prettier-ignore
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();
 
@@ -203,28 +203,24 @@ export const handleClick = (
 			MessageType.MOVE_CHECKER_AND_HIT
 		);
 
-		return updateGame(
-			dispatch,
-			newCheckers,
-			newDice,
-			notice,
-			currentPlayer
-		);
+		updateGame( dispatch, newCheckers, newDice, notice, currentPlayer );
+		checkForWin( dispatch, newCheckers, currentPlayer );
+		return;
 	}
 
-	// if ( hasCheckoutsOutsideEndzone( { checkers, currentPlayer } ) ) {
-	// 	console.log( 'hasCheckoutsOutsideEndzone' );
-	// 	return dispatch(
-	// 		setNotice(
-	// 			createNotice(
-	// 				NoticeStatusType.ERROR,
-	// 				MessageType.NOT_ALL_CHECKERS_IN_END_ZONE
-	// 			)
-	// 		)
-	// 	);
-	// }
-
-	console.log( 'DEFAULT' );
+	if (
+		hasCheckoutsOutsideEndzone( { checkers, currentPlayer } ) &&
+		wouldClearOffChecker( { die, lane, currentPlayer } )
+	) {
+		return dispatch(
+			setNotice(
+				createNotice(
+					NoticeStatusType.ERROR,
+					MessageType.NOT_ALL_CHECKERS_IN_END_ZONE
+				)
+			)
+		);
+	}
 
 	newCheckers[ id - 1 ].lane = targetLane;
 	newDice.shift();
@@ -233,5 +229,7 @@ export const handleClick = (
 		NoticeStatusType.SUCCESS,
 		MessageType.MOVE_CHECKER
 	);
+
 	updateGame( dispatch, newCheckers, newDice, notice, currentPlayer );
+	checkForWin( dispatch, newCheckers, currentPlayer );
 };

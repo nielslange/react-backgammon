@@ -7,6 +7,7 @@ export type StateType = {
 	checkers: CheckerType[];
 	currentPlayer: PlayerType;
 	dice: number[];
+	gameOver: boolean;
 	notice: NoticeType;
 	scores: {
 		[ PlayerType.PLAYER_BLUE ]: number;
