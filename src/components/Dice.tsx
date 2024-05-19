@@ -1,7 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { rollDice } from '../data/actions';
+import { flipDice, rollDice, shiftDice } from '../data/actions';
 import { StateType } from '../types';
-import { swapDice, shiftDice } from '../helpers/diceHelpers';
 
 export const Dice = () => {
 	const dispatch = useDispatch();
@@ -14,7 +13,6 @@ export const Dice = () => {
 	return (
 		<div>
 			<h2>Dice.tsx</h2>
-
 			<table>
 				<tbody>
 					<tr>
@@ -44,14 +42,11 @@ export const Dice = () => {
 					</tr>
 				</tbody>
 			</table>
-
 			<button onClick={ () => dispatch( rollDice() ) }>Roll dice</button>
-			<br />
-			<button onClick={ () => swapDice( dispatch, dice ) }>
+			<button onClick={ () => dispatch( flipDice( dice ) ) }>
 				Flip dice
 			</button>
-			<br />
-			<button onClick={ () => shiftDice( dispatch, dice ) }>
+			<button onClick={ () => dispatch( shiftDice( dice ) ) }>
 				Shift dice
 			</button>
 		</div>

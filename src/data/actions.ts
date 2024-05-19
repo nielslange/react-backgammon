@@ -21,7 +21,48 @@ export const rollDice = () => {
 		? [ dieOne, dieTwo, dieOne, dieTwo ]
 		: [ dieOne, dieTwo ];
 
-	return { type: ActionTypes.ROLL_DICE, dice };
+	return { type: ActionTypes.SET_DICE, dice };
+};
+
+/**
+ * Flips the order of the dice array.
+ * If the dice array has 2 elements, it swaps the elements.
+ * If the dice array has any other number of elements, it returns the array as is.
+ *
+ * @param dice - The array of dice numbers.
+ * @returns An object with the flipped dice array.
+ */
+export const flipDice = ( dice: number[] ) => {
+	if ( dice.length === 2 ) {
+		return { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ], dice[ 0 ] ] };
+	}
+
+	return { type: ActionTypes.SET_DICE, dice };
+};
+
+/**
+ * Remove the first element from the dice array.
+ *
+ * @param dispatch - The dispatch function from the Redux store.
+ * @param dice - The array of dice numbers.
+ */
+export const shiftDice = ( dice: number[] ) => {
+	switch ( dice.length ) {
+		case 4:
+			return {
+				type: ActionTypes.SET_DICE,
+				dice: [ dice[ 1 ], dice[ 2 ], dice[ 3 ] ],
+			};
+		case 3:
+			return {
+				type: ActionTypes.SET_DICE,
+				dice: [ dice[ 1 ], dice[ 2 ] ],
+			};
+		case 2:
+			return { type: ActionTypes.SET_DICE, dice: [ dice[ 1 ] ] };
+		default:
+			return { type: ActionTypes.SET_DICE, dice: [] };
+	}
 };
 
 /**

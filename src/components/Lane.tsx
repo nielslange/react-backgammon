@@ -16,68 +16,45 @@ export const Lane = ( { from, to, player }: LaneType ): JSX.Element => {
 	);
 	const lanes = [];
 
-	if ( from < to ) {
-		for ( let i = from; i <= to; i++ ) {
-			const checker: JSX.Element[] = checkers
-				.filter( ( item: any ) => item.lane === i )
-				.map( ( item: any ) => (
-					<Checker
-						key={ item.id }
-						className="checker"
-						id={ item.id }
-						player={ item.player }
-						currentPlayer={ currentPlayer }
-					/>
-				) );
-			lanes.push(
-				<div
-					className="lane"
-					title={ i.toString() }
-					data-lane={ i }
-					key={ i }
-				>
-					{ checker }
-				</div>
-			);
-		}
-	} else if ( from > to ) {
-		for ( let i = from; i >= to; i-- ) {
-			const checker: JSX.Element[] = checkers
-				.filter( ( item: any ) => item.lane === i )
-				.map( ( item: any ) => (
-					<Checker
-						key={ item.id }
-						className="checker"
-						id={ item.id }
-						player={ item.player }
-						currentPlayer={ currentPlayer }
-					/>
-				) );
-			lanes.push(
-				<div className="lane" data-lane={ i } key={ i }>
-					{ checker }
-				</div>
-			);
-		}
-	} else {
-		const key = `${ player }-${ from }`;
-		const checker: JSX.Element[] = checkers
-			.filter( ( item: any ) => item.lane === from )
-			.filter( ( item: any ) => item.player === player )
-			.map( ( item: any ) => (
-				<Checker
-					key={ item.id }
-					className="checker"
-					id={ item.id }
-					player={ item.player }
-					currentPlayer={ currentPlayer }
-				/>
-			) );
-		lanes.push(
-			<div className="lane" data-lane={ from } key={ key }>
-				{ checker }
+	const renderChecker = ( lane: number, keySuffix: string = '' ) => {
+		const filteredCheckers = checkers.filter(
+			( item: any ) =>
+				item.lane === lane &&
+				( keySuffix ? item.player === player : true )
+		);
+		const checkerElements = filteredCheckers.map( ( item: any ) => (
+			<Checker
+				className="checker"
+				currentPlayer={ currentPlayer }
+				id={ item.id }
+				key={ item.id }
+				player={ item.player }
+			/>
+		) );
+		const key = keySuffix ? `${ player }-${ lane }` : lane.toString();
+		return (
+			<div
+				className="lane"
+				data-lane={ lane }
+				title={ lane.toString() }
+				key={ key }
+			>
+				{ checkerElements }
 			</div>
 		);
+	};
+
+	// Render checker that are moving from one lane to another (if-state)
+	// or render checker that are staying in the same lane (else-state)
+	if ( from !== to ) {
+		const range =
+			from < to
+				? Array.from( { length: to - from + 1 }, ( _, i ) => from + i )
+				: Array.from( { length: from - to + 1 }, ( _, i ) => from - i );
+		lanes.push( ...range.map( ( lane ) => renderChecker( lane ) ) );
+	} else {
+		lanes.push( renderChecker( from, `${ player }` ) );
 	}
+
 	return <>{ lanes }</>;
 };

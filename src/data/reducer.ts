@@ -6,9 +6,6 @@ import { ActionTypes } from '../types';
 
 export const reducer = ( state = initialState, action: any ) => {
 	switch ( action.type ) {
-		case ActionTypes.ROLL_DICE:
-			return { ...state, dice: [ ...action.dice ] };
-
 		case ActionTypes.SET_DICE:
 			return { ...state, dice: [ ...action.dice ] };
 

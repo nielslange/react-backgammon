@@ -1,9 +1,9 @@
 /**
  * Internal dependencies
  */
-import { NoticeStatusType } from '.';
+import { MessageType, NoticeStatusType } from '.';
 
 export type NoticeType = {
-	message: string;
+	message: MessageType;
 	status: NoticeStatusType;
 };
