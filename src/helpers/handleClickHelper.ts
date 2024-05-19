@@ -1,52 +1,21 @@
 /**
  * Internal dependencies
  */
-import {
-	moveChecker,
-	rollDice,
-	setDice,
-	setNotice,
-	toggleCurrentPlayer,
-} from '../data/actions';
+import { setNotice } from '../data/actions';
 import {
 	hasDiceBeenRolled,
 	isCurrentPlayer,
 	hasWaitingChecker,
-	isFinishedChecker,
-	isActiveChecker,
+	isCheckerClearedOff,
+	isCheckerOnTheBoard,
 	isTargetOccupiedByCurrentPlayer,
 	isTargetOccupiedByOtherPlayer,
 	willHitOpponent,
 	getTargetLane,
 	getHitCheckerId,
 } from '../data/selectors';
-import type { NoticeType, PlayerType, CheckerType } from '../types';
-import { MessageType, NoticeStatusType } from '../types';
-
-const createNotice = (
-	status: NoticeStatusType,
-	message: MessageType
-): NoticeType => ( {
-	status,
-	message,
-} );
-
-const updateGame = (
-	dispatch: any,
-	newCheckers: CheckerType[],
-	newDice: number[],
-	notice: NoticeType,
-	currentPlayer: PlayerType
-) => {
-	dispatch( moveChecker( { checkers: newCheckers } ) );
-	dispatch( setNotice( notice ) );
-	dispatch( setDice( newDice ) );
-
-	if ( ! newDice.length ) {
-		dispatch( toggleCurrentPlayer( currentPlayer ) );
-		dispatch( rollDice() );
-	}
-};
+import { MessageType, NoticeStatusType, PlayerType } from '../types';
+import { updateGame, createNotice } from '.';
 
 export const handleClick = (
 	event: any,
@@ -59,6 +28,7 @@ export const handleClick = (
 	const playerObject = { checkers, currentPlayer, lane, die };
 
 	if ( ! hasDiceBeenRolled( dice ) ) {
+		console.log( 'hasDiceBeenRolled' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -70,6 +40,7 @@ export const handleClick = (
 	}
 
 	if ( ! isCurrentPlayer( { player, currentPlayer } ) ) {
+		console.log( 'isCurrentPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -80,10 +51,8 @@ export const handleClick = (
 		);
 	}
 
-	if (
-		hasWaitingChecker( { checkers, currentPlayer } ) &&
-		isFinishedChecker( lane )
-	) {
+	if ( isCheckerClearedOff( { lane, currentPlayer } ) ) {
+		console.log( 'isCheckerClearedOff' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -96,8 +65,24 @@ export const handleClick = (
 
 	if (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
-		isActiveChecker( lane )
+		isCheckerOnTheBoard( { lane } )
 	) {
+		console.log( 'hasWaitingChecker && isCheckerOnTheBoard' );
+		return dispatch(
+			setNotice(
+				createNotice(
+					NoticeStatusType.ERROR,
+					MessageType.WAITING_CHECKER
+				)
+			)
+		);
+	}
+
+	if (
+		hasWaitingChecker( { checkers, currentPlayer } ) &&
+		isCheckerOnTheBoard( { lane } )
+	) {
+		console.log( 'hasWaitingChecker && isCheckerOnTheBoard' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -112,11 +97,12 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		isTargetOccupiedByCurrentPlayer( playerObject )
 	) {
+		console.log( 'hasWaitingChecker && isTargetOccupiedByCurrentPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
 					NoticeStatusType.ERROR,
-					MessageType.OCCUPIED_BY_YOU
+					MessageType.OCCUPIED_BY_YOU_1
 				)
 			)
 		);
@@ -126,6 +112,7 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		isTargetOccupiedByOtherPlayer( playerObject )
 	) {
+		console.log( 'hasWaitingChecker && isTargetOccupiedByOtherPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -140,8 +127,10 @@ export const handleClick = (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		willHitOpponent( { checkers, currentPlayer, lane, die } )
 	) {
+		console.log( 'hasWaitingChecker && willHitOpponent' );
 		const hitCheckerId = getHitCheckerId( { checkers, lane: targetLane } );
-		newCheckers[ hitCheckerId - 1 ].lane = 0;
+		newCheckers[ hitCheckerId - 1 ].lane =
+			currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0;
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();
 
@@ -159,6 +148,7 @@ export const handleClick = (
 	}
 
 	if ( hasWaitingChecker( { checkers, currentPlayer } ) ) {
+		console.log( 'hasWaitingChecker' );
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();
 
@@ -176,17 +166,19 @@ export const handleClick = (
 	}
 
 	if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
+		console.log( 'isTargetOccupiedByCurrentPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
 					NoticeStatusType.ERROR,
-					MessageType.OCCUPIED_BY_YOU
+					MessageType.OCCUPIED_BY_YOU_2
 				)
 			)
 		);
 	}
 
 	if ( isTargetOccupiedByOtherPlayer( playerObject ) ) {
+		console.log( 'isTargetOccupiedByOtherPlayer' );
 		return dispatch(
 			setNotice(
 				createNotice(
@@ -198,8 +190,10 @@ export const handleClick = (
 	}
 
 	if ( willHitOpponent( { checkers, currentPlayer, lane, die } ) ) {
+		console.log( 'willHitOpponent' );
 		const hitCheckerId = getHitCheckerId( { checkers, lane: targetLane } );
-		newCheckers[ hitCheckerId - 1 ].lane = 0;
+		newCheckers[ hitCheckerId - 1 ].lane =
+			currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0;
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();
 
@@ -207,6 +201,7 @@ export const handleClick = (
 			NoticeStatusType.SUCCESS,
 			MessageType.MOVE_CHECKER_AND_HIT
 		);
+
 		return updateGame(
 			dispatch,
 			newCheckers,
@@ -215,6 +210,8 @@ export const handleClick = (
 			currentPlayer
 		);
 	}
+
+	console.log( 'DEFAULT' );
 
 	newCheckers[ id - 1 ].lane = targetLane;
 	newDice.shift();

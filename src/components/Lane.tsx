@@ -33,12 +33,7 @@ export const Lane = ( { from, to, player }: LaneType ): JSX.Element => {
 		) );
 		const key = keySuffix ? `${ player }-${ lane }` : lane.toString();
 		return (
-			<div
-				className="lane"
-				data-lane={ lane }
-				title={ lane.toString() }
-				key={ key }
-			>
+			<div className="lane" data-lane={ lane } key={ key }>
 				{ checkerElements }
 			</div>
 		);

@@ -13,8 +13,8 @@ export const Board = () => {
 				<div className="board-top">
 					<Lane from={ 13 } to={ 18 } />
 					<Lane
-						from={ 0 }
-						to={ 0 }
+						from={ 25 }
+						to={ 25 }
 						player={ PlayerType.PLAYER_RED }
 					/>
 					<Lane from={ 19 } to={ 24 } />
@@ -34,8 +34,8 @@ export const Board = () => {
 					/>
 					<Lane from={ 6 } to={ 1 } />
 					<Lane
-						from={ 25 }
-						to={ 25 }
+						from={ 0 }
+						to={ 0 }
 						player={ PlayerType.PLAYER_RED }
 					/>
 				</div>

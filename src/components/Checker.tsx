@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { handleClick } from '../helpers/clickHelper';
+import { handleClick } from '../helpers/handleClickHelper';
 import type { PlayerType, StateType } from '../types';
 
 export const Checker = ( props: any ) => {

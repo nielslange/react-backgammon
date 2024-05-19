@@ -12,11 +12,12 @@ import { ActionTypes, PlayerType } from '../types';
  * @returns An action object with the type "ROLL_DICE" and the rolled dice.
  */
 export const rollDice = () => {
-	const dieOne = Math.floor( Math.random() * 6 ) + 1;
-	const dieTwo = Math.floor( Math.random() * 6 ) + 1;
-	// const dieOne = 2;
-	// const dieTwo = 2;
-	const isDouble = dieOne === dieTwo;
+	// const dieOne = Math.floor( Math.random() * 6 ) + 1;
+	// const dieTwo = Math.floor( Math.random() * 6 ) + 1;
+	const dieOne = 5;
+	const dieTwo = 5;
+	// const isDouble = dieOne === dieTwo;
+	const isDouble = false;
 	const dice = isDouble
 		? [ dieOne, dieTwo, dieOne, dieTwo ]
 		: [ dieOne, dieTwo ];
@@ -106,6 +107,5 @@ export const toggleCurrentPlayer = ( currentPlayer: PlayerType ) => {
  * @returns An action object with the type "MOVE_CHECKER" and the updated checkers array.
  */
 export const moveChecker = ( { checkers }: { checkers: CheckerType[] } ) => {
-	console.log( checkers );
 	return { type: ActionTypes.MOVE_CHECKER, checkers };
 };

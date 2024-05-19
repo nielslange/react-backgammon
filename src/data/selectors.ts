@@ -22,7 +22,8 @@ interface PlayerParams {
 }
 
 interface LaneParams {
-	checkers: Checker[];
+	checkers?: Checker[];
+	currentPlayer?: PlayerType;
 	lane: number;
 }
 
@@ -34,30 +35,47 @@ export const getTargetLane = ( {
 	currentPlayer: PlayerType;
 	die: number;
 	lane: number;
-} ): number => {
-	return currentPlayer === PlayerType.PLAYER_BLUE
-		? lane + die
-		: lane === 0
-		? 25 - die
-		: lane - die;
+} ): number | undefined => {
+	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+		if ( lane === 0 ) return die;
+		if ( lane + die > 24 ) return 25;
+		return lane + die;
+	}
+
+	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+		if ( lane === 0 ) return 25 - die;
+		if ( lane - die < 1 ) return 0;
+		return lane - die;
+	}
+
+	return undefined;
 };
 
 export const getHitCheckerId = ( {
 	checkers,
 	lane,
 }: LaneParams ): number | undefined => {
-	const checker = checkers.find( ( checker ) => checker.lane === lane );
+	const checker = checkers?.find( ( checker ) => checker.lane === lane );
 
 	return checker?.id;
 };
 
-const currentPlayerCheckerCount = ( {
+const getCurrentPlayerCheckerCount = ( {
 	checkers,
 	currentPlayer,
 	die,
 	lane,
 }: CheckerParams ): number => {
 	const targetLane = getTargetLane( { currentPlayer, lane, die } );
+
+	if ( currentPlayer === PlayerType.PLAYER_BLUE && targetLane === 25 ) {
+		return 0;
+	}
+
+	if ( currentPlayer === PlayerType.PLAYER_RED && targetLane === 0 ) {
+		return 0;
+	}
+
 	return checkers.reduce( ( acc, checker ) => {
 		return checker.lane === targetLane && checker.player === currentPlayer
 			? acc + 1
@@ -65,7 +83,7 @@ const currentPlayerCheckerCount = ( {
 	}, 0 );
 };
 
-const otherPlayerCheckerCount = ( {
+const getOtherPlayerCheckerCount = ( {
 	checkers,
 	currentPlayer,
 	die,
@@ -96,17 +114,30 @@ export const hasWaitingChecker = ( {
 }: {
 	checkers: Checker[];
 	currentPlayer: PlayerType;
-} ): boolean => {
-	return checkers.some(
-		( checker ) => checker.lane === 0 && checker.player === currentPlayer
-	);
+} ): boolean | undefined => {
+	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+		return checkers.some(
+			( checker ) =>
+				checker.lane === 0 && checker.player === currentPlayer
+		);
+	}
+
+	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+		return checkers.some(
+			( checker ) =>
+				checker.lane === 25 && checker.player === currentPlayer
+		);
+	}
 };
 
-export const isFinishedChecker = ( lane: number ): boolean => {
-	return lane === 25;
+export const isCheckerClearedOff = ( {
+	lane,
+	currentPlayer,
+}: LaneParams ): boolean => {
+	return currentPlayer === PlayerType.PLAYER_BLUE ? lane === 25 : lane === 0;
 };
 
-export const isActiveChecker = ( lane: number ): boolean => {
+export const isCheckerOnTheBoard = ( { lane }: { lane: number } ): boolean => {
 	return lane > 0 && lane < 25;
 };
 
@@ -117,8 +148,12 @@ export const isTargetOccupiedByCurrentPlayer = ( {
 	lane,
 }: CheckerParams ): boolean => {
 	return (
-		currentPlayerCheckerCount( { checkers, currentPlayer, die, lane } ) ===
-		5
+		getCurrentPlayerCheckerCount( {
+			checkers,
+			currentPlayer,
+			die,
+			lane,
+		} ) === 5
 	);
 };
 
@@ -129,7 +164,8 @@ export const isTargetOccupiedByOtherPlayer = ( {
 	lane,
 }: CheckerParams ): boolean => {
 	return (
-		otherPlayerCheckerCount( { checkers, currentPlayer, die, lane } ) >= 2
+		getOtherPlayerCheckerCount( { checkers, currentPlayer, die, lane } ) >=
+		2
 	);
 };
 
@@ -140,6 +176,7 @@ export const willHitOpponent = ( {
 	lane,
 }: CheckerParams ): boolean => {
 	return (
-		otherPlayerCheckerCount( { checkers, currentPlayer, die, lane } ) === 1
+		getOtherPlayerCheckerCount( { checkers, currentPlayer, die, lane } ) ===
+		1
 	);
 };
