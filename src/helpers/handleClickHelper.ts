@@ -13,6 +13,7 @@ import {
 	willHitOpponent,
 	getTargetLane,
 	getHitCheckerId,
+	hasCheckoutsOutsideEndzone,
 } from '../data/selectors';
 import { MessageType, NoticeStatusType, PlayerType } from '../types';
 import { updateGame, createNotice } from '.';
@@ -102,7 +103,7 @@ export const handleClick = (
 			setNotice(
 				createNotice(
 					NoticeStatusType.ERROR,
-					MessageType.OCCUPIED_BY_YOU_1
+					MessageType.TARGET_OCCUPIED_BY_YOU
 				)
 			)
 		);
@@ -117,7 +118,31 @@ export const handleClick = (
 			setNotice(
 				createNotice(
 					NoticeStatusType.ERROR,
-					MessageType.OCCUPIED_BY_OPPONENT
+					MessageType.TARGET_OCCUPIED_BY_OPPONENT
+				)
+			)
+		);
+	}
+
+	if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
+		console.log( 'isTargetOccupiedByCurrentPlayer' );
+		return dispatch(
+			setNotice(
+				createNotice(
+					NoticeStatusType.ERROR,
+					MessageType.TARGET_OCCUPIED_BY_YOU
+				)
+			)
+		);
+	}
+
+	if ( isTargetOccupiedByOtherPlayer( playerObject ) ) {
+		console.log( 'isTargetOccupiedByOtherPlayer' );
+		return dispatch(
+			setNotice(
+				createNotice(
+					NoticeStatusType.ERROR,
+					MessageType.TARGET_OCCUPIED_BY_OPPONENT
 				)
 			)
 		);
@@ -154,7 +179,7 @@ export const handleClick = (
 
 		const notice = createNotice(
 			NoticeStatusType.SUCCESS,
-			MessageType.MOVE_CHECKER_TO_GAME
+			MessageType.MOVE_CHECKER_TO_BOARD
 		);
 		return updateGame(
 			dispatch,
@@ -162,30 +187,6 @@ export const handleClick = (
 			newDice,
 			notice,
 			currentPlayer
-		);
-	}
-
-	if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
-		console.log( 'isTargetOccupiedByCurrentPlayer' );
-		return dispatch(
-			setNotice(
-				createNotice(
-					NoticeStatusType.ERROR,
-					MessageType.OCCUPIED_BY_YOU_2
-				)
-			)
-		);
-	}
-
-	if ( isTargetOccupiedByOtherPlayer( playerObject ) ) {
-		console.log( 'isTargetOccupiedByOtherPlayer' );
-		return dispatch(
-			setNotice(
-				createNotice(
-					NoticeStatusType.ERROR,
-					MessageType.OCCUPIED_BY_OPPONENT
-				)
-			)
 		);
 	}
 
@@ -210,6 +211,18 @@ export const handleClick = (
 			currentPlayer
 		);
 	}
+
+	// if ( hasCheckoutsOutsideEndzone( { checkers, currentPlayer } ) ) {
+	// 	console.log( 'hasCheckoutsOutsideEndzone' );
+	// 	return dispatch(
+	// 		setNotice(
+	// 			createNotice(
+	// 				NoticeStatusType.ERROR,
+	// 				MessageType.NOT_ALL_CHECKERS_IN_END_ZONE
+	// 			)
+	// 		)
+	// 	);
+	// }
 
 	console.log( 'DEFAULT' );
 

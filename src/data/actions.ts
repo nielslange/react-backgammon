@@ -14,7 +14,7 @@ import { ActionTypes, PlayerType } from '../types';
 export const rollDice = () => {
 	// const dieOne = Math.floor( Math.random() * 6 ) + 1;
 	// const dieTwo = Math.floor( Math.random() * 6 ) + 1;
-	const dieOne = 5;
+	const dieOne = 1;
 	const dieTwo = 5;
 	// const isDouble = dieOne === dieTwo;
 	const isDouble = false;

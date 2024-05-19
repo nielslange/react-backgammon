@@ -90,6 +90,15 @@ const getOtherPlayerCheckerCount = ( {
 	lane,
 }: CheckerParams ): number => {
 	const targetLane = getTargetLane( { currentPlayer, lane, die } );
+
+	if ( currentPlayer === PlayerType.PLAYER_BLUE && targetLane === 25 ) {
+		return 0;
+	}
+
+	if ( currentPlayer === PlayerType.PLAYER_RED && targetLane === 0 ) {
+		return 0;
+	}
+
 	return checkers.reduce( ( acc, checker ) => {
 		return checker.lane === targetLane && checker.player !== currentPlayer
 			? acc + 1
@@ -175,8 +184,35 @@ export const willHitOpponent = ( {
 	die,
 	lane,
 }: CheckerParams ): boolean => {
+	console.log( { lane } );
 	return (
 		getOtherPlayerCheckerCount( { checkers, currentPlayer, die, lane } ) ===
 		1
 	);
+};
+
+export const hasCheckoutsOutsideEndzone = ( {
+	checkers,
+	currentPlayer,
+}: {
+	checkers: Checker[];
+	currentPlayer: PlayerType;
+} ): boolean | undefined => {
+	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+		return checkers.some(
+			( checker ) =>
+				checker.lane > 0 &&
+				checker.lane < 19 &&
+				checker.player === currentPlayer
+		);
+	}
+
+	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+		return checkers.some(
+			( checker ) =>
+				checker.lane > 6 &&
+				checker.lane < 25 &&
+				checker.player === currentPlayer
+		);
+	}
 };

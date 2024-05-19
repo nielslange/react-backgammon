@@ -67,7 +67,7 @@ export const initialState: StateType = {
 		{ id: 30, player: PlayerType.PLAYER_RED, lane: 2 },
 	],
 	currentPlayer: PlayerType.PLAYER_BLUE,
-	dice: [ 1, 1 ],
+	dice: [],
 	notice: {
 		message: MessageType.WELCOME,
 		status: NoticeStatusType.INFO,
