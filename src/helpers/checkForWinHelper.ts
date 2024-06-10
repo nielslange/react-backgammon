@@ -8,7 +8,7 @@ import { NoticeStatusType, MessageType, PlayerType } from '../types';
 
 export const checkForWin = (
 	dispatch: any,
-	checkers: Chec,
+	checkers: any,
 	currentPlayer: PlayerType
 ) => {
 	if ( hasPlayerWon( { checkers, currentPlayer } ) ) {
