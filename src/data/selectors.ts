@@ -55,13 +55,13 @@ export const getTargetLane = ( {
 	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
 		if ( lane === 0 ) return die;
 		if ( lane + die > 24 ) return 25;
-		return lane + die;
+		return lane - die;
 	}
 
 	if ( currentPlayer === PlayerType.PLAYER_RED ) {
 		if ( lane === 0 ) return 25 - die;
 		if ( lane - die < 1 ) return 0;
-		return lane - die;
+		return lane + die;
 	}
 
 	throw new Error( `Invalid player type: ${ currentPlayer }` );
