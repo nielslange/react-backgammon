@@ -27,6 +27,12 @@ export const reducer = ( state = initialState, action: any ) => {
 		case ActionTypes.SET_GAME_OVER:
 			return { ...state, gameOver: true };
 
+		// case ActionTypes.SURRENDER_GAME:
+		// 	return { ...state, surrender: true };
+
+		case ActionTypes.RESTART_GAME:
+			return { ...state };
+
 		default:
 			return state;
 	}

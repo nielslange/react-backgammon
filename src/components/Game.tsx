@@ -11,6 +11,7 @@ import { Dice } from './Dice';
 import { Players } from './Players';
 import { Board } from './Board';
 import { Notice } from './Notice';
+import { GameState } from './GameState';
 
 export const Game = () => {
 	return (
@@ -22,6 +23,7 @@ export const Game = () => {
 				<div>
 					<Dice />
 					<Players />
+					<GameState />
 					<Notice />
 				</div>
 			</Provider>

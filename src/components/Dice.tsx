@@ -1,4 +1,10 @@
 /**
+ * External dependencies
+ */
+import Button from 'react-bootstrap/Button';
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
+
+/**
  * Internal dependencies
  */
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,10 +18,11 @@ export const Dice = () => {
 	const diceTwo = useSelector( ( state: StateType ) => state.dice[ 1 ] );
 	const bonusOne = useSelector( ( state: StateType ) => state.dice[ 2 ] );
 	const bonusTwo = useSelector( ( state: StateType ) => state.dice[ 3 ] );
+	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
 
 	return (
 		<div>
-			<h2>Dice.tsx</h2>
+			<h2 className="h4">Dice.tsx</h2>
 			<table>
 				<tbody>
 					<tr>
@@ -46,15 +53,32 @@ export const Dice = () => {
 				</tbody>
 			</table>
 
-			<div className="button-group">
-				<button onClick={ () => dispatch( rollDice() ) }>Roll</button>
-				<button onClick={ () => dispatch( flipDice( dice ) ) }>
+			<ButtonGroup aria-label="Dice buttons" className="mb-3">
+				<Button
+					aria-label="Roll the dice"
+					variant="outline-primary"
+					onClick={ () => dispatch( rollDice() ) }
+					disabled={ gameOver }
+				>
+					Roll
+				</Button>
+				<Button
+					aria-label="Flip the dice"
+					variant="outline-secondary"
+					onClick={ () => dispatch( flipDice( dice ) ) }
+					disabled={ gameOver }
+				>
 					Flip
-				</button>
-				<button onClick={ () => dispatch( shiftDice( dice ) ) }>
+				</Button>
+				<Button
+					aria-label="Shift the dice"
+					variant="outline-secondary"
+					onClick={ () => dispatch( shiftDice( dice ) ) }
+					disabled={ gameOver }
+				>
 					Shift
-				</button>
-			</div>
+				</Button>
+			</ButtonGroup>
 		</div>
 	);
 };
