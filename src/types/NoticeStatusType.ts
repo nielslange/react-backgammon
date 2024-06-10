@@ -1,5 +1,5 @@
 export enum NoticeStatusType {
-	ERROR = 'error',
+	ERROR = 'danger',
 	SUCCESS = 'success',
 	INFO = 'info',
 }
