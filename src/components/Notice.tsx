@@ -4,8 +4,13 @@
 import { useSelector } from 'react-redux';
 import Alert from 'react-bootstrap/Alert';
 
+/**
+ * Internal dependencies
+ */
+import { StateType } from '../types';
+
 export const Notice = () => {
-	const notice = useSelector( ( state: any ) => state.notice );
+	const notice = useSelector( ( state: StateType ) => state.notice );
 
 	return (
 		<>

@@ -7,11 +7,7 @@ import { Provider } from 'react-redux';
  * Internal dependencies
  */
 import { store } from '../data/store';
-import { Dice } from './Dice';
-import { Players } from './Players';
-import { Board } from './Board';
-import { Notice } from './Notice';
-import { GameState } from './GameState';
+import { Board, Dice, GameState, Notice, Players } from '.';
 
 export const Game = () => {
 	return (

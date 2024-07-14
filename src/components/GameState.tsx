@@ -19,9 +19,9 @@ export const GameState = () => {
 	return (
 		<>
 			<h2 className="h4">GameState.tsx</h2>
-			<ButtonGroup aria-label="Dice buttons" className="mb-3">
+			<ButtonGroup aria-label="Game actions" className="mb-3">
 				<Button
-					aria-label="Roll the dice"
+					aria-label="Restart the game"
 					variant="outline-secondary"
 					onClick={ () => dispatch( rollDice() ) }
 					disabled={ gameOver }
@@ -29,7 +29,7 @@ export const GameState = () => {
 					Restart
 				</Button>
 				<Button
-					aria-label="Flip the dice"
+					aria-label="Surrender the game"
 					variant="outline-secondary"
 					onClick={ () => dispatch( flipDice( dice ) ) }
 					disabled={ gameOver }

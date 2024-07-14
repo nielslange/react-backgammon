@@ -1,4 +1,9 @@
 /**
+ * External dependencies
+ */
+import { Dispatch } from 'redux';
+
+/**
  * Internal dependencies
  */
 import {
@@ -11,7 +16,7 @@ import {
 import type { NoticeType, PlayerType, CheckerType } from '../types';
 
 export const updateGame = (
-	dispatch: any,
+	dispatch: Dispatch,
 	newCheckers: CheckerType[],
 	newDice: number[],
 	notice: NoticeType,

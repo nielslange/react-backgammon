@@ -90,20 +90,6 @@ export const handleClick = (
 
 	if (
 		hasWaitingChecker( { checkers, currentPlayer } ) &&
-		isCheckerOnTheBoard( { lane } )
-	) {
-		return dispatch(
-			setNotice(
-				createNotice(
-					NoticeStatusType.ERROR,
-					MessageType.WAITING_CHECKER
-				)
-			)
-		);
-	}
-
-	if (
-		hasWaitingChecker( { checkers, currentPlayer } ) &&
 		isTargetOccupiedByCurrentPlayer( playerObject )
 	) {
 		return dispatch(
@@ -194,6 +180,11 @@ export const handleClick = (
 
 	if ( willHitOpponent( { checkers, currentPlayer, lane, die } ) ) {
 		const hitCheckerId = getHitCheckerId( { checkers, lane: targetLane } );
+
+		if ( hitCheckerId === undefined ) {
+			throw new Error( 'No checker found on target lane' );
+		}
+
 		newCheckers[ hitCheckerId - 1 ].lane = currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0; // prettier-ignore
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();

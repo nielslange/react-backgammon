@@ -13,7 +13,9 @@ import { PlayerType, StateType } from '../types';
 
 export const Players = () => {
 	const dispatch = useDispatch();
-	const currentPlayer = useSelector( ( state: any ) => state.currentPlayer );
+	const currentPlayer = useSelector(
+		( state: StateType ) => state.currentPlayer
+	);
 	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
 
 	const handleToggleCurrentPlayer = () => {
@@ -39,7 +41,7 @@ export const Players = () => {
 				</tbody>
 			</table>
 
-			<ButtonGroup aria-label="Player buttons" className="mb-3">
+			<ButtonGroup aria-label="Player actions" className="mb-3">
 				<Button
 					aria-label="Toggle the current player"
 					variant="outline-primary"

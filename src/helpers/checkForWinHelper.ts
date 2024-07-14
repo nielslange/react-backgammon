@@ -7,7 +7,7 @@ import { createNotice } from '../helpers';
 import { NoticeStatusType, MessageType, PlayerType } from '../types';
 
 export const checkForWin = (
-	dispatch: any,
+	dispatch: Dispatch,
 	checkers: any,
 	currentPlayer: PlayerType
 ) => {

@@ -53,7 +53,7 @@ export const Dice = () => {
 				</tbody>
 			</table>
 
-			<ButtonGroup aria-label="Dice buttons" className="mb-3">
+			<ButtonGroup aria-label="Dice actions" className="mb-3">
 				<Button
 					aria-label="Roll the dice"
 					variant="outline-primary"
