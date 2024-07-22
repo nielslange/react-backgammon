@@ -11,6 +11,6 @@ export enum MessageType {
 	ROLL_DICE_FIRST = 'You need to roll the dice first.',
 	WAITING_CHECKER = 'You need to move the waiting checker first.',
 	WELCOME = 'Welcome to Backgammon!',
-	PLAYER_RED_WINS = 'Player Red wins!',
-	PLAYER_BLUE_WINS = 'Player Blue wins!',
+	PLAYER_TWO_WINS = 'Player Red wins!',
+	PLAYER_ONE_WINS = 'Player Blue wins!',
 }

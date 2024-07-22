@@ -1,6 +1,7 @@
 /**
  * External dependencies
  */
+import { clsx } from 'clsx';
 import { useSelector } from 'react-redux';
 import { Checker } from './Checker';
 
@@ -9,7 +10,13 @@ import { Checker } from './Checker';
  */
 import type { LaneType, StateType } from '../types';
 
-export const Lane = ( { from, to, player }: LaneType ): JSX.Element => {
+export const Lane = ( {
+	from,
+	to,
+	player,
+	bar,
+	off,
+}: LaneType ): JSX.Element => {
 	const checkers = useSelector( ( state: StateType ) => state.checkers );
 	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
@@ -33,7 +40,13 @@ export const Lane = ( { from, to, player }: LaneType ): JSX.Element => {
 		) );
 		const key = keySuffix ? `${ player }-${ lane }` : lane.toString();
 		return (
-			<div className="lane" data-lane={ lane } key={ key }>
+			<div
+				className={ clsx( 'lane', bar && 'bar', off && 'off' ) }
+				data-lane={ lane }
+				data-bar={ bar }
+				data-off={ off }
+				key={ key }
+			>
 				{ checkerElements }
 			</div>
 		);

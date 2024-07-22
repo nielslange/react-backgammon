@@ -23,6 +23,7 @@ export const Checker = ( props: any ) => {
 		<div
 			key={ id }
 			className={ className }
+			title={ `Checker ${ id }` }
 			data-checker={ id }
 			data-player={ player }
 			onClick={ ( event ) =>
@@ -36,8 +37,6 @@ export const Checker = ( props: any ) => {
 					dispatch,
 				} )
 			}
-		>
-			{ id }
-		</div>
+		></div>
 	);
 };

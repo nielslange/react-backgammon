@@ -1,72 +1,11 @@
 /**
  * Internal dependencies
  */
-import { PlayerType, MessageType, NoticeStatusType, StateType } from '../types';
+import { MessageType, NoticeStatusType, StateType } from '../types';
+import checkers from './checkers-ending.json';
 
-export const initialState: StateType = {
-	checkers: [
-		{ id: 1, player: PlayerType.PLAYER_BLUE, lane: 24 },
-		{ id: 2, player: PlayerType.PLAYER_BLUE, lane: 24 },
-		{ id: 3, player: PlayerType.PLAYER_BLUE, lane: 13 },
-		{ id: 4, player: PlayerType.PLAYER_BLUE, lane: 13 },
-		{ id: 5, player: PlayerType.PLAYER_BLUE, lane: 13 },
-		{ id: 6, player: PlayerType.PLAYER_BLUE, lane: 13 },
-		{ id: 7, player: PlayerType.PLAYER_BLUE, lane: 13 },
-		{ id: 8, player: PlayerType.PLAYER_BLUE, lane: 8 },
-		{ id: 9, player: PlayerType.PLAYER_BLUE, lane: 8 },
-		{ id: 10, player: PlayerType.PLAYER_BLUE, lane: 8 },
-		{ id: 11, player: PlayerType.PLAYER_BLUE, lane: 6 },
-		{ id: 12, player: PlayerType.PLAYER_BLUE, lane: 6 },
-		{ id: 13, player: PlayerType.PLAYER_BLUE, lane: 6 },
-		{ id: 14, player: PlayerType.PLAYER_BLUE, lane: 6 },
-		{ id: 15, player: PlayerType.PLAYER_BLUE, lane: 6 },
-		{ id: 16, player: PlayerType.PLAYER_RED, lane: 19 },
-		{ id: 17, player: PlayerType.PLAYER_RED, lane: 19 },
-		{ id: 18, player: PlayerType.PLAYER_RED, lane: 19 },
-		{ id: 19, player: PlayerType.PLAYER_RED, lane: 19 },
-		{ id: 20, player: PlayerType.PLAYER_RED, lane: 19 },
-		{ id: 21, player: PlayerType.PLAYER_RED, lane: 17 },
-		{ id: 22, player: PlayerType.PLAYER_RED, lane: 17 },
-		{ id: 23, player: PlayerType.PLAYER_RED, lane: 17 },
-		{ id: 24, player: PlayerType.PLAYER_RED, lane: 12 },
-		{ id: 25, player: PlayerType.PLAYER_RED, lane: 12 },
-		{ id: 26, player: PlayerType.PLAYER_RED, lane: 12 },
-		{ id: 27, player: PlayerType.PLAYER_RED, lane: 12 },
-		{ id: 28, player: PlayerType.PLAYER_RED, lane: 12 },
-		{ id: 29, player: PlayerType.PLAYER_RED, lane: 1 },
-		{ id: 30, player: PlayerType.PLAYER_RED, lane: 1 },
-		// { id: 1, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 2, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 3, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 4, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 5, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 6, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 7, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 8, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 9, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 10, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 11, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 12, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 13, player: PlayerType.PLAYER_BLUE, lane: 25 },
-		// { id: 14, player: PlayerType.PLAYER_BLUE, lane: 23 },
-		// { id: 15, player: PlayerType.PLAYER_BLUE, lane: 23 },
-		// { id: 16, player: PlayerType.PLAYER_RED, lane: 19 },
-		// { id: 17, player: PlayerType.PLAYER_RED, lane: 19 },
-		// { id: 18, player: PlayerType.PLAYER_RED, lane: 19 },
-		// { id: 19, player: PlayerType.PLAYER_RED, lane: 19 },
-		// { id: 20, player: PlayerType.PLAYER_RED, lane: 19 },
-		// { id: 21, player: PlayerType.PLAYER_RED, lane: 17 },
-		// { id: 22, player: PlayerType.PLAYER_RED, lane: 17 },
-		// { id: 23, player: PlayerType.PLAYER_RED, lane: 17 },
-		// { id: 24, player: PlayerType.PLAYER_RED, lane: 12 },
-		// { id: 25, player: PlayerType.PLAYER_RED, lane: 12 },
-		// { id: 26, player: PlayerType.PLAYER_RED, lane: 12 },
-		// { id: 27, player: PlayerType.PLAYER_RED, lane: 12 },
-		// { id: 28, player: PlayerType.PLAYER_RED, lane: 12 },
-		// { id: 29, player: PlayerType.PLAYER_RED, lane: 1 },
-		// { id: 30, player: PlayerType.PLAYER_RED, lane: 2 },
-	],
-	currentPlayer: PlayerType.PLAYER_BLUE,
+const otherStatePart = {
+	currentPlayer: 'PLAYER_ONE',
 	dice: [],
 	gameOver: false,
 	notice: {
@@ -74,7 +13,12 @@ export const initialState: StateType = {
 		status: NoticeStatusType.INFO,
 	},
 	scores: {
-		[ PlayerType.PLAYER_BLUE ]: 0,
-		[ PlayerType.PLAYER_RED ]: 0,
+		PLAYER_ONE: 0,
+		PLAYER_TWO: 0,
 	},
 };
+
+export const initialState: StateType = {
+	checkers,
+	...otherStatePart,
+} as StateType;

@@ -149,7 +149,7 @@ export const handleClick = (
 		}
 
 		newCheckers[ hitCheckerId - 1 ].lane =
-			currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0;
+			currentPlayer === PlayerType.PLAYER_ONE ? 25 : 0;
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();
 
@@ -185,7 +185,7 @@ export const handleClick = (
 			throw new Error( 'No checker found on target lane' );
 		}
 
-		newCheckers[ hitCheckerId - 1 ].lane = currentPlayer === PlayerType.PLAYER_BLUE ? 25 : 0; // prettier-ignore
+		newCheckers[ hitCheckerId - 1 ].lane = currentPlayer === PlayerType.PLAYER_ONE ? 25 : 0; // prettier-ignore
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();
 

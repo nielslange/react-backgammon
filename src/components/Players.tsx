@@ -33,9 +33,9 @@ export const Players = () => {
 						<td>Current player</td>
 						<td>:</td>
 						<td>
-							{ currentPlayer === PlayerType.PLAYER_BLUE
-								? '🔵 ' + PlayerType.PLAYER_BLUE
-								: '🔴 ' + PlayerType.PLAYER_RED }
+							{ currentPlayer === PlayerType.PLAYER_ONE
+								? '2️⃣ ' + PlayerType.PLAYER_ONE
+								: '1️⃣ ' + PlayerType.PLAYER_TWO }
 						</td>
 					</tr>
 				</tbody>

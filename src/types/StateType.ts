@@ -10,7 +10,7 @@ export type StateType = {
 	gameOver: boolean;
 	notice: NoticeType;
 	scores: {
-		[ PlayerType.PLAYER_BLUE ]: number;
-		[ PlayerType.PLAYER_RED ]: number;
+		[ PlayerType.PLAYER_ONE ]: number;
+		[ PlayerType.PLAYER_TWO ]: number;
 	};
 };

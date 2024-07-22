@@ -31,7 +31,7 @@ interface LaneParams {
  * Calculates and returns the target lane for a player in a game.
  *
  * @param {Object} params - The function parameters.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  * @param {number} params.die - The value of a die roll.
  * @param {number} params.lane - The current lane of the player.
  *
@@ -39,8 +39,8 @@ interface LaneParams {
  *
  * @example
  *
- * getTargetLane({ currentPlayer: PlayerType.PLAYER_BLUE, die: 5, lane: 0 }); // returns 5
- * getTargetLane({ currentPlayer: PlayerType.PLAYER_RED, die: 5, lane: 0 }); // returns 20
+ * getTargetLane({ currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns 5
+ * getTargetLane({ currentPlayer: PlayerType.PLAYER_TWO, die: 5, lane: 0 }); // returns 20
  *
  */
 export const getTargetLane = ( {
@@ -52,13 +52,13 @@ export const getTargetLane = ( {
 	die: number;
 	lane: number;
 } ): number => {
-	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		if ( lane === 0 ) return die;
 		if ( lane + die > 24 ) return 25;
 		return lane - die;
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		if ( lane === 0 ) return 25 - die;
 		if ( lane - die < 1 ) return 0;
 		return lane + die;
@@ -96,7 +96,7 @@ export const getHitCheckerId = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  * @param {number} params.die - The value of a die roll.
  * @param {number} params.lane - The current lane of the player.
  *
@@ -104,7 +104,7 @@ export const getHitCheckerId = ( {
  *
  * @example
  *
- * getCurrentPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE, die: 5, lane: 0 }); // returns count
+ * getCurrentPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns count
  *
  */
 const getCurrentPlayerCheckerCount = ( {
@@ -115,11 +115,11 @@ const getCurrentPlayerCheckerCount = ( {
 }: CheckerParams ): number => {
 	const targetLane = getTargetLane( { currentPlayer, lane, die } );
 
-	if ( currentPlayer === PlayerType.PLAYER_BLUE && targetLane === 25 ) {
+	if ( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 25 ) {
 		return 0;
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_RED && targetLane === 0 ) {
+	if ( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 0 ) {
 		return 0;
 	}
 
@@ -133,7 +133,7 @@ const getCurrentPlayerCheckerCount = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  * @param {number} params.die - The value of a die roll.
  * @param {number} params.lane - The current lane of the player.
  *
@@ -141,7 +141,7 @@ const getCurrentPlayerCheckerCount = ( {
  *
  * @example
  *
- * getOtherPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE, die: 5, lane: 0 }); // returns count
+ * getOtherPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns count
  *
  */
 const getOtherPlayerCheckerCount = ( {
@@ -152,11 +152,11 @@ const getOtherPlayerCheckerCount = ( {
 }: CheckerParams ): number => {
 	const targetLane = getTargetLane( { currentPlayer, lane, die } );
 
-	if ( currentPlayer === PlayerType.PLAYER_BLUE && targetLane === 25 ) {
+	if ( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 25 ) {
 		return 0;
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_RED && targetLane === 0 ) {
+	if ( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 0 ) {
 		return 0;
 	}
 
@@ -170,7 +170,7 @@ const getOtherPlayerCheckerCount = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  * @param {number} params.die - The value of a die roll.
  * @param {number} params.lane - The current lane of the player.
  *
@@ -178,7 +178,7 @@ const getOtherPlayerCheckerCount = ( {
  *
  * @example
  *
- * getOtherPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE, die: 5, lane: 0 }); // returns count
+ * getOtherPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns count
  *
  */
 export const hasDiceBeenRolled = ( dice: number[] ): boolean => {
@@ -196,8 +196,8 @@ export const hasDiceBeenRolled = ( dice: number[] ): boolean => {
  *
  * @example
  *
- * isCurrentPlayer({ player: PlayerType.PLAYER_BLUE, currentPlayer: PlayerType.PLAYER_BLUE }); // returns true
- * isCurrentPlayer({ player: PlayerType.PLAYER_RED, currentPlayer: PlayerType.PLAYER_BLUE }); // returns false
+ * isCurrentPlayer({ player: PlayerType.PLAYER_ONE, currentPlayer: PlayerType.PLAYER_ONE }); // returns true
+ * isCurrentPlayer({ player: PlayerType.PLAYER_TWO, currentPlayer: PlayerType.PLAYER_ONE }); // returns false
  *
  */
 export const isCurrentPlayer = ( {
@@ -212,14 +212,14 @@ export const isCurrentPlayer = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  *
- * @returns {boolean | undefined} Returns `true` if the current player has a checker waiting (i.e., a checker on lane 0 for blue player or lane 25 for red player), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_BLUE` nor `PLAYER_RED`.
+ * @returns {boolean | undefined} Returns `true` if the current player has a checker waiting (i.e., a checker on lane 0 for blue player or lane 25 for red player), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_ONE` nor `PLAYER_TWO`.
  *
  * @example
  *
- * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE }); // returns true
- * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_RED }); // returns false
+ * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE }); // returns true
+ * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns false
  *
  */
 export const hasWaitingChecker = ( {
@@ -229,11 +229,11 @@ export const hasWaitingChecker = ( {
 	checkers: Checker[];
 	currentPlayer: PlayerType;
 } ): boolean | undefined => {
-	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		return checkers.some( ( checker ) => checker.lane === 0 && checker.player === currentPlayer ); // prettier-ignore
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		return checkers.some( ( checker ) => checker.lane === 25 && checker.player === currentPlayer ); // prettier-ignore
 	}
 };
@@ -243,21 +243,21 @@ export const hasWaitingChecker = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  *
- * @returns {boolean | undefined} Returns `true` if the current player has a checker waiting (i.e., a checker on lane 0 for blue player or lane 25 for red player), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_BLUE` nor `PLAYER_RED`.
+ * @returns {boolean | undefined} Returns `true` if the current player has a checker waiting (i.e., a checker on lane 0 for blue player or lane 25 for red player), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_ONE` nor `PLAYER_TWO`.
  *
  * @example
  *
- * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE }); // returns true
- * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_RED }); // returns false
+ * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE }); // returns true
+ * hasWaitingChecker({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns false
  *
  */
 export const isCheckerClearedOff = ( {
 	lane,
 	currentPlayer,
 }: LaneParams ): boolean => {
-	return currentPlayer === PlayerType.PLAYER_BLUE ? lane === 25 : lane === 0;
+	return currentPlayer === PlayerType.PLAYER_ONE ? lane === 25 : lane === 0;
 };
 
 /**
@@ -310,7 +310,7 @@ export const isTargetOccupiedByCurrentPlayer = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  * @param {number} params.die - The current die roll.
  * @param {number} params.lane - The current lane of the checker.
  *
@@ -318,7 +318,7 @@ export const isTargetOccupiedByCurrentPlayer = ( {
  *
  * @example
  *
- * isTargetOccupiedByOtherPlayer({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE, die: 3, lane: 0 }); // returns false
+ * isTargetOccupiedByOtherPlayer({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 3, lane: 0 }); // returns false
  *
  */
 export const isTargetOccupiedByOtherPlayer = ( {
@@ -335,7 +335,7 @@ export const isTargetOccupiedByOtherPlayer = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  * @param {number} params.die - The value of a die roll.
  * @param {number} params.lane - The current lane of the checker.
  *
@@ -343,8 +343,8 @@ export const isTargetOccupiedByOtherPlayer = ( {
  *
  * @example
  *
- * willHitOpponent({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE, die: 5, lane: 0 }); // returns true
- * willHitOpponent({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 3, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_BLUE, die: 4, lane: 0 }); // returns false
+ * willHitOpponent({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns true
+ * willHitOpponent({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 4, lane: 0 }); // returns false
  *
  */
 export const willHitOpponent = ( {
@@ -361,16 +361,16 @@ export const willHitOpponent = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  *
- * @returns {boolean | undefined} Returns `true` if the current player has any checkers outside the end zone (lanes 19-24 for blue player and lanes 1-6 for red player), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_BLUE` nor `PLAYER_RED`.
+ * @returns {boolean | undefined} Returns `true` if the current player has any checkers outside the end zone (lanes 19-24 for blue player and lanes 1-6 for red player), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_ONE` nor `PLAYER_TWO`.
  *
  * @example
  *
- * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 18, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 20, player: PlayerType.PLAYER_BLUE}], currentPlayer: PlayerType.PLAYER_BLUE }); // returns true
- * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 20, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 20, player: PlayerType.PLAYER_BLUE}], currentPlayer: PlayerType.PLAYER_BLUE }); // returns false
- * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 7, player: PlayerType.PLAYER_RED}, {id: 2, lane: 25, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_RED }); // returns true
- * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 6, player: PlayerType.PLAYER_RED}, {id: 2, lane: 25, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_RED }); // returns false
+ * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 18, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 20, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns true
+ * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 20, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 20, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns false
+ * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 7, player: PlayerType.PLAYER_TWO}, {id: 2, lane: 25, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns true
+ * hasCheckoutsOutsideEndzone({ checkers: [{id: 1, lane: 6, player: PlayerType.PLAYER_TWO}, {id: 2, lane: 25, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns false
  *
  */
 export const hasCheckoutsOutsideEndzone = ( {
@@ -380,7 +380,7 @@ export const hasCheckoutsOutsideEndzone = ( {
 	checkers: Checker[];
 	currentPlayer: PlayerType;
 } ): boolean | undefined => {
-	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		return checkers.some(
 			( checker ) =>
 				checker.lane > 0 &&
@@ -389,7 +389,7 @@ export const hasCheckoutsOutsideEndzone = ( {
 		);
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		return checkers.some(
 			( checker ) =>
 				checker.lane > 6 &&
@@ -405,15 +405,15 @@ export const hasCheckoutsOutsideEndzone = ( {
  * @param {Object} params - The function parameters.
  * @param {number} params.die - The value of a die roll.
  * @param {number} params.lane - The current lane of the checker.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  *
  * @returns {boolean} Returns `true` if the move would clear off the checker (i.e., move it beyond the end of the board), and `false` otherwise.
  *
  * @example
  *
- * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_BLUE }); // returns true
- * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_RED }); // returns false
- * wouldClearOffChecker({ die: 5, lane: 20, currentPlayer: PlayerType.PLAYER_BLUE }); // returns false
+ * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_ONE }); // returns true
+ * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_TWO }); // returns false
+ * wouldClearOffChecker({ die: 5, lane: 20, currentPlayer: PlayerType.PLAYER_ONE }); // returns false
  *
  */
 export const wouldClearOffChecker = ( {
@@ -425,11 +425,11 @@ export const wouldClearOffChecker = ( {
 	lane: number;
 	currentPlayer: PlayerType;
 } ): boolean => {
-	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		return lane + die > 24;
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		return lane - die < 1;
 	}
 
@@ -441,15 +441,15 @@ export const wouldClearOffChecker = ( {
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_BLUE` or `PLAYER_RED`.
+ * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  *
  * @returns {boolean} Returns `true` if all of the current player's checkers are on the end of the board (lane 25 for blue player and lane 0 for red player), and `false` otherwise.
  *
  * @example
  *
- * hasPlayerWon({ checkers: [{id: 1, lane: 25, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 25, player: PlayerType.PLAYER_BLUE}], currentPlayer: PlayerType.PLAYER_BLUE }); // returns true
- * hasPlayerWon({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_RED}, {id: 2, lane: 0, player: PlayerType.PLAYER_RED}], currentPlayer: PlayerType.PLAYER_RED }); // returns true
- * hasPlayerWon({ checkers: [{id: 1, lane: 24, player: PlayerType.PLAYER_BLUE}, {id: 2, lane: 25, player: PlayerType.PLAYER_BLUE}], currentPlayer: PlayerType.PLAYER_BLUE }); // returns false
+ * hasPlayerWon({ checkers: [{id: 1, lane: 25, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 25, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns true
+ * hasPlayerWon({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_TWO}, {id: 2, lane: 0, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns true
+ * hasPlayerWon({ checkers: [{id: 1, lane: 24, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 25, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns false
  *
  */
 export const hasPlayerWon = ( {
@@ -459,15 +459,15 @@ export const hasPlayerWon = ( {
 	checkers: Checker[];
 	currentPlayer: PlayerType;
 } ): boolean => {
-	if ( currentPlayer === PlayerType.PLAYER_BLUE ) {
+	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		return checkers
-			.filter( ( checker ) => checker.player === PlayerType.PLAYER_BLUE )
+			.filter( ( checker ) => checker.player === PlayerType.PLAYER_ONE )
 			.every( ( checker ) => checker.lane === 25 );
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_RED ) {
+	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		return checkers
-			.filter( ( checker ) => checker.player === PlayerType.PLAYER_RED )
+			.filter( ( checker ) => checker.player === PlayerType.PLAYER_TWO )
 			.every( ( checker ) => checker.lane === 0 );
 	}
 

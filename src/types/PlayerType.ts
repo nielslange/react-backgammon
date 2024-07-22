@@ -1,4 +1,4 @@
 export enum PlayerType {
-	PLAYER_BLUE = 'PLAYER_BLUE',
-	PLAYER_RED = 'PLAYER_RED',
+	PLAYER_ONE = 'PLAYER_ONE',
+	PLAYER_TWO = 'PLAYER_TWO',
 }

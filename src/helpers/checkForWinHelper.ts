@@ -1,4 +1,9 @@
 /**
+ * External dependencies
+ */
+import { Dispatch } from 'redux';
+
+/**
  * Internal dependencies
  */
 import { setNotice, setGameOver } from '../data/actions';
@@ -14,9 +19,9 @@ export const checkForWin = (
 	if ( hasPlayerWon( { checkers, currentPlayer } ) ) {
 		const notice = createNotice(
 			NoticeStatusType.SUCCESS,
-			currentPlayer === PlayerType.PLAYER_BLUE
-				? MessageType.PLAYER_BLUE_WINS
-				: MessageType.PLAYER_RED_WINS
+			currentPlayer === PlayerType.PLAYER_ONE
+				? MessageType.PLAYER_ONE_WINS
+				: MessageType.PLAYER_TWO_WINS
 		);
 		dispatch( setNotice( notice ) );
 		dispatch( setGameOver() );

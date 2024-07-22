@@ -78,14 +78,14 @@ export const setNotice = ( notice: NoticeType ) => {
 };
 
 /**
- * This function toggles the current player between PlayerType.PLAYER_BLUE and PlayerType.PLAYER_RED.
+ * This function toggles the current player between PlayerType.PLAYER_ONE and PlayerType.PLAYER_TWO.
  * The function returns an object with the type of action (TOGGLE_CURRENT_PLAYER) and the player value.
  *
  * @param {PlayerType} currentPlayer - The current player value.
  * @returns {Object} An object containing the type of action and the player value.
  */
 export const toggleCurrentPlayer = ( currentPlayer: PlayerType ) => {
-	const player = currentPlayer === PlayerType.PLAYER_BLUE ? PlayerType.PLAYER_RED : PlayerType.PLAYER_BLUE; // prettier-ignore
+	const player = currentPlayer === PlayerType.PLAYER_ONE ? PlayerType.PLAYER_TWO : PlayerType.PLAYER_ONE; // prettier-ignore
 
 	return { type: ActionTypes.TOGGLE_CURRENT_PLAYER, player };
 };

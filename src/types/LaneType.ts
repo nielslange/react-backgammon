@@ -7,4 +7,6 @@ export type LaneType = {
 	from: number;
 	to: number;
 	player?: PlayerType;
+	bar?: PlayerType;
+	off?: PlayerType;
 };

@@ -18,8 +18,8 @@ table {
 	
 
 	& > div {
-		// border: 1px solid;
-		margin: 2em;
+		border: 1px solid;
+		padding: 2em;
 		width: 100%;
 	}
 }
@@ -96,7 +96,7 @@ table {
 				overflow: hidden;
 			}
 			&:nth-child(14) {
-				width: 150px;
+				width: 50px;
 				align-content: flex-start;
 			}
 		}
@@ -143,7 +143,7 @@ table {
 				overflow: hidden;
 			}
 			&:nth-child(14) {
-				width: 150px;
+				width: 50px;
 				// align-content: flex-end;
 			}
 		}
@@ -178,11 +178,18 @@ table {
 				text-align: center;
 				line-height: 46px;
 				cursor: pointer;
-				&[data-player="PLAYER_BLUE"] {
+				&[data-player="PLAYER_ONE"] {
 					background-color: #5e81ac;
 				}
-				&[data-player="PLAYER_RED"] {
+				&[data-player="PLAYER_TWO"] {
 					background-color: #bf616a;
+				}
+			}
+			
+			&.off {
+				.checker {
+					border-radius: 2px;
+					height: 11px;
 				}
 			}
 		}
