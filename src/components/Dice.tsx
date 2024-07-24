@@ -17,7 +17,6 @@ export const Dice = () => {
 	const diceTwo = useSelector( ( state: StateType ) => state.dice[ 1 ] );
 	const bonusOne = useSelector( ( state: StateType ) => state.dice[ 2 ] );
 	const bonusTwo = useSelector( ( state: StateType ) => state.dice[ 3 ] );
-	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
 
 	return (
 		<div>
