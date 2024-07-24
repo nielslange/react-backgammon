@@ -1,8 +1,7 @@
 /**
  * External dependencies
  */
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import { Button } from '@ariakit/react';
 
 /**
  * Internal dependencies
@@ -22,7 +21,7 @@ export const Dice = () => {
 
 	return (
 		<div>
-			<h2 className="h4">Dice.tsx</h2>
+			<h2>Dice.tsx</h2>
 			<table>
 				<tbody>
 					<tr>
@@ -53,32 +52,11 @@ export const Dice = () => {
 				</tbody>
 			</table>
 
-			<ButtonGroup aria-label="Dice actions" className="mb-3">
-				<Button
-					aria-label="Roll the dice"
-					variant="outline-primary"
-					onClick={ () => dispatch( rollDice() ) }
-					disabled={ gameOver }
-				>
-					Roll
-				</Button>
-				<Button
-					aria-label="Flip the dice"
-					variant="outline-secondary"
-					onClick={ () => dispatch( flipDice( dice ) ) }
-					disabled={ gameOver }
-				>
-					Flip
-				</Button>
-				<Button
-					aria-label="Shift the dice"
-					variant="outline-secondary"
-					onClick={ () => dispatch( shiftDice( dice ) ) }
-					disabled={ gameOver }
-				>
-					Shift
-				</Button>
-			</ButtonGroup>
+			<Button onClick={ () => dispatch( rollDice() ) }>Roll</Button>
+			<Button onClick={ () => dispatch( flipDice( dice ) ) }>Flip</Button>
+			<Button onClick={ () => dispatch( shiftDice( dice ) ) }>
+				Shift
+			</Button>
 		</div>
 	);
 };

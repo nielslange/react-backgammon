@@ -2,7 +2,7 @@
  * External dependencies
  */
 import { useSelector } from 'react-redux';
-import Alert from 'react-bootstrap/Alert';
+import { clsx } from 'clsx';
 
 /**
  * Internal dependencies
@@ -14,15 +14,14 @@ export const Notice = () => {
 
 	return (
 		<>
-			<h2 className="h4">Notice.tsx</h2>
+			<h2>Notice.tsx</h2>
 
-			<Alert
+			<div
 				key={ notice.status }
-				variant={ notice.status }
-				transition={ true }
+				className={ clsx( 'notice', notice.status ) }
 			>
 				{ notice.message }
-			</Alert>
+			</div>
 		</>
 	);
 };

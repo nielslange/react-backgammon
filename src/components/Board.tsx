@@ -7,7 +7,7 @@ import { PlayerType } from '../types';
 export const Board = () => {
 	return (
 		<div>
-			<h2 className="h4">Board.tsx</h2>
+			<h2>Board.tsx</h2>
 
 			<div className="board">
 				<div className="board-top">
