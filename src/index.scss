@@ -11,6 +11,24 @@ table {
 	margin-bottom: 10px;
 }
 
+button {
+	background-color: #4C566A;
+	color: #eceff4;
+	border: none;
+	border-radius: 3px;
+	padding: 10px;
+	cursor: pointer;
+	margin-right: 5px;
+	
+	&:last-of-type {
+		margin-right: 0;
+	}
+	
+	&:hover {
+		background-color: #5E81AC;
+	}
+}
+
 .game {
 	display: flex;
 	max-width: 1200px;
@@ -19,7 +37,7 @@ table {
 
 	& > div {
 		border: 1px solid;
-		padding: 2em;
+		padding: 1em;
 		width: 100%;
 	}
 }
@@ -53,7 +71,6 @@ table {
 .board {
 	display: inline-block;
 	flex-direction: column;
-	// border: 1px solid #000;
 	background-color: #3b4252;
 
 	.board-top {
