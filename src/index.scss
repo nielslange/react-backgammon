@@ -11,24 +11,6 @@ table {
 	margin-bottom: 10px;
 }
 
-button {
-	background-color: #4C566A;
-	color: #eceff4;
-	border: none;
-	border-radius: 3px;
-	padding: 10px;
-	cursor: pointer;
-	margin-right: 5px;
-	
-	&:last-of-type {
-		margin-right: 0;
-	}
-	
-	&:hover {
-		background-color: #5E81AC;
-	}
-}
-
 .game {
 	display: flex;
 	max-width: 1200px;
@@ -37,7 +19,7 @@ button {
 
 	& > div {
 		border: 1px solid;
-		padding: 1em;
+		padding: 2em;
 		width: 100%;
 	}
 }
@@ -71,6 +53,7 @@ button {
 .board {
 	display: inline-block;
 	flex-direction: column;
+	// border: 1px solid #000;
 	background-color: #3b4252;
 
 	.board-top {
@@ -169,14 +152,6 @@ button {
 	.board-bottom {
 		display: flex;
 		.lane {
-			&:before {
-				content: "";
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 0;
-				height: 0;
-			}
 			position: relative;
 			box-sizing: border-box;
 			display: flex;
@@ -184,6 +159,15 @@ button {
 			height: 280px;
 			width: 50px;
 
+			&:before {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 0;
+				height: 0;
+			}	
+			
 			.checker {
 				z-index: 2;
 				box-sizing: border-box;
