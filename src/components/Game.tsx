@@ -7,7 +7,7 @@ import { Provider } from 'react-redux';
  * Internal dependencies
  */
 import { store } from '../data/store';
-import { Board, Dice, GameState, Notice, Players } from '.';
+import { Board, Dice, GameState, Notice, PipCount, Players } from '.';
 
 export const Game = () => {
 	return (
@@ -19,6 +19,7 @@ export const Game = () => {
 				<div>
 					<Dice />
 					<Players />
+					<PipCount />
 					<GameState />
 					<Notice />
 				</div>

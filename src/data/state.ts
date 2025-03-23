@@ -1,11 +1,12 @@
 /**
  * Internal dependencies
  */
-import { MessageType, NoticeStatusType, StateType } from '../types';
-import checkers from './checkers-ending.json';
+import { MessageType, NoticeStatusType, StateType, PlayerType } from '../types';
+import checkers from './checkers-start.json';
 
-const otherStatePart = {
-	currentPlayer: 'PLAYER_ONE',
+export const initialState: StateType = {
+	checkers,
+	currentPlayer: null,
 	dice: [],
 	gameOver: false,
 	notice: {
@@ -13,12 +14,11 @@ const otherStatePart = {
 		status: NoticeStatusType.INFO,
 	},
 	scores: {
-		PLAYER_ONE: 0,
-		PLAYER_TWO: 0,
+		[ PlayerType.PLAYER_ONE ]: 0,
+		[ PlayerType.PLAYER_TWO ]: 0,
 	},
-};
-
-export const initialState: StateType = {
-	checkers,
-	...otherStatePart,
+	pipCount: {
+		[ PlayerType.PLAYER_ONE ]: 167,
+		[ PlayerType.PLAYER_TWO ]: 167,
+	},
 } as StateType;

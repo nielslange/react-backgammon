@@ -12,8 +12,11 @@ import {
 	setDice,
 	setNotice,
 	toggleCurrentPlayer,
+	updatePipCount,
 } from '../data/actions';
+import { calculatePipCount } from '../data/selectors';
 import type { NoticeType, PlayerType, CheckerType } from '../types';
+import { PlayerType as PlayerTypeEnum } from '../types';
 
 export const updateGame = (
 	dispatch: Dispatch,
@@ -25,6 +28,19 @@ export const updateGame = (
 	dispatch( moveChecker( { checkers: newCheckers } ) );
 	dispatch( setNotice( notice ) );
 	dispatch( setDice( newDice ) );
+
+	// Update pip counts after each move
+	const pipCount = {
+		[ PlayerTypeEnum.PLAYER_ONE ]: calculatePipCount( {
+			checkers: newCheckers as any,
+			player: PlayerTypeEnum.PLAYER_ONE,
+		} ),
+		[ PlayerTypeEnum.PLAYER_TWO ]: calculatePipCount( {
+			checkers: newCheckers as any,
+			player: PlayerTypeEnum.PLAYER_TWO,
+		} ),
+	};
+	dispatch( updatePipCount( pipCount ) );
 
 	if ( ! newDice.length ) {
 		dispatch( toggleCurrentPlayer( currentPlayer ) );

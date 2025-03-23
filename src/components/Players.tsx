@@ -9,6 +9,7 @@ import { useSelector, useDispatch } from 'react-redux';
  * Internal dependencies
  */
 import { toggleCurrentPlayer, rollDice } from '../data/actions';
+import { getFormattedPlayerNameWithEmoji } from '../helpers/playerNameHelper';
 import { PlayerType, StateType } from '../types';
 
 export const Players = () => {
@@ -19,7 +20,15 @@ export const Players = () => {
 	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
 
 	const handleToggleCurrentPlayer = () => {
-		dispatch( toggleCurrentPlayer( currentPlayer ) );
+		if ( currentPlayer === null ) {
+			// If no player is selected yet, first roll establishes PLAYER_ONE
+			dispatch( {
+				type: 'TOGGLE_CURRENT_PLAYER',
+				player: PlayerType.PLAYER_ONE,
+			} );
+		} else {
+			dispatch( toggleCurrentPlayer( currentPlayer ) );
+		}
 		dispatch( rollDice() );
 	};
 
@@ -33,9 +42,7 @@ export const Players = () => {
 						<td>Current player</td>
 						<td>:</td>
 						<td>
-							{ currentPlayer === PlayerType.PLAYER_ONE
-								? '1️⃣ ' + PlayerType.PLAYER_ONE
-								: '2️⃣ ' + PlayerType.PLAYER_TWO }
+							{ getFormattedPlayerNameWithEmoji( currentPlayer ) }
 						</td>
 					</tr>
 				</tbody>
@@ -48,7 +55,9 @@ export const Players = () => {
 					onClick={ handleToggleCurrentPlayer }
 					disabled={ gameOver }
 				>
-					Toggle current player
+					{ currentPlayer === null
+						? 'Start Game'
+						: 'Toggle current player' }
 				</Button>
 			</ButtonGroup>
 		</div>

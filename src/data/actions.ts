@@ -81,11 +81,20 @@ export const setNotice = ( notice: NoticeType ) => {
  * This function toggles the current player between PlayerType.PLAYER_ONE and PlayerType.PLAYER_TWO.
  * The function returns an object with the type of action (TOGGLE_CURRENT_PLAYER) and the player value.
  *
- * @param {PlayerType} currentPlayer - The current player value.
+ * @param {PlayerType|null} currentPlayer - The current player value.
  * @returns {Object} An object containing the type of action and the player value.
  */
-export const toggleCurrentPlayer = ( currentPlayer: PlayerType ) => {
-	const player = currentPlayer === PlayerType.PLAYER_ONE ? PlayerType.PLAYER_TWO : PlayerType.PLAYER_ONE; // prettier-ignore
+export const toggleCurrentPlayer = ( currentPlayer: PlayerType | null ) => {
+	let player;
+
+	if ( currentPlayer === null ) {
+		player = PlayerType.PLAYER_ONE;
+	} else {
+		player =
+			currentPlayer === PlayerType.PLAYER_ONE
+				? PlayerType.PLAYER_TWO
+				: PlayerType.PLAYER_ONE;
+	}
 
 	return { type: ActionTypes.TOGGLE_CURRENT_PLAYER, player };
 };
@@ -130,4 +139,20 @@ export const restartGame = () => {
  */
 export const surrenderGame = () => {
 	return { type: ActionTypes.SURRENDER_GAME };
+};
+
+/**
+ * This function updates the pip count for both players.
+ * The function returns an object with the type of action (UPDATE_PIP_COUNT) and the pip count values.
+ *
+ * @param {Object} pipCount - An object containing the pip counts for both players.
+ * @param {number} pipCount.PLAYER_ONE - The pip count for player one.
+ * @param {number} pipCount.PLAYER_TWO - The pip count for player two.
+ * @returns {Object} An object containing the type of action and the pip count values.
+ */
+export const updatePipCount = ( pipCount: {
+	[ PlayerType.PLAYER_ONE ]: number;
+	[ PlayerType.PLAYER_TWO ]: number;
+} ) => {
+	return { type: ActionTypes.UPDATE_PIP_COUNT, pipCount };
 };

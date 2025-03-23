@@ -7,17 +7,44 @@ import { useDispatch, useSelector } from 'react-redux';
  * Internal dependencies
  */
 import { handleClick } from '../helpers/handleClickHelper';
-import type { PlayerType, StateType } from '../types';
+import { createNotice } from '../helpers/createNoticeHelper';
+import { setNotice } from '../data/actions';
+import { MessageType, NoticeStatusType, PlayerType, StateType } from '../types';
 
 export const Checker = ( props: any ) => {
 	const { className, id, player } = props;
 	const dispatch = useDispatch();
 	const dice = useSelector( ( state: StateType ) => state.dice );
-	const currentPlayer: PlayerType = useSelector(
+	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
 	);
 	const checkers = useSelector( ( state: StateType ) => state.checkers );
 	const die = dice[ 0 ];
+
+	const handleCheckerClick = ( event: any ) => {
+		// If no player is selected yet, show message
+		if ( currentPlayer === null ) {
+			return dispatch(
+				setNotice(
+					createNotice(
+						NoticeStatusType.ERROR,
+						MessageType.ROLL_DICE_FIRST
+					)
+				)
+			);
+		}
+
+		// Otherwise process the normal click
+		handleClick( event, {
+			id,
+			player,
+			dice,
+			currentPlayer,
+			checkers,
+			die,
+			dispatch,
+		} );
+	};
 
 	return (
 		<div
@@ -26,17 +53,7 @@ export const Checker = ( props: any ) => {
 			title={ `Checker ${ id }` }
 			data-checker={ id }
 			data-player={ player }
-			onClick={ ( event ) =>
-				handleClick( event, {
-					id,
-					player,
-					dice,
-					currentPlayer,
-					checkers,
-					die,
-					dispatch,
-				} )
-			}
+			onClick={ handleCheckerClick }
 		></div>
 	);
 };

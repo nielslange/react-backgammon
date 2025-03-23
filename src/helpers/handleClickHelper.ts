@@ -1,7 +1,8 @@
 /**
  * Internal dependencies
  */
-import { setNotice } from '../data/actions';
+import { Dispatch } from 'redux';
+import { setGameOver, setNotice } from '../data/actions';
 import {
 	hasDiceBeenRolled,
 	isCurrentPlayer,
@@ -15,9 +16,13 @@ import {
 	getHitCheckerId,
 	hasCheckoutsOutsideEndzone,
 	wouldClearOffChecker,
+	hasPlayerWon,
 } from '../data/selectors';
 import { MessageType, NoticeStatusType, PlayerType } from '../types';
-import { updateGame, createNotice, checkForWin } from '../helpers';
+import { checkForWin } from './checkForWinHelper';
+import { createNotice } from './createNoticeHelper';
+import { updateGame } from './updateGameHelper';
+import { validateDiceUse } from './validateMoveHelper';
 
 /**
  * Handles the click event on a game board lane.
@@ -58,6 +63,17 @@ export const handleClick = (
 				createNotice(
 					NoticeStatusType.ERROR,
 					MessageType.NOT_YOUR_CHECKER
+				)
+			)
+		);
+	}
+
+	if ( ! validateDiceUse( { dice, checkers, currentPlayer, die } ) ) {
+		return dispatch(
+			setNotice(
+				createNotice(
+					NoticeStatusType.ERROR,
+					MessageType.MUST_USE_LARGER_DIE
 				)
 			)
 		);

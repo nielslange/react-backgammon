@@ -4,6 +4,8 @@ export enum MessageType {
 	MOVE_CHECKER_AND_HIT = 'Moved the checker to the target lane and hit the opponent.',
 	MOVE_CHECKER_TO_BOARD = 'Moved the checker to the game board.',
 	MOVE_WAITING_CHECKER_AND_HIT = "Moved the waiting checker to the game and hit your opponent's checker.",
+	MUST_USE_LARGER_DIE = 'You must use the larger die value when you cannot use both dice.',
+	NO_VALID_MOVES = 'No valid moves available. Turn passed to opponent.',
 	NOT_YOUR_CHECKER = 'This is not your checker.',
 	NOT_ALL_CHECKERS_IN_END_ZONE = 'Not all checkers are in the end zone.',
 	TARGET_OCCUPIED_BY_OPPONENT = "The target lane is occupied by your opponent's checkers.",
@@ -13,4 +15,6 @@ export enum MessageType {
 	WELCOME = 'Welcome to Backgammon!',
 	PLAYER_TWO_WINS = 'Player Red wins!',
 	PLAYER_ONE_WINS = 'Player Blue wins!',
+	PLAYER_SURRENDERED = 'The current player has surrendered the game.',
+	GAME_RESTARTED = 'Game has been restarted. Good luck!',
 }

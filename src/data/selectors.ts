@@ -357,7 +357,7 @@ export const willHitOpponent = ( {
 };
 
 /**
- * Determines if the current player has any checkers outside the end zone.
+ * Determines if the current player has any checkouts outside the end zone.
  *
  * @param {Object} params - The function parameters.
  * @param {Checker[]} params.checkers - An array of checker objects.
@@ -383,18 +383,22 @@ export const hasCheckoutsOutsideEndzone = ( {
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		return checkers.some(
 			( checker ) =>
-				checker.lane > 0 &&
-				checker.lane < 19 &&
-				checker.player === currentPlayer
+				checker.player === currentPlayer &&
+				// Checker is on the board but outside home board
+				( ( checker.lane > 0 && checker.lane < 19 ) ||
+					// Checker is on bar
+					checker.lane === 0 )
 		);
 	}
 
 	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		return checkers.some(
 			( checker ) =>
-				checker.lane > 6 &&
-				checker.lane < 25 &&
-				checker.player === currentPlayer
+				checker.player === currentPlayer &&
+				// Checker is on the board but outside home board
+				( ( checker.lane > 6 && checker.lane < 25 ) ||
+					// Checker is on bar
+					checker.lane === 25 )
 		);
 	}
 };
@@ -472,4 +476,54 @@ export const hasPlayerWon = ( {
 	}
 
 	return false;
+};
+
+/**
+ * Calculates the pip count for a player.
+ * The pip count is the total distance all checkers need to travel to be removed from the board.
+ *
+ * @param {Object} params - The function parameters.
+ * @param {Checker[]} params.checkers - An array of checker objects.
+ * @param {PlayerType} params.player - The player to calculate pip count for.
+ *
+ * @returns {number} The total pip count for the specified player.
+ */
+export const calculatePipCount = ( {
+	checkers,
+	player,
+}: {
+	checkers: Checker[];
+	player: PlayerType;
+} ): number => {
+	return checkers.reduce( ( total, checker ) => {
+		if ( checker.player !== player ) {
+			return total;
+		}
+
+		if ( player === PlayerType.PLAYER_ONE ) {
+			// For Player One, count distance from current lane to lane 25 (bearing off point)
+			if ( checker.lane === 0 ) {
+				// Checker on bar needs to enter and then travel to bearing off
+				return total + 25;
+			} else if ( checker.lane === 25 ) {
+				// Checker already borne off
+				return total;
+			} else {
+				// Regular checker on board - distance to bearing off point
+				return total + ( 25 - checker.lane );
+			}
+		} else {
+			// For Player Two, count distance from current lane to lane 0 (bearing off point)
+			if ( checker.lane === 25 ) {
+				// Checker on bar needs to enter and then travel to bearing off
+				return total + 25;
+			} else if ( checker.lane === 0 ) {
+				// Checker already borne off
+				return total;
+			} else {
+				// Regular checker on board - distance to bearing off point
+				return total + checker.lane;
+			}
+		}
+	}, 0 );
 };
