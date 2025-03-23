@@ -14,7 +14,7 @@ import {
 	willHitOpponent,
 	getTargetLane,
 	getHitCheckerId,
-	hasCheckoutsOutsideEndzone,
+	hasCheckersOutsideHomeBoard,
 	wouldClearOffChecker,
 	hasPlayerWon,
 } from '../data/selectors';
@@ -90,46 +90,26 @@ export const handleClick = (
 		);
 	}
 
-	if (
-		hasWaitingChecker( { checkers, currentPlayer } ) &&
-		isCheckerOnTheBoard( { lane } )
-	) {
-		return dispatch(
-			setNotice(
-				createNotice(
-					NoticeStatusType.ERROR,
-					MessageType.WAITING_CHECKER
-				)
-			)
-		);
-	}
+	// Check if player has a checker on the bar
+	const hasWaiting = hasWaitingChecker( { checkers, currentPlayer } );
+	console.log( 'Has waiting checker:', hasWaiting );
 
-	if (
-		hasWaitingChecker( { checkers, currentPlayer } ) &&
-		isTargetOccupiedByCurrentPlayer( playerObject )
-	) {
-		return dispatch(
-			setNotice(
-				createNotice(
-					NoticeStatusType.ERROR,
-					MessageType.TARGET_OCCUPIED_BY_YOU
+	// If player has a checker on the bar, they must move it first
+	if ( hasWaiting ) {
+		// If trying to move a checker that's not on the bar
+		if ( lane !== 0 && lane !== 25 ) {
+			console.log(
+				'Waiting checker condition triggered - trying to move a checker on the board when there are checkers on the bar'
+			);
+			return dispatch(
+				setNotice(
+					createNotice(
+						NoticeStatusType.ERROR,
+						MessageType.WAITING_CHECKER
+					)
 				)
-			)
-		);
-	}
-
-	if (
-		hasWaitingChecker( { checkers, currentPlayer } ) &&
-		isTargetOccupiedByOtherPlayer( playerObject )
-	) {
-		return dispatch(
-			setNotice(
-				createNotice(
-					NoticeStatusType.ERROR,
-					MessageType.TARGET_OCCUPIED_BY_OPPONENT
-				)
-			)
-		);
+			);
+		}
 	}
 
 	if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
@@ -216,9 +196,12 @@ export const handleClick = (
 	}
 
 	if (
-		hasCheckoutsOutsideEndzone( { checkers, currentPlayer } ) &&
+		hasCheckersOutsideHomeBoard( { checkers, currentPlayer } ) &&
 		wouldClearOffChecker( { die, lane, currentPlayer } )
 	) {
+		console.log( 'Preventing bearing off due to checkers outside endzone' );
+		console.log( 'Current lane:', lane );
+		console.log( 'Target lane:', targetLane );
 		return dispatch(
 			setNotice(
 				createNotice(

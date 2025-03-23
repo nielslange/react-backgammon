@@ -9,12 +9,7 @@ import { Dispatch } from 'redux';
 import { setGameOver, setNotice } from '../data/actions';
 import { hasPlayerWon } from '../data/selectors';
 import { createNotice } from './createNoticeHelper';
-import {
-	CheckerType,
-	MessageType,
-	NoticeStatusType,
-	PlayerType,
-} from '../types';
+import { MessageType, NoticeStatusType, PlayerType } from '../types';
 
 /**
  * Checks if a player has won the game and updates the game state accordingly.
