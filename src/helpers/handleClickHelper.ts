@@ -195,13 +195,36 @@ export const handleClick = (
 		return;
 	}
 
-	if (
-		hasCheckersOutsideHomeBoard( { checkers, currentPlayer } ) &&
-		wouldClearOffChecker( { die, lane, currentPlayer } )
-	) {
+	// Check if attempting to bear off when checkers are outside home board
+	// This check must happen BEFORE any bearing off logic, as bearing off is only allowed
+	// when ALL checkers are in the home board
+	const isBearingOff =
+		( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 25 ) ||
+		( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 0 );
+
+	if ( isBearingOff && hasCheckersOutsideHomeBoard( { checkers, currentPlayer } ) ) {
 		console.log( 'Preventing bearing off due to checkers outside endzone' );
 		console.log( 'Current lane:', lane );
 		console.log( 'Target lane:', targetLane );
+		return dispatch(
+			setNotice(
+				createNotice(
+					NoticeStatusType.ERROR,
+					MessageType.NOT_ALL_CHECKERS_IN_END_ZONE
+				)
+			)
+		);
+	}
+
+	// Check if attempting to bear off with higher die when checkers exist on higher points
+	// This only applies when all checkers are in the home board
+	if (
+		isBearingOff &&
+		! hasCheckersOutsideHomeBoard( { checkers, currentPlayer } ) &&
+		! wouldClearOffChecker( { die, lane, currentPlayer, checkers } )
+	) {
+		// Attempting to bear off but wouldClearOffChecker returned false
+		// This means either not exact and checkers exist on higher points, or invalid move
 		return dispatch(
 			setNotice(
 				createNotice(

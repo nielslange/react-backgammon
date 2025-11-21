@@ -93,23 +93,25 @@ function canUseDie(
 		// Calculate the target lane for this die
 		let targetLane;
 		if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-			targetLane = checker.lane + die;
 			// If on bar, check if can enter
 			if ( checker.lane === 0 ) {
-				targetLane = die;
+				targetLane = 25 - die; // Enter opponent's home board (19-24)
+			} else {
+				targetLane = checker.lane - die; // Player 1 moves from 24 to 1 (decreasing)
 			}
 			// Cannot bear off if not in home board or would overshoot
-			if ( targetLane > 24 && checker.lane < 19 ) {
+			if ( targetLane > 24 && checker.lane < 19 && checker.lane !== 0 ) {
 				return false;
 			}
 		} else {
-			targetLane = checker.lane - die;
 			// If on bar, check if can enter
 			if ( checker.lane === 25 ) {
-				targetLane = 25 - die;
+				targetLane = die; // Enter opponent's home board (1-6)
+			} else {
+				targetLane = checker.lane + die; // Player 2 moves from 1 to 24 (increasing)
 			}
 			// Cannot bear off if not in home board or would overshoot
-			if ( targetLane < 1 && checker.lane > 6 ) {
+			if ( targetLane < 1 && checker.lane > 6 && checker.lane !== 25 ) {
 				return false;
 			}
 		}

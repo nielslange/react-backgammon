@@ -49,7 +49,10 @@ const getTargetLane = ( {
 	lane: number;
 	die: number;
 } ): number => {
-	return currentPlayer === PlayerType.PLAYER_ONE ? lane + die : lane - die;
+	// According to official rules: "checkers are always moved forward, to a lower-numbered point"
+	// For Player 1 (starting at 24), forward means decreasing (24→1), so lane - die
+	// For Player 2 (starting at 1), forward means increasing (1→24), so lane + die
+	return currentPlayer === PlayerType.PLAYER_ONE ? lane - die : lane + die;
 };
 
 const isLaneBlocked = (
@@ -257,10 +260,11 @@ describe( 'Dice Usage Rules', () => {
 			const requiredMoves = getRequiredMoves( modifiedGameState );
 
 			// Should only allow the higher die (6) to be used
+			// Player 1 moves decreasing: 10 - 6 = 4
 			expect( requiredMoves ).toHaveLength( 1 );
 			expect( requiredMoves[ 0 ].die ).toBe( 6 );
 			expect( requiredMoves[ 0 ].from ).toBe( 10 );
-			expect( requiredMoves[ 0 ].to ).toBe( 16 );
+			expect( requiredMoves[ 0 ].to ).toBe( 4 );
 		} );
 
 		it( 'should require using both dice when possible', () => {
@@ -282,8 +286,9 @@ describe( 'Dice Usage Rules', () => {
 			expect( allMoves ).toHaveLength( 2 );
 
 			// Check specific moves
-			expect( allMoves ).toContainEqual( { from: 10, to: 13, die: 3 } );
-			expect( allMoves ).toContainEqual( { from: 10, to: 15, die: 5 } );
+			// Player 1 moves decreasing: 10 - 3 = 7, 10 - 5 = 5
+			expect( allMoves ).toContainEqual( { from: 10, to: 7, die: 3 } );
+			expect( allMoves ).toContainEqual( { from: 10, to: 5, die: 5 } );
 
 			// Get required moves
 			const requiredMoves = getRequiredMoves( gameState );
@@ -513,8 +518,9 @@ describe( 'Dice Usage Rules', () => {
 			const allMoves = getAllAvailableMoves( gameState );
 
 			// Should have only one valid move (using die 2)
+			// Player 1 moves decreasing: 10 - 2 = 8
 			expect( allMoves ).toHaveLength( 1 );
-			expect( allMoves[ 0 ] ).toEqual( { from: 10, to: 12, die: 2 } );
+			expect( allMoves[ 0 ] ).toEqual( { from: 10, to: 8, die: 2 } );
 
 			// Get required moves
 			const requiredMoves = getRequiredMoves( gameState );

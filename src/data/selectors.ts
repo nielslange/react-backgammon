@@ -477,30 +477,71 @@ export const hasCheckersOutsideHomeBoard = ( {
 };
 
 /**
+ * Checks if there are any checkers on higher points than the given lane.
+ * For Player 1, higher means lanes greater than the given lane (closer to 24).
+ * For Player 2, higher means lanes less than the given lane (closer to 1).
+ *
+ * @param {Object} params - The function parameters.
+ * @param {Checker[]} params.checkers - An array of checker objects.
+ * @param {number} params.lane - The lane to check from.
+ * @param {PlayerType} params.currentPlayer - The current player.
+ *
+ * @returns {boolean} Returns `true` if there are checkers on higher points, `false` otherwise.
+ */
+const hasCheckersOnHigherPoints = ( {
+	checkers,
+	lane,
+	currentPlayer,
+}: {
+	checkers: Checker[];
+	lane: number;
+	currentPlayer: PlayerType;
+} ): boolean => {
+	const playerCheckers = checkers.filter(
+		( checker ) => checker.player === currentPlayer
+	);
+
+	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
+		// For Player 1, higher points are lanes greater than the current lane (19-24 range)
+		return playerCheckers.some(
+			( checker ) => checker.lane > lane && checker.lane >= 19 && checker.lane <= 24
+		);
+	} else {
+		// For Player 2, higher points are lanes less than the current lane (1-6 range)
+		return playerCheckers.some(
+			( checker ) => checker.lane < lane && checker.lane >= 1 && checker.lane <= 6
+		);
+	}
+};
+
+/**
  * Determines if a move would clear off a checker from the board.
  *
  * @param {Object} params - The function parameters.
  * @param {number} params.die - The value of a die roll.
  * @param {number} params.lane - The current lane of the checker.
  * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
+ * @param {Checker[]} params.checkers - An array of checker objects (optional, needed for overshoot validation).
  *
  * @returns {boolean} Returns `true` if the move would clear off the checker (i.e., move it beyond the end of the board), and `false` otherwise.
  *
  * @example
  *
- * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_ONE }); // returns true
- * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_TWO }); // returns false
- * wouldClearOffChecker({ die: 5, lane: 20, currentPlayer: PlayerType.PLAYER_ONE }); // returns false
+ * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_ONE, checkers: [...] }); // returns true
+ * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_TWO, checkers: [...] }); // returns false
+ * wouldClearOffChecker({ die: 5, lane: 20, currentPlayer: PlayerType.PLAYER_ONE, checkers: [...] }); // returns false
  *
  */
 export const wouldClearOffChecker = ( {
 	die,
 	lane,
 	currentPlayer,
+	checkers = [],
 }: {
 	die: number;
 	lane: number;
 	currentPlayer: PlayerType;
+	checkers?: Checker[];
 } ): boolean => {
 	// Checkers can only be borne off from the home board
 	// For Player One, home board is lanes 19-24
@@ -511,36 +552,56 @@ export const wouldClearOffChecker = ( {
 			return false;
 		}
 
-		// If exact, can bear off
-		if ( lane - die === 18 ) {
+		// Calculate target lane
+		const targetLane = lane - die;
+
+		// If exact (target is exactly 18, which is the bearing off point), can bear off
+		if ( targetLane === 18 ) {
 			return true;
 		}
 
-		// If overshooting, check if it's allowed
-		if ( lane - die < 18 ) {
+		// If overshooting (target < 18), check if it's allowed
+		if ( targetLane < 18 ) {
 			// Can only overshoot if no checkers on higher points
 			// e.g., from lane 20, die 5 goes to lane 15, which is overshoot
 			// Only valid if no checkers on lanes 21-24
-			return true; // The checking for no checkers on higher points is done elsewhere
+			return ! hasCheckersOnHigherPoints( {
+				checkers,
+				lane,
+				currentPlayer,
+			} );
 		}
+
+		// If target is still on board (target > 18), not bearing off
+		return false;
 	} else if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		// Must be on the home board to bear off
 		if ( lane < 1 || lane > 6 ) {
 			return false;
 		}
 
-		// If exact, can bear off
-		if ( lane + die === 7 ) {
+		// Calculate target lane
+		const targetLane = lane + die;
+
+		// If exact (target is exactly 7, which is the bearing off point), can bear off
+		if ( targetLane === 7 ) {
 			return true;
 		}
 
-		// If overshooting, check if it's allowed
-		if ( lane + die > 7 ) {
+		// If overshooting (target > 7), check if it's allowed
+		if ( targetLane > 7 ) {
 			// Can only overshoot if no checkers on higher points
 			// e.g., from lane 2, die 6 goes to lane 8, which is overshoot
 			// Only valid if no checkers on lanes 1-2
-			return true; // The checking for no checkers on higher points is done elsewhere
+			return ! hasCheckersOnHigherPoints( {
+				checkers,
+				lane,
+				currentPlayer,
+			} );
 		}
+
+		// If target is still on board (target < 7), not bearing off
+		return false;
 	}
 
 	return false;
@@ -739,15 +800,25 @@ function canUseDie(
 		// Calculate the target lane for this die
 		let targetLane;
 		if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-			targetLane = checker.lane + die;
+			// Handle bar entry
+			if ( checker.lane === 0 ) {
+				targetLane = 25 - die;
+			} else {
+				targetLane = checker.lane - die; // Player 1 moves from 24 to 1 (decreasing)
+			}
 			// Cannot bear off if not in home board
-			if ( targetLane > 24 && checker.lane < 19 ) {
+			if ( targetLane > 24 && checker.lane < 19 && checker.lane !== 0 ) {
 				return false;
 			}
 		} else {
-			targetLane = checker.lane - die;
+			// Handle bar entry
+			if ( checker.lane === 25 ) {
+				targetLane = die;
+			} else {
+				targetLane = checker.lane + die; // Player 2 moves from 1 to 24 (increasing)
+			}
 			// Cannot bear off if not in home board
-			if ( targetLane < 1 && checker.lane > 6 ) {
+			if ( targetLane < 1 && checker.lane > 6 && checker.lane !== 25 ) {
 				return false;
 			}
 		}
@@ -867,6 +938,7 @@ export const getAvailableLanes = ( {
 			die,
 			lane,
 			currentPlayer,
+			checkers,
 		} );
 
 		// Check if the move is valid

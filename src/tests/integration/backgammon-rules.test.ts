@@ -45,7 +45,10 @@ const getTargetLane = ( {
 	lane: number;
 	die: number;
 } ): number => {
-	return currentPlayer === PlayerType.PLAYER_ONE ? lane + die : lane - die;
+	// According to official rules: "checkers are always moved forward, to a lower-numbered point"
+	// For Player 1 (starting at 24), forward means decreasing (24→1), so lane - die
+	// For Player 2 (starting at 1), forward means increasing (1→24), so lane + die
+	return currentPlayer === PlayerType.PLAYER_ONE ? lane - die : lane + die;
 };
 
 const canHitOpponent = (
@@ -203,7 +206,7 @@ describe( 'Backgammon Rules', () => {
 	} );
 
 	describe( 'Movement Direction', () => {
-		it( 'should move Player 1 checkers in increasing lane direction', () => {
+		it( 'should move Player 1 checkers in decreasing lane direction (24→1)', () => {
 			const startLane = 10;
 			const die = 4;
 			const targetLane = getTargetLane( {
@@ -212,10 +215,11 @@ describe( 'Backgammon Rules', () => {
 				die,
 			} );
 
-			expect( targetLane ).toBe( 14 ); // 10 + 4 = 14
+			// Player 1 moves forward (toward point 1), so lane numbers decrease
+			expect( targetLane ).toBe( 6 ); // 10 - 4 = 6
 		} );
 
-		it( 'should move Player 2 checkers in decreasing lane direction', () => {
+		it( 'should move Player 2 checkers in increasing lane direction (1→24)', () => {
 			const startLane = 10;
 			const die = 4;
 			const targetLane = getTargetLane( {
@@ -224,7 +228,8 @@ describe( 'Backgammon Rules', () => {
 				die,
 			} );
 
-			expect( targetLane ).toBe( 6 ); // 10 - 4 = 6
+			// Player 2 moves forward (toward point 24), so lane numbers increase
+			expect( targetLane ).toBe( 14 ); // 10 + 4 = 14
 		} );
 	} );
 
@@ -342,11 +347,11 @@ describe( 'Backgammon Rules', () => {
 			// Should have 4 possible moves (2 checkers × 2 dice)
 			expect( moves ).toHaveLength( 4 );
 
-			// Check specific moves
-			expect( moves ).toContainEqual( { from: 10, to: 13, die: 3 } );
-			expect( moves ).toContainEqual( { from: 10, to: 15, die: 5 } );
-			expect( moves ).toContainEqual( { from: 15, to: 18, die: 3 } );
-			expect( moves ).toContainEqual( { from: 15, to: 20, die: 5 } );
+			// Check specific moves (Player 1 moves decreasing: lane - die)
+			expect( moves ).toContainEqual( { from: 10, to: 7, die: 3 } ); // 10 - 3 = 7
+			expect( moves ).toContainEqual( { from: 10, to: 5, die: 5 } ); // 10 - 5 = 5
+			expect( moves ).toContainEqual( { from: 15, to: 12, die: 3 } ); // 15 - 3 = 12
+			expect( moves ).toContainEqual( { from: 15, to: 10, die: 5 } ); // 15 - 5 = 10
 		} );
 
 		it( 'should handle doubles dice correctly', () => {
@@ -367,9 +372,11 @@ describe( 'Backgammon Rules', () => {
 			expect( moves ).toHaveLength( 4 );
 
 			// All moves should be for die value 4
+			// Player 1 moves decreasing: 10 - 4 = 6
 			moves.forEach( ( move ) => {
 				expect( move.die ).toBe( 4 );
 				expect( move.from ).toBe( 10 );
+				expect( move.to ).toBe( 6 );
 			} );
 		} );
 
@@ -390,8 +397,9 @@ describe( 'Backgammon Rules', () => {
 			const moves = getAvailableMoves( gameState );
 
 			// Should have only 1 possible move (using die 6, since die 5 would go to blocked point)
+			// Player 1 moves decreasing: 10 - 6 = 4
 			expect( moves ).toHaveLength( 1 );
-			expect( moves[ 0 ] ).toEqual( { from: 10, to: 16, die: 6 } );
+			expect( moves[ 0 ] ).toEqual( { from: 10, to: 4, die: 6 } );
 		} );
 	} );
 
@@ -424,7 +432,7 @@ describe( 'Backgammon Rules', () => {
 			const game = {
 				...initialState,
 				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 3 ],
+				dice: [ 4 ], // Die 4 from lane 22: 22 - 4 = 18 (exact bearing off)
 				checkers: [
 					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 22 }, // Home board starts at lane 19
 					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 24 },
@@ -438,8 +446,8 @@ describe( 'Backgammon Rules', () => {
 				currentPlayer: game.currentPlayer,
 			} );
 
-			// With die 3, from lane 22, checker should be able to bear off
-			expect( availableMoves ).toEqual( { 3: 25 } );
+			// With die 4, from lane 22, checker should be able to bear off (22 - 4 = 18, exact)
+			expect( availableMoves ).toEqual( { 4: 25 } );
 		} );
 	} );
 
