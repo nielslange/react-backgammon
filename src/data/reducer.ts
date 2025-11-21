@@ -28,7 +28,48 @@ export const reducer = ( state = initialState, action: any ) => {
 			return { ...state, currentPlayer: action.player };
 
 		case ActionTypes.MOVE_CHECKER:
-			return { ...state, checkers: action.checkers };
+			// Save current state to history before applying move
+			const historyEntry = {
+				checkers: [ ...state.checkers ],
+				currentPlayer: state.currentPlayer,
+				dice: [ ...state.dice ],
+				pipCount: { ...state.pipCount },
+			};
+
+			return {
+				...state,
+				checkers: action.checkers,
+				moveHistory: [ ...state.moveHistory, historyEntry ],
+			};
+
+		case ActionTypes.UNDO_MOVE:
+			// If there are no moves to undo
+			if ( state.moveHistory.length === 0 ) {
+				return {
+					...state,
+					notice: {
+						message: MessageType.NO_MOVES_TO_UNDO,
+						status: NoticeStatusType.ERROR,
+					},
+				};
+			}
+
+			// Get the last state from history
+			const lastState = state.moveHistory[ state.moveHistory.length - 1 ];
+			const newHistory = state.moveHistory.slice( 0, -1 );
+
+			return {
+				...state,
+				checkers: lastState.checkers,
+				currentPlayer: lastState.currentPlayer,
+				dice: lastState.dice,
+				pipCount: lastState.pipCount,
+				moveHistory: newHistory,
+				notice: {
+					message: MessageType.MOVE_UNDONE,
+					status: NoticeStatusType.INFO,
+				},
+			};
 
 		case ActionTypes.SET_GAME_OVER:
 			return { ...state, gameOver: true };

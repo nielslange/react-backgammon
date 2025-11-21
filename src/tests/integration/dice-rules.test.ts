@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { PlayerType } from '../../types';
+// Remove the conflicting imports and use the local functions
+// import { getTargetLane } from '../../data/selectors';
+// import { rollDice } from '../../helpers/diceHelper';
+// import { createMockGame } from '../test-utils/mockFactory';
+// import { getAvailableLanes } from '../../data/selectors';
 
 // Define interfaces for testing
 interface Checker {
@@ -17,6 +22,22 @@ interface GameState {
 	selectedDie: number | null;
 	error: string | null;
 }
+
+// Helper function to create a mock game
+const createMockGame = ( params: Partial< GameState > ): GameState => {
+	return {
+		checkers: [],
+		currentPlayer: PlayerType.PLAYER_ONE,
+		dice: [ 1, 2 ],
+		activeLane: null,
+		selectedDie: null,
+		error: null,
+		...params,
+	};
+};
+
+// Import the needed function from the selectors file
+import { getAvailableLanes } from '../../data/selectors';
 
 // Helper functions for testing dice rules
 const getTargetLane = ( {
@@ -65,18 +86,18 @@ const isValidBearOff = ( {
 
 	// For Player 1, home board is 19-24
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-		// Exact number needed from point 24
-		if ( lane === 24 && die === 1 ) return true;
-		// Exact number needed from point 23
-		if ( lane === 23 && die === 2 ) return true;
-		// Exact number needed from point 22
-		if ( lane === 22 && die === 3 ) return true;
-		// Exact number needed from point 21
-		if ( lane === 21 && die === 4 ) return true;
-		// Exact number needed from point 20
-		if ( lane === 20 && die === 5 ) return true;
 		// Exact number needed from point 19
 		if ( lane === 19 && die === 6 ) return true;
+		// Exact number needed from point 20
+		if ( lane === 20 && die === 5 ) return true;
+		// Exact number needed from point 21
+		if ( lane === 21 && die === 4 ) return true;
+		// Exact number needed from point 22
+		if ( lane === 22 && die === 3 ) return true;
+		// Exact number needed from point 23
+		if ( lane === 23 && die === 2 ) return true;
+		// Exact number needed from point 24
+		if ( lane === 24 && die === 1 ) return true;
 
 		// Can use higher die when no checkers are on higher points
 		if ( die > 24 - lane ) {
@@ -86,18 +107,18 @@ const isValidBearOff = ( {
 
 	// For Player 2, home board is 1-6
 	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
-		// Exact number needed from point 1
-		if ( lane === 1 && die === 1 ) return true;
-		// Exact number needed from point 2
-		if ( lane === 2 && die === 2 ) return true;
-		// Exact number needed from point 3
-		if ( lane === 3 && die === 3 ) return true;
-		// Exact number needed from point 4
-		if ( lane === 4 && die === 4 ) return true;
-		// Exact number needed from point 5
-		if ( lane === 5 && die === 5 ) return true;
 		// Exact number needed from point 6
 		if ( lane === 6 && die === 6 ) return true;
+		// Exact number needed from point 5
+		if ( lane === 5 && die === 5 ) return true;
+		// Exact number needed from point 4
+		if ( lane === 4 && die === 4 ) return true;
+		// Exact number needed from point 3
+		if ( lane === 3 && die === 3 ) return true;
+		// Exact number needed from point 2
+		if ( lane === 2 && die === 2 ) return true;
+		// Exact number needed from point 1
+		if ( lane === 1 && die === 1 ) return true;
 
 		// Can use higher die when no checkers are on higher points
 		if ( die > lane ) {
@@ -417,6 +438,54 @@ describe( 'Dice Usage Rules', () => {
 					hasCheckersOutsideHomeBoard: false,
 				} )
 			).toBe( true );
+		} );
+
+		it( 'only allows Player 1 to bear off when all checkers are in home board (lanes 19-24)', () => {
+			// Can't bear off while checkers are outside home board
+			const game = createMockGame( {
+				currentPlayer: PlayerType.PLAYER_ONE,
+				checkers: [
+					// For Player 1, home board is 19-24
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 18 }, // Outside home board
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 20 }, // In home board
+				],
+				dice: [ 5 ],
+			} );
+
+			// Should not be able to bear off from lane 20 with die 5
+			// since there's a checker outside home board
+			const lane20Moves = getAvailableLanes( {
+				currentPlayer: PlayerType.PLAYER_ONE,
+				lane: 20,
+				dice: game.dice,
+				checkers: game.checkers,
+			} );
+
+			expect( lane20Moves ).toEqual( {} );
+		} );
+
+		it( 'only allows Player 2 to bear off when all checkers are in home board (lanes 1-6)', () => {
+			const game = createMockGame( {
+				currentPlayer: PlayerType.PLAYER_TWO,
+				checkers: [
+					// For Player 2, home board is 1-6
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 7 }, // Outside home board
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 }, // In home board
+				],
+				dice: [ 5 ],
+			} );
+
+			// Should not be able to bear off from lane 5 with die 5
+			// since there's a checker outside home board
+			const lane5Moves = getAvailableLanes( {
+				currentPlayer: PlayerType.PLAYER_TWO,
+				lane: 5,
+				dice: game.dice,
+				checkers: game.checkers,
+			} );
+
+			// Only normal moves allowed (not bearing off)
+			expect( lane5Moves ).toEqual( { 5: 0 } );
 		} );
 	} );
 

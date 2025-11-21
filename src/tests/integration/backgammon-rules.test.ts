@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { PlayerType } from '../../types';
+import { getAvailableLanes } from '../../data/selectors';
 
 // Define interfaces needed for testing
 interface Checker {
@@ -122,6 +123,16 @@ const createInitialBoard = (): Checker[] => {
 		checkers.push( { id: id++, player: PlayerType.PLAYER_TWO, lane: 19 } ); // 5 on point 19
 
 	return checkers;
+};
+
+// Initial game state for tests
+const initialState: GameState = {
+	checkers: [],
+	currentPlayer: PlayerType.PLAYER_ONE,
+	dice: [],
+	activeLane: null,
+	selectedDie: null,
+	error: null,
 };
 
 describe( 'Backgammon Rules', () => {
@@ -406,6 +417,29 @@ describe( 'Backgammon Rules', () => {
 			expect( player1Checkers.length ).toBe( 0 );
 
 			// In a real implementation, this would trigger game over with Player 1 as winner
+		} );
+
+		it( 'Player 1 can bear off when checkers are all in home board', () => {
+			// Player 1 has all checkers in home board
+			const game = {
+				...initialState,
+				currentPlayer: PlayerType.PLAYER_ONE,
+				dice: [ 3 ],
+				checkers: [
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 22 }, // Home board starts at lane 19
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 24 },
+				],
+			};
+
+			const availableMoves = getAvailableLanes( {
+				dice: game.dice,
+				lane: 22,
+				checkers: game.checkers,
+				currentPlayer: game.currentPlayer,
+			} );
+
+			// With die 3, from lane 22, checker should be able to bear off
+			expect( availableMoves ).toEqual( { 3: 25 } );
 		} );
 	} );
 

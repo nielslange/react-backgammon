@@ -40,7 +40,7 @@ interface LaneParams {
  * @example
  *
  * getTargetLane({ currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns 5
- * getTargetLane({ currentPlayer: PlayerType.PLAYER_TWO, die: 5, lane: 0 }); // returns 20
+ * getTargetLane({ currentPlayer: PlayerType.PLAYER_TWO, die: 5, lane: 25 }); // returns 20
  *
  */
 export const getTargetLane = ( {
@@ -53,21 +53,21 @@ export const getTargetLane = ( {
 	lane: number;
 } ): number => {
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-		if ( lane === 0 ) return die; // Coming from the bar
+		if ( lane === 0 ) return 25 - die; // Coming from the bar
 
 		// Handle bearing off cases
-		if ( lane >= 19 && lane <= 24 && lane + die >= 25 ) return 25;
+		if ( lane >= 19 && lane <= 24 && lane - die < 19 ) return 25;
 
-		return lane + die; // Normal movement on the board
+		return lane - die; // Normal movement on the board (counterclockwise)
 	}
 
 	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
-		if ( lane === 25 ) return 25 - die; // Coming from the bar
+		if ( lane === 25 ) return die; // Coming from the bar
 
 		// Handle bearing off cases
-		if ( lane >= 1 && lane <= 6 && lane - die <= 0 ) return 0;
+		if ( lane <= 6 && lane >= 1 && lane + die > 6 ) return 0;
 
-		return lane - die; // Normal movement on the board
+		return lane + die; // Normal movement on the board (clockwise)
 	}
 
 	throw new Error( `Invalid player type: ${ currentPlayer }` );
@@ -444,38 +444,36 @@ export const hasCheckersOutsideHomeBoard = ( {
 	checkers: Checker[];
 	currentPlayer: PlayerType;
 } ): boolean => {
-	// Filter to only include the current player's checkers that are still on the board
-	// (not already borne off)
 	const playerCheckers = checkers.filter(
-		( checker ) =>
-			checker.player === currentPlayer &&
-			( currentPlayer === PlayerType.PLAYER_ONE
-				? checker.lane !== 25
-				: checker.lane !== 0 )
+		( checker ) => checker.player === currentPlayer
 	);
 
-	// If no checkers left on board, return false (no checkers outside home board)
+	// If there are no checkers for the current player, they're all borne off
 	if ( playerCheckers.length === 0 ) {
 		return false;
 	}
 
-	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-		// Check if any of Player One's checkers are outside home board (lanes 19-24)
-		// or on the bar (lane 0)
-		return playerCheckers.some(
-			( checker ) =>
-				checker.lane === 0 || ( checker.lane > 0 && checker.lane < 19 )
-		);
-	} else if ( currentPlayer === PlayerType.PLAYER_TWO ) {
-		// Check if any of Player Two's checkers are outside home board (lanes 1-6)
-		// or on the bar (lane 25)
-		return playerCheckers.some(
-			( checker ) =>
-				checker.lane === 25 || ( checker.lane > 6 && checker.lane < 25 )
-		);
-	}
+	// Check if there are any checkers outside of the home board
+	// For Player 1, home board is lanes 19-24
+	// For Player 2, home board is lanes 1-6
+	return playerCheckers.some( ( checker ) => {
+		if ( currentPlayer === PlayerType.PLAYER_ONE ) {
+			// Bar is always outside home board
+			if ( checker.lane === 0 ) {
+				return true;
+			}
+			// For Player 1, home board is 19-24
+			return checker.lane < 19;
+		}
 
-	return false;
+		// currentPlayer === PlayerType.PLAYER_TWO
+		// Bar is always outside home board
+		if ( checker.lane === 25 ) {
+			return true;
+		}
+		// For Player 2, home board is 1-6
+		return checker.lane > 6;
+	} );
 };
 
 /**
@@ -504,27 +502,48 @@ export const wouldClearOffChecker = ( {
 	lane: number;
 	currentPlayer: PlayerType;
 } ): boolean => {
-	let result = false;
-
+	// Checkers can only be borne off from the home board
+	// For Player One, home board is lanes 19-24
+	// For Player Two, home board is lanes 1-6
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-		// PLAYER_ONE can only bear off from their home board (lanes 19-24)
-		// Ensure we're only considering checkers in the home board
-		if ( lane >= 19 && lane <= 24 ) {
-			// Check if the move would take the checker off the board
-			// For PLAYER_ONE, either exact roll or more than needed to bear off
-			result = lane + die >= 25;
+		// Must be on the home board to bear off
+		if ( lane < 19 || lane > 24 ) {
+			return false;
+		}
+
+		// If exact, can bear off
+		if ( lane - die === 18 ) {
+			return true;
+		}
+
+		// If overshooting, check if it's allowed
+		if ( lane - die < 18 ) {
+			// Can only overshoot if no checkers on higher points
+			// e.g., from lane 20, die 5 goes to lane 15, which is overshoot
+			// Only valid if no checkers on lanes 21-24
+			return true; // The checking for no checkers on higher points is done elsewhere
 		}
 	} else if ( currentPlayer === PlayerType.PLAYER_TWO ) {
-		// PLAYER_TWO can only bear off from their home board (lanes 1-6)
-		// Ensure we're only considering checkers in the home board
-		if ( lane >= 1 && lane <= 6 ) {
-			// Check if the move would take the checker off the board
-			// For PLAYER_TWO, either exact roll or more than needed to bear off
-			result = lane - die <= 0;
+		// Must be on the home board to bear off
+		if ( lane < 1 || lane > 6 ) {
+			return false;
+		}
+
+		// If exact, can bear off
+		if ( lane + die === 7 ) {
+			return true;
+		}
+
+		// If overshooting, check if it's allowed
+		if ( lane + die > 7 ) {
+			// Can only overshoot if no checkers on higher points
+			// e.g., from lane 2, die 6 goes to lane 8, which is overshoot
+			// Only valid if no checkers on lanes 1-2
+			return true; // The checking for no checkers on higher points is done elsewhere
 		}
 	}
 
-	return result;
+	return false;
 };
 
 /**
@@ -752,3 +771,127 @@ function canUseDie(
 		return ! isBlocked && ! isOccupiedBySelf;
 	} );
 }
+
+/**
+ * Returns the lanes that a checker can move to based on the current dice and game state.
+ *
+ * @param params - The parameters object.
+ * @param params.dice - The available dice to use for movement.
+ * @param params.lane - The current lane of the checker.
+ * @param params.checkers - The current state of all checkers on the board.
+ * @param params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
+ * @param params.playedDiceIndices - The indices of dice that have already been played in the current turn.
+ *
+ * @returns An object mapping from die value to target lane, where each die value represents a possible move
+ * and the corresponding target lane is the lane the checker would move to if that die were used.
+ *
+ * The function follows these rules:
+ * 1. Checkers can only move in one direction: Player One moves from lane 24 to lane 1, and Player Two from lane 1 to lane 24.
+ * 2. A checker can't move to a lane that already has 2 or more opponent checkers.
+ * 3. If any checker is on the bar (lane 0 for Player One or lane 25 for Player Two), it must re-enter the board before any other checker can move.
+ * 4. Checkers can only bear off (move off the board) if all of the player's checkers are in their home board.
+ *
+ * @example
+ *
+ * const dice = [2, 3];
+ * const lane = 20;
+ * const checkers = [...] // Array of Checker objects
+ * const playedDiceIndices = [1]; // The die at index 1 has already been played
+ * const result = getAvailableLanes({ dice, lane, checkers, currentPlayer: PlayerType.PLAYER_ONE, playedDiceIndices });
+ * // result might be { 2: 18 }, meaning the checker can move to lane 18 using the die with value 2.
+ */
+export const getAvailableLanes = ( {
+	dice,
+	lane,
+	checkers,
+	currentPlayer,
+	playedDiceIndices,
+}: {
+	dice: number[];
+	lane: number;
+	checkers: Checker[];
+	currentPlayer: PlayerType;
+	playedDiceIndices?: number[];
+} ): { [ key: number ]: number } => {
+	// Return empty object if no dice available
+	if ( dice.length === 0 ) {
+		return {};
+	}
+
+	// If there are checkers on the bar, player must move them first
+	// Bar is lane 0 for Player One and lane 25 for Player Two
+	const playerCheckersOnBar = checkers.filter(
+		( checker ) =>
+			checker.player === currentPlayer &&
+			( ( currentPlayer === PlayerType.PLAYER_ONE &&
+				checker.lane === 0 ) ||
+				( currentPlayer === PlayerType.PLAYER_TWO &&
+					checker.lane === 25 ) )
+	);
+
+	if (
+		playerCheckersOnBar.length > 0 &&
+		! (
+			( currentPlayer === PlayerType.PLAYER_ONE && lane === 0 ) ||
+			( currentPlayer === PlayerType.PLAYER_TWO && lane === 25 )
+		)
+	) {
+		// If there are checkers on the bar but we're not trying to move one, return empty
+		return {};
+	}
+
+	// Check if all the player's checkers are in their home board (or already borne off)
+	const canBearOff = ! hasCheckersOutsideHomeBoard( {
+		checkers,
+		currentPlayer,
+	} );
+
+	// Filter out dice that have already been played
+	const availableDice = playedDiceIndices
+		? dice.filter( ( _, index ) => ! playedDiceIndices.includes( index ) )
+		: dice;
+
+	// Map available dice to target lanes
+	const availableMoves: { [ key: number ]: number } = {};
+
+	availableDice.forEach( ( die ) => {
+		// Calculate target lane based on die value and current player
+		const targetLane = getTargetLane( {
+			die,
+			lane,
+			currentPlayer,
+		} );
+
+		// Determine if this move would bear off a checker
+		const wouldBearOff = wouldClearOffChecker( {
+			die,
+			lane,
+			currentPlayer,
+		} );
+
+		// Check if the move is valid
+		if ( wouldBearOff ) {
+			// Bearing off is only allowed if all checkers are in home board
+			if ( canBearOff ) {
+				// For Player One, bearing off means target lane would be 0
+				// For Player Two, bearing off means target lane would be 25
+				availableMoves[ die ] =
+					currentPlayer === PlayerType.PLAYER_ONE ? 0 : 25;
+			}
+		} else if ( targetLane > 0 && targetLane < 25 ) {
+			// Normal move (not bearing off)
+			// Check if target lane is free or has fewer than 2 opponent checkers
+			const opponentCheckersCount = checkers.filter(
+				( checker ) =>
+					checker.player !== currentPlayer &&
+					checker.lane === targetLane
+			).length;
+
+			if ( opponentCheckersCount < 2 ) {
+				availableMoves[ die ] = targetLane;
+			}
+		}
+	} );
+
+	return availableMoves;
+};

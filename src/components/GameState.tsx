@@ -14,6 +14,7 @@ import {
 	rollDice,
 	shiftDice,
 	surrenderGame,
+	undoMove,
 } from '../data/actions';
 import { StateType } from '../types';
 
@@ -21,6 +22,9 @@ export const GameState = () => {
 	const dispatch = useDispatch();
 	const dice = useSelector( ( state: StateType ) => state.dice );
 	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
+	const moveHistory = useSelector(
+		( state: StateType ) => state.moveHistory
+	);
 
 	return (
 		<>
@@ -41,33 +45,13 @@ export const GameState = () => {
 				>
 					Surrender
 				</Button>
-			</ButtonGroup>
-
-			<h2 className="h6">Development Controls</h2>
-			<ButtonGroup aria-label="Development actions" className="mb-3">
 				<Button
-					aria-label="Roll the dice (Dev)"
-					variant="outline-primary btn-sm"
-					onClick={ () => dispatch( rollDice() ) }
-					disabled={ gameOver }
-				>
-					Roll
-				</Button>
-				<Button
-					aria-label="Flip the dice (Dev)"
+					aria-label="Undo last move"
 					variant="outline-secondary btn-sm"
-					onClick={ () => dispatch( flipDice( dice ) ) }
-					disabled={ gameOver }
+					onClick={ () => dispatch( undoMove() ) }
+					disabled={ gameOver || moveHistory.length === 0 }
 				>
-					Flip
-				</Button>
-				<Button
-					aria-label="Shift the dice (Dev)"
-					variant="outline-secondary btn-sm"
-					onClick={ () => dispatch( shiftDice( dice ) ) }
-					disabled={ gameOver }
-				>
-					Shift
+					Undo
 				</Button>
 			</ButtonGroup>
 		</>

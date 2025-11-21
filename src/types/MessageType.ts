@@ -17,4 +17,6 @@ export enum MessageType {
 	PLAYER_ONE_WINS = 'Player Blue wins!',
 	PLAYER_SURRENDERED = 'The current player has surrendered the game.',
 	GAME_RESTARTED = 'Game has been restarted. Good luck!',
+	MOVE_UNDONE = 'Last move has been undone.',
+	NO_MOVES_TO_UNDO = 'There are no moves to undo.',
 }

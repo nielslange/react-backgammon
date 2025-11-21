@@ -15,16 +15,11 @@ export const Board = () => {
 					<Lane
 						from={ 25 }
 						to={ 25 }
-						bar={ PlayerType.PLAYER_ONE }
-						// player={ PlayerType.PLAYER_ONE }
+						bar={ PlayerType.PLAYER_TWO }
+						player={ PlayerType.PLAYER_TWO }
 					/>
 					<Lane from={ 19 } to={ 24 } />
-					<Lane
-						from={ 0 }
-						to={ 0 }
-						off={ PlayerType.PLAYER_TWO }
-						// player={ PlayerType.PLAYER_TWO }
-					/>
+					<Lane from={ 0 } to={ 0 } off={ PlayerType.PLAYER_TWO } />
 				</div>
 
 				<div className="board-bottom">
@@ -36,12 +31,7 @@ export const Board = () => {
 						player={ PlayerType.PLAYER_ONE }
 					/>
 					<Lane from={ 6 } to={ 1 } />
-					<Lane
-						from={ 25 }
-						to={ 25 }
-						off={ PlayerType.PLAYER_ONE }
-						player={ PlayerType.PLAYER_ONE }
-					/>
+					<Lane from={ 25 } to={ 25 } off={ PlayerType.PLAYER_ONE } />
 				</div>
 			</div>
 		</div>

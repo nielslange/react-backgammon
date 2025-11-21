@@ -9,6 +9,7 @@ import { Checker } from './Checker';
  * Internal dependencies
  */
 import type { LaneType, StateType } from '../types';
+import { PlayerType } from '../types';
 
 export const Lane = ( {
 	from,
@@ -47,6 +48,13 @@ export const Lane = ( {
 				data-off={ off }
 				key={ key }
 			>
+				{ bar && (
+					<div className="bar-label">
+						{ player === PlayerType.PLAYER_ONE
+							? 'Player 1 Bar'
+							: 'Player 2 Bar' }
+					</div>
+				) }
 				{ checkerElements }
 			</div>
 		);

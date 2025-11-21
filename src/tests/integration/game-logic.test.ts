@@ -50,23 +50,21 @@ describe( 'Game Logic Integration Tests', () => {
 	describe( 'Bearing Off Logic', () => {
 		it( 'should only allow bearing off when all checkers are in home board (Player 1)', () => {
 			// Player 1 has all checkers in home board
-			const homeboardCheckers: Checker[] = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 19 },
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 20 },
-				{ id: 3, player: PlayerType.PLAYER_ONE, lane: 24 },
+			const allInHomeBoard = [
+				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 19 }, // Home board starts at lane 19
+				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 24 },
 			];
 
 			// Player 1 has one checker outside home board
-			const outsideCheckers: Checker[] = [
+			const oneOutsideHomeBoard = [
 				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 18 }, // Outside home board
 				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 20 },
-				{ id: 3, player: PlayerType.PLAYER_ONE, lane: 24 },
 			];
 
 			// hasCheckersOutsideHomeBoard should be false when all checkers are in home board
 			expect(
 				hasCheckersOutsideHomeBoard( {
-					checkers: homeboardCheckers,
+					checkers: allInHomeBoard,
 					currentPlayer: PlayerType.PLAYER_ONE,
 				} )
 			).toBe( false );
@@ -74,7 +72,7 @@ describe( 'Game Logic Integration Tests', () => {
 			// hasCheckersOutsideHomeBoard should be true when a checker is outside home board
 			expect(
 				hasCheckersOutsideHomeBoard( {
-					checkers: outsideCheckers,
+					checkers: oneOutsideHomeBoard,
 					currentPlayer: PlayerType.PLAYER_ONE,
 				} )
 			).toBe( true );
@@ -100,23 +98,21 @@ describe( 'Game Logic Integration Tests', () => {
 
 		it( 'should only allow bearing off when all checkers are in home board (Player 2)', () => {
 			// Player 2 has all checkers in home board
-			const homeboardCheckers: Checker[] = [
-				{ id: 1, player: PlayerType.PLAYER_TWO, lane: 1 },
-				{ id: 2, player: PlayerType.PLAYER_TWO, lane: 3 },
-				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 6 },
+			const allInHomeBoard = [
+				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 1 }, // Home board starts at lane 1
+				{ id: 4, player: PlayerType.PLAYER_TWO, lane: 6 },
 			];
 
 			// Player 2 has one checker outside home board
-			const outsideCheckers: Checker[] = [
-				{ id: 1, player: PlayerType.PLAYER_TWO, lane: 1 },
-				{ id: 2, player: PlayerType.PLAYER_TWO, lane: 3 },
+			const oneOutsideHomeBoard = [
 				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 7 }, // Outside home board
+				{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 },
 			];
 
 			// hasCheckersOutsideHomeBoard should be false when all checkers are in home board
 			expect(
 				hasCheckersOutsideHomeBoard( {
-					checkers: homeboardCheckers,
+					checkers: allInHomeBoard,
 					currentPlayer: PlayerType.PLAYER_TWO,
 				} )
 			).toBe( false );
@@ -124,7 +120,7 @@ describe( 'Game Logic Integration Tests', () => {
 			// hasCheckersOutsideHomeBoard should be true when a checker is outside home board
 			expect(
 				hasCheckersOutsideHomeBoard( {
-					checkers: outsideCheckers,
+					checkers: oneOutsideHomeBoard,
 					currentPlayer: PlayerType.PLAYER_TWO,
 				} )
 			).toBe( true );

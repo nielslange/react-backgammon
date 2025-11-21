@@ -21,4 +21,5 @@ export const initialState: StateType = {
 		[ PlayerType.PLAYER_ONE ]: 167,
 		[ PlayerType.PLAYER_TWO ]: 167,
 	},
+	moveHistory: [],
 } as StateType;

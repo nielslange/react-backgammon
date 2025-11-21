@@ -17,4 +17,13 @@ export type StateType = {
 		[ PlayerType.PLAYER_ONE ]: number;
 		[ PlayerType.PLAYER_TWO ]: number;
 	};
+	moveHistory: Array< {
+		checkers: CheckerType[];
+		currentPlayer: PlayerType | null;
+		dice: number[];
+		pipCount: {
+			[ PlayerType.PLAYER_ONE ]: number;
+			[ PlayerType.PLAYER_TWO ]: number;
+		};
+	} >;
 };

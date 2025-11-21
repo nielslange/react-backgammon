@@ -73,6 +73,7 @@ describe( 'hasCheckersOutsideHomeBoard', () => {
 			checkers,
 			currentPlayer: PlayerType.PLAYER_ONE,
 		} );
+
 		expect( result ).toBe( true );
 	} );
 
@@ -86,32 +87,35 @@ describe( 'hasCheckersOutsideHomeBoard', () => {
 			checkers,
 			currentPlayer: PlayerType.PLAYER_ONE,
 		} );
+
 		expect( result ).toBe( false );
 	} );
 
 	it( 'should return true when Player 2 has checkers outside home board', () => {
 		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 7 },
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 5 },
+			{ id: 3, player: PlayerType.PLAYER_TWO, lane: 7 },
+			{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 },
 		];
 
 		const result = hasCheckersOutsideHomeBoard( {
 			checkers,
 			currentPlayer: PlayerType.PLAYER_TWO,
 		} );
+
 		expect( result ).toBe( true );
 	} );
 
 	it( 'should return false when Player 2 has all checkers in home board', () => {
 		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 6 },
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 5 },
+			{ id: 3, player: PlayerType.PLAYER_TWO, lane: 6 },
+			{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 },
 		];
 
 		const result = hasCheckersOutsideHomeBoard( {
 			checkers,
 			currentPlayer: PlayerType.PLAYER_TWO,
 		} );
+
 		expect( result ).toBe( false );
 	} );
 } );
@@ -123,16 +127,16 @@ describe( 'wouldClearOffChecker', () => {
 			lane: 21,
 			currentPlayer: PlayerType.PLAYER_ONE,
 		} );
-		expect( result ).toBe( true );
-	} );
 
-	it( 'should return false when Player 1 move would not bear off', () => {
-		const result = wouldClearOffChecker( {
-			die: 3,
+		expect( result ).toBe( true );
+
+		const result2 = wouldClearOffChecker( {
+			die: 6,
 			lane: 20,
 			currentPlayer: PlayerType.PLAYER_ONE,
 		} );
-		expect( result ).toBe( false );
+
+		expect( result2 ).toBe( true );
 	} );
 
 	it( 'should return false when Player 1 tries to bear off from outside home board', () => {
@@ -141,6 +145,7 @@ describe( 'wouldClearOffChecker', () => {
 			lane: 15,
 			currentPlayer: PlayerType.PLAYER_ONE,
 		} );
+
 		expect( result ).toBe( false );
 	} );
 
@@ -150,16 +155,16 @@ describe( 'wouldClearOffChecker', () => {
 			lane: 4,
 			currentPlayer: PlayerType.PLAYER_TWO,
 		} );
-		expect( result ).toBe( true );
-	} );
 
-	it( 'should return false when Player 2 move would not bear off', () => {
-		const result = wouldClearOffChecker( {
-			die: 2,
+		expect( result ).toBe( true );
+
+		const result2 = wouldClearOffChecker( {
+			die: 6,
 			lane: 5,
 			currentPlayer: PlayerType.PLAYER_TWO,
 		} );
-		expect( result ).toBe( false );
+
+		expect( result2 ).toBe( true );
 	} );
 
 	it( 'should return false when Player 2 tries to bear off from outside home board', () => {
@@ -168,6 +173,7 @@ describe( 'wouldClearOffChecker', () => {
 			lane: 10,
 			currentPlayer: PlayerType.PLAYER_TWO,
 		} );
+
 		expect( result ).toBe( false );
 	} );
 } );

@@ -1,6 +1,6 @@
 body {
 	background: #fff;
-	color: #3B4252;
+	color: #3b4252;
 	margin: 20px;
 	font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
@@ -15,7 +15,6 @@ table {
 	display: flex;
 	max-width: 1200px;
 	margin: auto;
-	
 
 	& > div {
 		border: 1px solid;
@@ -37,17 +36,16 @@ table {
 	}
 
 	&.info {
-		border-color: #5E81AC;
-		background-color: lighten(#5E81AC, 10%);
+		border-color: #5e81ac;
+		background-color: lighten(#5e81ac, 10%);
 		color: #eceff4;
 	}
 
 	&.success {
 		border-color: #a3be8c;
 		background-color: lighten(#a3be8c, 10%);
-		color: #4C566A;
+		color: #4c566a;
 	}
-
 }
 
 .board {
@@ -85,7 +83,7 @@ table {
 			}
 			&:nth-child(7),
 			&:nth-child(14) {
-				background-color: #4C566A;
+				background-color: #4c566a;
 				flex-wrap: wrap;
 				&:before {
 					border: none;
@@ -132,7 +130,7 @@ table {
 			}
 			&:nth-child(7),
 			&:nth-child(14) {
-				background-color: #4C566A;
+				background-color: #4c566a;
 				flex-wrap: wrap;
 				&:before {
 					border: none;
@@ -166,8 +164,8 @@ table {
 				left: 0;
 				width: 0;
 				height: 0;
-			}	
-			
+			}
+
 			.checker {
 				z-index: 2;
 				box-sizing: border-box;
@@ -186,11 +184,34 @@ table {
 					background-color: #bf616a;
 				}
 			}
-			
+
 			&.off {
 				.checker {
 					border-radius: 2px;
 					height: 11px;
+				}
+			}
+
+			&.bar {
+				background-color: #d8dee9;
+				border: 2px solid #4c566a;
+				border-radius: 4px;
+				margin: 0 10px;
+
+				.checker {
+					margin: 5px auto;
+					width: 40px;
+					height: 40px;
+				}
+
+				.bar-label {
+					background-color: #4c566a;
+					color: white;
+					text-align: center;
+					padding: 4px;
+					font-size: 12px;
+					font-weight: bold;
+					border-radius: 2px 2px 0 0;
 				}
 			}
 		}

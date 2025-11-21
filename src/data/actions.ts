@@ -156,3 +156,13 @@ export const updatePipCount = ( pipCount: {
 } ) => {
 	return { type: ActionTypes.UPDATE_PIP_COUNT, pipCount };
 };
+
+/**
+ * This function undoes the last move made in the game.
+ * The function returns an object with the type of action (UNDO_MOVE).
+ *
+ * @returns {Object} An object containing the type of action.
+ */
+export const undoMove = () => {
+	return { type: ActionTypes.UNDO_MOVE };
+};
