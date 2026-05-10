@@ -55,19 +55,19 @@ export const getTargetLane = ( {
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		if ( lane === 0 ) return 25 - die; // Coming from the bar
 
-		// Handle bearing off cases
-		if ( lane >= 19 && lane <= 24 && lane - die < 19 ) return 25;
+		// Handle bearing off cases (Player 1 home board is 1-6, bears off to 0)
+		if ( lane >= 1 && lane <= 6 && lane - die < 1 ) return 0;
 
-		return lane - die; // Normal movement on the board (counterclockwise)
+		return lane - die; // Normal movement on the board (counterclockwise, 24→1)
 	}
 
 	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		if ( lane === 25 ) return die; // Coming from the bar
 
-		// Handle bearing off cases
-		if ( lane <= 6 && lane >= 1 && lane + die > 6 ) return 0;
+		// Handle bearing off cases (Player 2 home board is 19-24, bears off to 25)
+		if ( lane >= 19 && lane <= 24 && lane + die > 24 ) return 25;
 
-		return lane + die; // Normal movement on the board (clockwise)
+		return lane + die; // Normal movement on the board (clockwise, 1→24)
 	}
 
 	throw new Error( `Invalid player type: ${ currentPlayer }` );
@@ -427,14 +427,14 @@ export const willHitOpponent = ( {
  * @param {Checker[]} params.checkers - An array of checker objects.
  * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
  *
- * @returns {boolean | undefined} Returns `true` if the current player has any checkers outside the end zone (lanes 19-24 for blue player and lanes 1-6 for red player), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_ONE` nor `PLAYER_TWO`.
+ * @returns {boolean | undefined} Returns `true` if the current player has any checkers outside the end zone (lanes 1-6 for Player 1 and lanes 19-24 for Player 2), and `false` otherwise. Returns `undefined` if the current player is neither `PLAYER_ONE` nor `PLAYER_TWO`.
  *
  * @example
  *
- * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 18, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 20, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns true
- * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 20, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 20, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns false
- * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 7, player: PlayerType.PLAYER_TWO}, {id: 2, lane: 25, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns true
- * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 6, player: PlayerType.PLAYER_TWO}, {id: 2, lane: 25, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns false
+ * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 7, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns true
+ * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 3, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 5, player: PlayerType.PLAYER_ONE}], currentPlayer: PlayerType.PLAYER_ONE }); // returns false
+ * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 18, player: PlayerType.PLAYER_TWO}, {id: 2, lane: 20, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns true
+ * hasCheckersOutsideHomeBoard({ checkers: [{id: 1, lane: 20, player: PlayerType.PLAYER_TWO}, {id: 2, lane: 24, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_TWO }); // returns false
  *
  */
 export const hasCheckersOutsideHomeBoard = ( {
@@ -454,16 +454,16 @@ export const hasCheckersOutsideHomeBoard = ( {
 	}
 
 	// Check if there are any checkers outside of the home board
-	// For Player 1, home board is lanes 19-24
-	// For Player 2, home board is lanes 1-6
+	// For Player 1 (moves 24→1), home board is lanes 1-6 (last 6 points before bearing off)
+	// For Player 2 (moves 1→24), home board is lanes 19-24 (last 6 points before bearing off)
 	return playerCheckers.some( ( checker ) => {
 		if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 			// Bar is always outside home board
 			if ( checker.lane === 0 ) {
 				return true;
 			}
-			// For Player 1, home board is 19-24
-			return checker.lane < 19;
+			// For Player 1, home board is 1-6
+			return checker.lane > 6;
 		}
 
 		// currentPlayer === PlayerType.PLAYER_TWO
@@ -471,8 +471,8 @@ export const hasCheckersOutsideHomeBoard = ( {
 		if ( checker.lane === 25 ) {
 			return true;
 		}
-		// For Player 2, home board is 1-6
-		return checker.lane > 6;
+		// For Player 2, home board is 19-24
+		return checker.lane < 19;
 	} );
 };
 
@@ -502,14 +502,16 @@ const hasCheckersOnHigherPoints = ( {
 	);
 
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-		// For Player 1, higher points are lanes greater than the current lane (19-24 range)
+		// For Player 1 (moves 24→1), higher points are lanes greater than the current lane (1-6 range)
+		// Higher means closer to 6 (the highest point in Player 1's home board)
 		return playerCheckers.some(
-			( checker ) => checker.lane > lane && checker.lane >= 19 && checker.lane <= 24
+			( checker ) => checker.lane > lane && checker.lane >= 1 && checker.lane <= 6
 		);
 	} else {
-		// For Player 2, higher points are lanes less than the current lane (1-6 range)
+		// For Player 2 (moves 1→24), higher points are lanes greater than the current lane (19-24 range)
+		// Higher means closer to 24 (the highest point in Player 2's home board)
 		return playerCheckers.some(
-			( checker ) => checker.lane < lane && checker.lane >= 1 && checker.lane <= 6
+			( checker ) => checker.lane > lane && checker.lane >= 19 && checker.lane <= 24
 		);
 	}
 };
@@ -527,9 +529,9 @@ const hasCheckersOnHigherPoints = ( {
  *
  * @example
  *
- * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_ONE, checkers: [...] }); // returns true
- * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_TWO, checkers: [...] }); // returns false
- * wouldClearOffChecker({ die: 5, lane: 20, currentPlayer: PlayerType.PLAYER_ONE, checkers: [...] }); // returns false
+ * wouldClearOffChecker({ die: 6, lane: 6, currentPlayer: PlayerType.PLAYER_ONE, checkers: [...] }); // returns true
+ * wouldClearOffChecker({ die: 6, lane: 20, currentPlayer: PlayerType.PLAYER_TWO, checkers: [...] }); // returns true
+ * wouldClearOffChecker({ die: 5, lane: 3, currentPlayer: PlayerType.PLAYER_ONE, checkers: [...] }); // returns false
  *
  */
 export const wouldClearOffChecker = ( {
@@ -544,26 +546,54 @@ export const wouldClearOffChecker = ( {
 	checkers?: Checker[];
 } ): boolean => {
 	// Checkers can only be borne off from the home board
-	// For Player One, home board is lanes 19-24
-	// For Player Two, home board is lanes 1-6
+	// For Player One (moves 24→1), home board is lanes 1-6
+	// For Player Two (moves 1→24), home board is lanes 19-24
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
+		// Must be on the home board to bear off
+		if ( lane < 1 || lane > 6 ) {
+			return false;
+		}
+
+		// Calculate target lane (Player 1 moves decreasing: lane - die)
+		const targetLane = lane - die;
+
+		// If exact (target is exactly 0, which is the bearing off point), can bear off
+		if ( targetLane === 0 ) {
+			return true;
+		}
+
+		// If overshooting (target < 0), check if it's allowed
+		if ( targetLane < 0 ) {
+			// Can only overshoot if no checkers on higher points (closer to 6)
+			// e.g., from lane 2, die 5 goes to lane -3, which is overshoot
+			// Only valid if no checkers on lanes 3-6
+			return ! hasCheckersOnHigherPoints( {
+				checkers,
+				lane,
+				currentPlayer,
+			} );
+		}
+
+		// If target is still on board (target > 0), not bearing off
+		return false;
+	} else if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		// Must be on the home board to bear off
 		if ( lane < 19 || lane > 24 ) {
 			return false;
 		}
 
-		// Calculate target lane
-		const targetLane = lane - die;
+		// Calculate target lane (Player 2 moves increasing: lane + die)
+		const targetLane = lane + die;
 
-		// If exact (target is exactly 18, which is the bearing off point), can bear off
-		if ( targetLane === 18 ) {
+		// If exact (target is exactly 25, which is the bearing off point), can bear off
+		if ( targetLane === 25 ) {
 			return true;
 		}
 
-		// If overshooting (target < 18), check if it's allowed
-		if ( targetLane < 18 ) {
-			// Can only overshoot if no checkers on higher points
-			// e.g., from lane 20, die 5 goes to lane 15, which is overshoot
+		// If overshooting (target > 25), check if it's allowed
+		if ( targetLane > 25 ) {
+			// Can only overshoot if no checkers on higher points (closer to 24)
+			// e.g., from lane 20, die 6 goes to lane 26, which is overshoot
 			// Only valid if no checkers on lanes 21-24
 			return ! hasCheckersOnHigherPoints( {
 				checkers,
@@ -572,35 +602,7 @@ export const wouldClearOffChecker = ( {
 			} );
 		}
 
-		// If target is still on board (target > 18), not bearing off
-		return false;
-	} else if ( currentPlayer === PlayerType.PLAYER_TWO ) {
-		// Must be on the home board to bear off
-		if ( lane < 1 || lane > 6 ) {
-			return false;
-		}
-
-		// Calculate target lane
-		const targetLane = lane + die;
-
-		// If exact (target is exactly 7, which is the bearing off point), can bear off
-		if ( targetLane === 7 ) {
-			return true;
-		}
-
-		// If overshooting (target > 7), check if it's allowed
-		if ( targetLane > 7 ) {
-			// Can only overshoot if no checkers on higher points
-			// e.g., from lane 2, die 6 goes to lane 8, which is overshoot
-			// Only valid if no checkers on lanes 1-2
-			return ! hasCheckersOnHigherPoints( {
-				checkers,
-				lane,
-				currentPlayer,
-			} );
-		}
-
-		// If target is still on board (target < 7), not bearing off
+		// If target is still on board (target < 25), not bearing off
 		return false;
 	}
 
@@ -806,8 +808,8 @@ function canUseDie(
 			} else {
 				targetLane = checker.lane - die; // Player 1 moves from 24 to 1 (decreasing)
 			}
-			// Cannot bear off if not in home board
-			if ( targetLane > 24 && checker.lane < 19 && checker.lane !== 0 ) {
+			// Cannot bear off if not in home board (Player 1 home board is 1-6)
+			if ( targetLane < 0 && checker.lane > 6 && checker.lane !== 0 ) {
 				return false;
 			}
 		} else {
@@ -817,8 +819,8 @@ function canUseDie(
 			} else {
 				targetLane = checker.lane + die; // Player 2 moves from 1 to 24 (increasing)
 			}
-			// Cannot bear off if not in home board
-			if ( targetLane < 1 && checker.lane > 6 && checker.lane !== 25 ) {
+			// Cannot bear off if not in home board (Player 2 home board is 19-24)
+			if ( targetLane > 25 && checker.lane < 19 && checker.lane !== 25 ) {
 				return false;
 			}
 		}

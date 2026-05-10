@@ -87,29 +87,8 @@ const isValidBearOff = ( {
 		return false;
 	}
 
-	// For Player 1, home board is 19-24
+	// For Player 1, home board is 1-6 (moves 24→1)
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-		// Exact number needed from point 19
-		if ( lane === 19 && die === 6 ) return true;
-		// Exact number needed from point 20
-		if ( lane === 20 && die === 5 ) return true;
-		// Exact number needed from point 21
-		if ( lane === 21 && die === 4 ) return true;
-		// Exact number needed from point 22
-		if ( lane === 22 && die === 3 ) return true;
-		// Exact number needed from point 23
-		if ( lane === 23 && die === 2 ) return true;
-		// Exact number needed from point 24
-		if ( lane === 24 && die === 1 ) return true;
-
-		// Can use higher die when no checkers are on higher points
-		if ( die > 24 - lane ) {
-			return true;
-		}
-	}
-
-	// For Player 2, home board is 1-6
-	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		// Exact number needed from point 6
 		if ( lane === 6 && die === 6 ) return true;
 		// Exact number needed from point 5
@@ -125,6 +104,27 @@ const isValidBearOff = ( {
 
 		// Can use higher die when no checkers are on higher points
 		if ( die > lane ) {
+			return true;
+		}
+	}
+
+	// For Player 2, home board is 19-24 (moves 1→24)
+	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
+		// Exact number needed from point 19
+		if ( lane === 19 && die === 6 ) return true;
+		// Exact number needed from point 20
+		if ( lane === 20 && die === 5 ) return true;
+		// Exact number needed from point 21
+		if ( lane === 21 && die === 4 ) return true;
+		// Exact number needed from point 22
+		if ( lane === 22 && die === 3 ) return true;
+		// Exact number needed from point 23
+		if ( lane === 23 && die === 2 ) return true;
+		// Exact number needed from point 24
+		if ( lane === 24 && die === 1 ) return true;
+
+		// Can use higher die when no checkers are on higher points
+		if ( die > 24 - lane ) {
 			return true;
 		}
 	}
@@ -226,14 +226,14 @@ describe( 'Dice Usage Rules', () => {
 			const gameState: GameState = {
 				checkers: [
 					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 10 },
-					// Lane 15 and 16 are blocked
-					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 15 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 15 },
-					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 16 },
-					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 16 },
+					// Lanes 5 and 4 are blocked (Player 1 moves decreasing: 10-5=5, 10-6=4)
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 4 },
+					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 4 },
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 5, 6 ], // 5 would go to blocked lane 15, 6 would go to blocked lane 16
+				dice: [ 5, 6 ], // 5 would go to blocked lane 5, 6 would go to blocked lane 4
 				activeLane: null,
 				selectedDie: null,
 				error: null,
@@ -242,17 +242,17 @@ describe( 'Dice Usage Rules', () => {
 			// Get all available moves
 			const allMoves = getAllAvailableMoves( gameState );
 
-			// In this scenario, both lanes 15 and 16 are blocked, so there are no valid moves
+			// In this scenario, both lanes 5 and 4 are blocked, so there are no valid moves
 			expect( allMoves ).toHaveLength( 0 );
 
-			// If we modify so lane 16 isn't blocked
+			// If we modify so lane 4 isn't blocked
 			const modifiedGameState = {
 				...gameState,
 				checkers: [
 					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 10 },
-					// Only lane 15 is blocked
-					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 15 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 15 },
+					// Only lane 5 is blocked
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 5 },
 				],
 			};
 
@@ -300,12 +300,12 @@ describe( 'Dice Usage Rules', () => {
 
 	describe( 'Bearing Off Rules', () => {
 		it( 'should require exact count for bearing off when higher points have checkers', () => {
-			// Player 1 with checkers on 21, 22, 24
+			// Player 1 with checkers on 3, 4, 6 (home board is 1-6)
 			const gameState: GameState = {
 				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 21 },
-					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 22 },
-					{ id: 3, player: PlayerType.PLAYER_ONE, lane: 24 },
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 3 },
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 4 },
+					{ id: 3, player: PlayerType.PLAYER_ONE, lane: 6 },
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
 				dice: [ 2, 3 ],
@@ -314,31 +314,31 @@ describe( 'Dice Usage Rules', () => {
 				error: null,
 			};
 
-			// Check valid bear off for lane 24 with die 1 (exact)
+			// Check valid bear off for lane 6 with die 6 (exact)
 			expect(
 				isValidBearOff( {
-					die: 1,
-					lane: 24,
+					die: 6,
+					lane: 6,
 					currentPlayer: PlayerType.PLAYER_ONE,
 					hasCheckersOutsideHomeBoard: false,
 				} )
 			).toBe( true );
 
-			// Can't bear off with lane 24 and die 2 (not exact and other checkers on higher points)
+			// Can't bear off with lane 6 and die 5 (not exact and other checkers on higher points)
 			expect(
 				isValidBearOff( {
-					die: 2,
-					lane: 24,
+					die: 5,
+					lane: 6,
 					currentPlayer: PlayerType.PLAYER_ONE,
 					hasCheckersOutsideHomeBoard: false,
 				} )
 			).toBe( false );
 
-			// Check valid bear off for lane 22 with die 3 (exact)
+			// Check valid bear off for lane 4 with die 4 (exact)
 			expect(
 				isValidBearOff( {
-					die: 3,
-					lane: 22,
+					die: 4,
+					lane: 4,
 					currentPlayer: PlayerType.PLAYER_ONE,
 					hasCheckersOutsideHomeBoard: false,
 				} )
@@ -346,33 +346,33 @@ describe( 'Dice Usage Rules', () => {
 		} );
 
 		it( 'should allow bearing off with higher dice when no checkers on higher points', () => {
-			// Player 1 with checker only on lane 21
+			// Player 1 with checker only on lane 3 (home board is 1-6)
 			const gameState: GameState = {
 				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 21 },
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 3 },
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 4, 6 ],
+				dice: [ 3, 6 ],
 				activeLane: null,
 				selectedDie: null,
 				error: null,
 			};
 
-			// Can bear off with lane 21 and die 4 (exact)
+			// Can bear off with lane 3 and die 3 (exact)
 			expect(
 				isValidBearOff( {
-					die: 4,
-					lane: 21,
+					die: 3,
+					lane: 3,
 					currentPlayer: PlayerType.PLAYER_ONE,
 					hasCheckersOutsideHomeBoard: false,
 				} )
 			).toBe( true );
 
-			// Can also bear off with lane 21 and die 6 (higher die and no checkers on higher points)
+			// Can also bear off with lane 3 and die 6 (higher die and no checkers on higher points)
 			expect(
 				isValidBearOff( {
 					die: 6,
-					lane: 21,
+					lane: 3,
 					currentPlayer: PlayerType.PLAYER_ONE,
 					hasCheckersOutsideHomeBoard: false,
 				} )
@@ -380,79 +380,102 @@ describe( 'Dice Usage Rules', () => {
 		} );
 
 		it( 'should handle Player 2 bearing off correctly', () => {
-			// Player 2 with checkers on lanes 2, 3, 4
+			// Player 2 with checkers on lanes 20, 21, 22 (home board is 19-24)
 			const gameState: GameState = {
 				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_TWO, lane: 2 },
-					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 3 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 4 },
+					{ id: 1, player: PlayerType.PLAYER_TWO, lane: 20 },
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 21 },
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 22 },
 				],
 				currentPlayer: PlayerType.PLAYER_TWO,
-				dice: [ 2, 3 ],
+				dice: [ 4, 5 ],
 				activeLane: null,
 				selectedDie: null,
 				error: null,
 			};
 
-			// Can bear off with lane 2 and die 2 (exact)
+			// Can bear off with lane 20 and die 5 (exact: 20 + 5 = 25)
 			expect(
 				isValidBearOff( {
-					die: 2,
-					lane: 2,
+					die: 5,
+					lane: 20,
 					currentPlayer: PlayerType.PLAYER_TWO,
 					hasCheckersOutsideHomeBoard: false,
 				} )
 			).toBe( true );
 
-			// Can bear off with lane 3 and die 3 (exact)
+			// Can bear off with lane 21 and die 4 (exact: 21 + 4 = 25)
+			expect(
+				isValidBearOff( {
+					die: 4,
+					lane: 21,
+					currentPlayer: PlayerType.PLAYER_TWO,
+					hasCheckersOutsideHomeBoard: false,
+				} )
+			).toBe( true );
+
+			// Can't bear off with lane 21 and die 3 (not exact with checker on higher point)
 			expect(
 				isValidBearOff( {
 					die: 3,
-					lane: 3,
-					currentPlayer: PlayerType.PLAYER_TWO,
-					hasCheckersOutsideHomeBoard: false,
-				} )
-			).toBe( true );
-
-			// Can't bear off with lane 3 and die 2 (not exact with checker on higher point)
-			expect(
-				isValidBearOff( {
-					die: 2,
-					lane: 3,
+					lane: 21,
 					currentPlayer: PlayerType.PLAYER_TWO,
 					hasCheckersOutsideHomeBoard: false,
 				} )
 			).toBe( false );
 
-			// Player 2 with checker only on lane 2
+			// Player 2 with checker only on lane 20
 			const modifiedGameState: GameState = {
-				checkers: [ { id: 1, player: PlayerType.PLAYER_TWO, lane: 2 } ],
+				checkers: [ { id: 1, player: PlayerType.PLAYER_TWO, lane: 20 } ],
 				currentPlayer: PlayerType.PLAYER_TWO,
-				dice: [ 3, 4 ],
+				dice: [ 5, 6 ],
 				activeLane: null,
 				selectedDie: null,
 				error: null,
 			};
 
-			// Can bear off with lane 2 and die 3 (higher die, no checkers on higher points)
+			// Can bear off with lane 20 and die 6 (higher die, no checkers on higher points)
 			expect(
 				isValidBearOff( {
-					die: 3,
-					lane: 2,
+					die: 6,
+					lane: 20,
 					currentPlayer: PlayerType.PLAYER_TWO,
 					hasCheckersOutsideHomeBoard: false,
 				} )
 			).toBe( true );
 		} );
 
-		it( 'only allows Player 1 to bear off when all checkers are in home board (lanes 19-24)', () => {
+		it( 'only allows Player 1 to bear off when all checkers are in home board (lanes 1-6)', () => {
 			// Can't bear off while checkers are outside home board
 			const game = createMockGame( {
 				currentPlayer: PlayerType.PLAYER_ONE,
 				checkers: [
-					// For Player 1, home board is 19-24
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 18 }, // Outside home board
-					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 20 }, // In home board
+					// For Player 1, home board is 1-6
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 7 }, // Outside home board
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 }, // In home board
+				],
+				dice: [ 3 ],
+			} );
+
+			// Should not be able to bear off from lane 3 with die 3
+			// since there's a checker outside home board
+			const lane3Moves = getAvailableLanes( {
+				currentPlayer: PlayerType.PLAYER_ONE,
+				lane: 3,
+				dice: game.dice,
+				checkers: game.checkers,
+			} );
+
+			expect( lane3Moves ).toEqual( {} );
+		} );
+
+		it( 'only allows Player 2 to bear off when all checkers are in home board (lanes 19-24)', () => {
+			const game = createMockGame( {
+				currentPlayer: PlayerType.PLAYER_TWO,
+				checkers: [
+					// For Player 2, home board is 19-24
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 18 }, // Outside home board
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 20 }, // In home board
 				],
 				dice: [ 5 ],
 			} );
@@ -460,37 +483,15 @@ describe( 'Dice Usage Rules', () => {
 			// Should not be able to bear off from lane 20 with die 5
 			// since there's a checker outside home board
 			const lane20Moves = getAvailableLanes( {
-				currentPlayer: PlayerType.PLAYER_ONE,
+				currentPlayer: PlayerType.PLAYER_TWO,
 				lane: 20,
 				dice: game.dice,
 				checkers: game.checkers,
 			} );
 
+			// Should not be able to bear off since checkers are outside home board
+			// Normal moves would go to lane 25 (20 + 5), but that's bearing off, which is blocked
 			expect( lane20Moves ).toEqual( {} );
-		} );
-
-		it( 'only allows Player 2 to bear off when all checkers are in home board (lanes 1-6)', () => {
-			const game = createMockGame( {
-				currentPlayer: PlayerType.PLAYER_TWO,
-				checkers: [
-					// For Player 2, home board is 1-6
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 7 }, // Outside home board
-					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 }, // In home board
-				],
-				dice: [ 5 ],
-			} );
-
-			// Should not be able to bear off from lane 5 with die 5
-			// since there's a checker outside home board
-			const lane5Moves = getAvailableLanes( {
-				currentPlayer: PlayerType.PLAYER_TWO,
-				lane: 5,
-				dice: game.dice,
-				checkers: game.checkers,
-			} );
-
-			// Only normal moves allowed (not bearing off)
-			expect( lane5Moves ).toEqual( { 5: 0 } );
 		} );
 	} );
 
@@ -499,13 +500,13 @@ describe( 'Dice Usage Rules', () => {
 			const gameState: GameState = {
 				checkers: [
 					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 10 },
-					// Most lanes are blocked
-					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 13 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 13 },
-					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 14 },
-					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 14 },
-					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 15 },
-					{ id: 7, player: PlayerType.PLAYER_TWO, lane: 15 },
+					// Most lanes are blocked (Player 1 moves decreasing: 10-2=8, 10-6=4)
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 4 },
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 4 },
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 6 },
+					{ id: 7, player: PlayerType.PLAYER_TWO, lane: 6 },
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
 				dice: [ 2, 6 ],
@@ -517,7 +518,7 @@ describe( 'Dice Usage Rules', () => {
 			// Get all available moves
 			const allMoves = getAllAvailableMoves( gameState );
 
-			// Should have only one valid move (using die 2)
+			// Should have only one valid move (using die 2, since die 6 goes to blocked lane 4)
 			// Player 1 moves decreasing: 10 - 2 = 8
 			expect( allMoves ).toHaveLength( 1 );
 			expect( allMoves[ 0 ] ).toEqual( { from: 10, to: 8, die: 2 } );
@@ -529,7 +530,7 @@ describe( 'Dice Usage Rules', () => {
 			expect( requiredMoves ).toHaveLength( 1 );
 			expect( requiredMoves[ 0 ] ).toEqual( {
 				from: 10,
-				to: 12,
+				to: 8,
 				die: 2,
 			} );
 		} );
@@ -538,17 +539,18 @@ describe( 'Dice Usage Rules', () => {
 			const gameState: GameState = {
 				checkers: [
 					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 10 },
-					// All potential landing spots are blocked
-					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 12 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 12 },
-					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 13 },
-					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 13 },
-					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 14 },
-					{ id: 7, player: PlayerType.PLAYER_TWO, lane: 14 },
-					{ id: 8, player: PlayerType.PLAYER_TWO, lane: 15 },
-					{ id: 9, player: PlayerType.PLAYER_TWO, lane: 15 },
-					{ id: 10, player: PlayerType.PLAYER_TWO, lane: 16 },
-					{ id: 11, player: PlayerType.PLAYER_TWO, lane: 16 },
+					// All potential landing spots are blocked (Player 1 moves decreasing)
+					// From lane 10: can move to 8 (10-2), 7 (10-3), 6 (10-4), 5 (10-5), 4 (10-6)
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 4 },
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 4 },
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 6 },
+					{ id: 7, player: PlayerType.PLAYER_TWO, lane: 6 },
+					{ id: 8, player: PlayerType.PLAYER_TWO, lane: 7 },
+					{ id: 9, player: PlayerType.PLAYER_TWO, lane: 7 },
+					{ id: 10, player: PlayerType.PLAYER_TWO, lane: 8 },
+					{ id: 11, player: PlayerType.PLAYER_TWO, lane: 8 },
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
 				dice: [ 2, 3, 4, 5, 6 ],

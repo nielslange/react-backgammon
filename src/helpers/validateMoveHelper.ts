@@ -99,8 +99,9 @@ function canUseDie(
 			} else {
 				targetLane = checker.lane - die; // Player 1 moves from 24 to 1 (decreasing)
 			}
-			// Cannot bear off if not in home board or would overshoot
-			if ( targetLane > 24 && checker.lane < 19 && checker.lane !== 0 ) {
+			// Cannot bear off if not in home board (Player 1 home board is 1-6)
+			// If would overshoot (targetLane < 0) and not in home board, invalid
+			if ( targetLane < 0 && checker.lane > 6 && checker.lane !== 0 ) {
 				return false;
 			}
 		} else {
@@ -110,8 +111,9 @@ function canUseDie(
 			} else {
 				targetLane = checker.lane + die; // Player 2 moves from 1 to 24 (increasing)
 			}
-			// Cannot bear off if not in home board or would overshoot
-			if ( targetLane < 1 && checker.lane > 6 && checker.lane !== 25 ) {
+			// Cannot bear off if not in home board (Player 2 home board is 19-24)
+			// If would overshoot (targetLane > 25) and not in home board, invalid
+			if ( targetLane > 25 && checker.lane < 19 && checker.lane !== 25 ) {
 				return false;
 			}
 		}

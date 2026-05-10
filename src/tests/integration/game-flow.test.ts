@@ -306,28 +306,29 @@ describe( 'Game Flow', () => {
 	describe( 'Complete Game Simulation', () => {
 		it( 'should simulate a basic game flow until a player wins', () => {
 			// For testing purposes, we'll use a simplified board with just a few checkers
+			// Player 1 home board is 1-6, Player 2 home board is 19-24
 			const initialState: GameState = {
 				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 23 },
-					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 24 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 1 },
-					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 2 },
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 5 }, // In home board (1-6)
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 6 }, // In home board
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 20 }, // In home board (19-24)
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 21 }, // In home board
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 1, 2 ],
+				dice: [ 5, 6 ],
 				activeLane: null,
 				selectedDie: null,
 				error: null,
 				winner: null,
 			};
 
-			// Player 1's turn - bear off both checkers
-			const afterPlayer1Move1 = simulateMove( initialState, 24, -1, 1 );
+			// Player 1's turn - bear off both checkers (bearing off to 0)
+			const afterPlayer1Move1 = simulateMove( initialState, 6, 0, 6 );
 			const afterPlayer1Move2 = simulateMove(
 				afterPlayer1Move1,
-				23,
-				-1,
-				2
+				5,
+				0,
+				5
 			);
 
 			// Should now be Player 2's turn
@@ -338,16 +339,16 @@ describe( 'Game Flow', () => {
 			// Let's give Player 2 new dice
 			const player2Turn = {
 				...afterPlayer1Move2,
-				dice: [ 2, 3 ],
+				dice: [ 4, 5 ],
 			};
 
-			// Player 2 also bears off their checkers
-			const afterPlayer2Move1 = simulateMove( player2Turn, 2, -1, 2 );
+			// Player 2 also bears off their checkers (bearing off to 25)
+			const afterPlayer2Move1 = simulateMove( player2Turn, 21, 25, 4 );
 			const afterPlayer2Move2 = simulateMove(
 				afterPlayer2Move1,
-				1,
-				-1,
-				3
+				20,
+				25,
+				5
 			);
 
 			// Player 2 should win

@@ -49,16 +49,16 @@ describe( 'Game Logic Integration Tests', () => {
 
 	describe( 'Bearing Off Logic', () => {
 		it( 'should only allow bearing off when all checkers are in home board (Player 1)', () => {
-			// Player 1 has all checkers in home board
+			// Player 1 has all checkers in home board (home board is lanes 1-6)
 			const allInHomeBoard = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 19 }, // Home board starts at lane 19
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 24 },
+				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 1 }, // Home board is lanes 1-6
+				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 6 },
 			];
 
 			// Player 1 has one checker outside home board
 			const oneOutsideHomeBoard = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 18 }, // Outside home board
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 20 },
+				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 7 }, // Outside home board
+				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 },
 			];
 
 			// hasCheckersOutsideHomeBoard should be false when all checkers are in home board
@@ -78,63 +78,12 @@ describe( 'Game Logic Integration Tests', () => {
 			).toBe( true );
 
 			// wouldClearOffChecker should correctly identify bearing off moves from home board
-			// From lane 24, die 6 is exact (24 - 6 = 18)
+			// From lane 6, die 6 is exact (6 - 6 = 0)
 			expect(
 				wouldClearOffChecker( {
 					die: 6,
-					lane: 24,
+					lane: 6,
 					currentPlayer: PlayerType.PLAYER_ONE,
-					checkers: allInHomeBoard,
-				} )
-			).toBe( true );
-
-			// wouldClearOffChecker should correctly reject bearing off from outside home board
-			expect(
-				wouldClearOffChecker( {
-					die: 10,
-					lane: 18,
-					currentPlayer: PlayerType.PLAYER_ONE,
-					checkers: oneOutsideHomeBoard,
-				} )
-			).toBe( false );
-		} );
-
-		it( 'should only allow bearing off when all checkers are in home board (Player 2)', () => {
-			// Player 2 has all checkers in home board
-			const allInHomeBoard = [
-				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 1 }, // Home board starts at lane 1
-				{ id: 4, player: PlayerType.PLAYER_TWO, lane: 6 },
-			];
-
-			// Player 2 has one checker outside home board
-			const oneOutsideHomeBoard = [
-				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 7 }, // Outside home board
-				{ id: 4, player: PlayerType.PLAYER_TWO, lane: 5 },
-			];
-
-			// hasCheckersOutsideHomeBoard should be false when all checkers are in home board
-			expect(
-				hasCheckersOutsideHomeBoard( {
-					checkers: allInHomeBoard,
-					currentPlayer: PlayerType.PLAYER_TWO,
-				} )
-			).toBe( false );
-
-			// hasCheckersOutsideHomeBoard should be true when a checker is outside home board
-			expect(
-				hasCheckersOutsideHomeBoard( {
-					checkers: oneOutsideHomeBoard,
-					currentPlayer: PlayerType.PLAYER_TWO,
-				} )
-			).toBe( true );
-
-			// wouldClearOffChecker should correctly identify bearing off moves from home board
-			// From lane 3, die 4 is exact (3 + 4 = 7)
-			expect(
-				wouldClearOffChecker( {
-					die: 4,
-					lane: 3,
-					currentPlayer: PlayerType.PLAYER_TWO,
 					checkers: allInHomeBoard,
 				} )
 			).toBe( true );
@@ -144,6 +93,57 @@ describe( 'Game Logic Integration Tests', () => {
 				wouldClearOffChecker( {
 					die: 10,
 					lane: 7,
+					currentPlayer: PlayerType.PLAYER_ONE,
+					checkers: oneOutsideHomeBoard,
+				} )
+			).toBe( false );
+		} );
+
+		it( 'should only allow bearing off when all checkers are in home board (Player 2)', () => {
+			// Player 2 has all checkers in home board (home board is lanes 19-24)
+			const allInHomeBoard = [
+				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 19 }, // Home board is lanes 19-24
+				{ id: 4, player: PlayerType.PLAYER_TWO, lane: 24 },
+			];
+
+			// Player 2 has one checker outside home board
+			const oneOutsideHomeBoard = [
+				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 18 }, // Outside home board
+				{ id: 4, player: PlayerType.PLAYER_TWO, lane: 20 },
+			];
+
+			// hasCheckersOutsideHomeBoard should be false when all checkers are in home board
+			expect(
+				hasCheckersOutsideHomeBoard( {
+					checkers: allInHomeBoard,
+					currentPlayer: PlayerType.PLAYER_TWO,
+				} )
+			).toBe( false );
+
+			// hasCheckersOutsideHomeBoard should be true when a checker is outside home board
+			expect(
+				hasCheckersOutsideHomeBoard( {
+					checkers: oneOutsideHomeBoard,
+					currentPlayer: PlayerType.PLAYER_TWO,
+				} )
+			).toBe( true );
+
+			// wouldClearOffChecker should correctly identify bearing off moves from home board
+			// From lane 20, die 5 is exact (20 + 5 = 25)
+			expect(
+				wouldClearOffChecker( {
+					die: 5,
+					lane: 20,
+					currentPlayer: PlayerType.PLAYER_TWO,
+					checkers: allInHomeBoard,
+				} )
+			).toBe( true );
+
+			// wouldClearOffChecker should correctly reject bearing off from outside home board
+			expect(
+				wouldClearOffChecker( {
+					die: 10,
+					lane: 18,
 					currentPlayer: PlayerType.PLAYER_TWO,
 					checkers: oneOutsideHomeBoard,
 				} )
@@ -153,8 +153,8 @@ describe( 'Game Logic Integration Tests', () => {
 		it( 'should detect checkers outside home board prevents bearing off (Player 1)', () => {
 			// Player 1 has one checker outside home board and one in home board
 			const checkers = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 18 }, // Outside home board
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 24 }, // In home board
+				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 7 }, // Outside home board (home board is 1-6)
+				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 }, // In home board
 			];
 
 			// Should detect that checkers are outside home board
@@ -173,8 +173,8 @@ describe( 'Game Logic Integration Tests', () => {
 		it( 'should detect checkers outside home board prevents bearing off (Player 2)', () => {
 			// Player 2 has one checker outside home board and one in home board
 			const checkers = [
-				{ id: 1, player: PlayerType.PLAYER_TWO, lane: 7 }, // Outside home board
-				{ id: 2, player: PlayerType.PLAYER_TWO, lane: 1 }, // In home board
+				{ id: 1, player: PlayerType.PLAYER_TWO, lane: 18 }, // Outside home board (home board is 19-24)
+				{ id: 2, player: PlayerType.PLAYER_TWO, lane: 20 }, // In home board
 			];
 
 			// Should detect that checkers are outside home board
@@ -196,21 +196,21 @@ describe( 'Game Logic Integration Tests', () => {
 			// Set up a realistic game state
 			const gameState = {
 				checkers: [
-					// Player 1 checkers
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 19 },
-					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 20 },
-					{ id: 3, player: PlayerType.PLAYER_ONE, lane: 22 },
+					// Player 1 checkers (home board is 1-6)
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 1 },
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 },
+					{ id: 3, player: PlayerType.PLAYER_ONE, lane: 5 },
 
-					// Player 2 checkers
-					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 3 },
-					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 5 },
-					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 7 }, // Outside home board
+					// Player 2 checkers (home board is 19-24)
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 20 },
+					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 22 },
+					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 18 }, // Outside home board
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
 				dice: [ 3, 5 ],
 			};
 
-			// Player 1 has all checkers in home board
+			// Player 1 has all checkers in home board (home board is 1-6)
 			expect(
 				hasCheckersOutsideHomeBoard( {
 					checkers: gameState.checkers,
@@ -218,7 +218,7 @@ describe( 'Game Logic Integration Tests', () => {
 				} )
 			).toBe( false );
 
-			// Player 2 has one checker outside home board
+			// Player 2 has one checker outside home board (home board is 19-24)
 			expect(
 				hasCheckersOutsideHomeBoard( {
 					checkers: gameState.checkers,
@@ -226,11 +226,11 @@ describe( 'Game Logic Integration Tests', () => {
 				} )
 			).toBe( true );
 
-			// Player 1 can bear off from lane 22 with a die of 4 (exact: 22 - 4 = 18)
+			// Player 1 can bear off from lane 3 with a die of 3 (exact: 3 - 3 = 0)
 			expect(
 				wouldClearOffChecker( {
-					die: 4,
-					lane: 22,
+					die: 3,
+					lane: 3,
 					currentPlayer: PlayerType.PLAYER_ONE,
 					checkers: gameState.checkers,
 				} )

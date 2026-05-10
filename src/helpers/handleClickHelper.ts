@@ -198,9 +198,10 @@ export const handleClick = (
 	// Check if attempting to bear off when checkers are outside home board
 	// This check must happen BEFORE any bearing off logic, as bearing off is only allowed
 	// when ALL checkers are in the home board
+	// Player 1 (moves 24→1) bears off to 0, Player 2 (moves 1→24) bears off to 25
 	const isBearingOff =
-		( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 25 ) ||
-		( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 0 );
+		( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 0 ) ||
+		( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 25 );
 
 	if ( isBearingOff && hasCheckersOutsideHomeBoard( { checkers, currentPlayer } ) ) {
 		console.log( 'Preventing bearing off due to checkers outside endzone' );

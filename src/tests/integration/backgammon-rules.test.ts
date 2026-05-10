@@ -384,8 +384,8 @@ describe( 'Backgammon Rules', () => {
 			const gameState: GameState = {
 				checkers: [
 					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 10 },
-					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 15 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 15 }, // Blocked point
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 5 },
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 5 }, // Blocked point (lane 5)
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
 				dice: [ 5, 6 ],
@@ -396,8 +396,8 @@ describe( 'Backgammon Rules', () => {
 
 			const moves = getAvailableMoves( gameState );
 
-			// Should have only 1 possible move (using die 6, since die 5 would go to blocked point)
-			// Player 1 moves decreasing: 10 - 6 = 4
+			// Should have only 1 possible move (using die 6, since die 5 would go to blocked point 5)
+			// Player 1 moves decreasing: 10 - 5 = 5 (blocked), 10 - 6 = 4 (open)
 			expect( moves ).toHaveLength( 1 );
 			expect( moves[ 0 ] ).toEqual( { from: 10, to: 4, die: 6 } );
 		} );
@@ -428,48 +428,48 @@ describe( 'Backgammon Rules', () => {
 		} );
 
 		it( 'Player 1 can bear off when checkers are all in home board', () => {
-			// Player 1 has all checkers in home board
+			// Player 1 has all checkers in home board (home board is lanes 1-6)
 			const game = {
 				...initialState,
 				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 4 ], // Die 4 from lane 22: 22 - 4 = 18 (exact bearing off)
+				dice: [ 4 ], // Die 4 from lane 4: 4 - 4 = 0 (exact bearing off)
 				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 22 }, // Home board starts at lane 19
-					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 24 },
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 4 }, // Home board is lanes 1-6
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 6 },
 				],
 			};
 
 			const availableMoves = getAvailableLanes( {
 				dice: game.dice,
-				lane: 22,
+				lane: 4,
 				checkers: game.checkers,
 				currentPlayer: game.currentPlayer,
 			} );
 
-			// With die 4, from lane 22, checker should be able to bear off (22 - 4 = 18, exact)
-			expect( availableMoves ).toEqual( { 4: 25 } );
+			// With die 4, from lane 4, checker should be able to bear off (4 - 4 = 0, exact)
+			expect( availableMoves ).toEqual( { 4: 0 } );
 		} );
 	} );
 
 	describe( 'Legal Move Detection', () => {
 		it( 'should identify when a player has no legal moves', () => {
-			// Player 1 has all checkers in home board
+			// Player 1 has all checkers in home board (home board is lanes 1-6)
 			const gameState: GameState = {
 				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 19 }, // Home board starts at lane 19
-					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 20 },
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 1 }, // Home board is lanes 1-6
+					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 },
 					// Player 2 has blocked all possible landing spots
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 21 },
-					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 21 },
-					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 22 },
-					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 22 },
-					{ id: 7, player: PlayerType.PLAYER_TWO, lane: 23 },
-					{ id: 8, player: PlayerType.PLAYER_TWO, lane: 23 },
-					{ id: 9, player: PlayerType.PLAYER_TWO, lane: 24 },
-					{ id: 10, player: PlayerType.PLAYER_TWO, lane: 24 },
+					// From lane 1 with die 1: would go to 0 (bearing off, but need exact or overshoot)
+					// From lane 1 with die 2: would go to -1 (overshoot, but need no checkers on higher points)
+					// From lane 3 with die 1: would go to 2 (blocked)
+					// From lane 3 with die 2: would go to 1 (blocked)
+					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 2 },
+					{ id: 4, player: PlayerType.PLAYER_TWO, lane: 2 },
+					{ id: 5, player: PlayerType.PLAYER_TWO, lane: 1 },
+					{ id: 6, player: PlayerType.PLAYER_TWO, lane: 1 },
 				],
 				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 1, 2 ], // Not enough to bear off either checker
+				dice: [ 1, 2 ], // Not enough to bear off either checker (need exact or overshoot with no higher points)
 				activeLane: null,
 				selectedDie: null,
 				error: null,
