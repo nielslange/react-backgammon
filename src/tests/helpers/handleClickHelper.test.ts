@@ -1,44 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { handleClick } from '../../helpers/handleClickHelper';
-import { PlayerType } from '../../types';
-import * as selectors from '../../data/selectors';
+import { MessageType, PlayerType } from '../../types';
+import type { CheckerType } from '../../types';
 
-// Mock the necessary functions
-vi.mock( '../../data/selectors', () => ( {
-	hasDiceBeenRolled: vi.fn(),
-	hasWaitingChecker: vi.fn(),
-	hasCheckersOutsideHomeBoard: vi.fn(),
-	wouldClearOffChecker: vi.fn(),
-	isCheckerOnTheBoard: vi.fn(),
-	getTargetLane: vi.fn(),
-	isCurrentPlayer: vi.fn(),
-	isCheckerClearedOff: vi.fn(),
-	isTargetOccupiedByCurrentPlayer: vi.fn(),
-	isTargetOccupiedByOtherPlayer: vi.fn(),
-	willHitOpponent: vi.fn(),
-	getHitCheckerId: vi.fn(),
-	hasPlayerWon: vi.fn(),
-	calculatePipCount: vi.fn(),
-} ) );
-
-// Mock updateGame and checkForWin helpers
-vi.mock( '../../helpers/updateGameHelper', () => ( {
-	updateGame: vi.fn( ( dispatch, checkers, dice, notice, currentPlayer ) => {
-		// Simple mock that dispatches the action
-		dispatch( {
-			type: 'UPDATE_GAME',
-			payload: { checkers, dice, notice, currentPlayer },
-		} );
-	} ),
-} ) );
-
-vi.mock( '../../helpers/checkForWinHelper', () => ( {
-	checkForWin: vi.fn( () => null ),
-} ) );
-
-// Mock event with target lane
-const createMockEvent = ( lane ) => ( {
+// Light mock for the click event — handleClick reads
+// `event.target.closest('.lane').dataset.lane`.
+const eventForLane = ( lane: number ) => ( {
 	target: {
 		closest: vi.fn().mockReturnValue( {
 			dataset: { lane: String( lane ) },
@@ -46,210 +14,147 @@ const createMockEvent = ( lane ) => ( {
 	},
 } );
 
-interface Checker {
+type Params = {
 	id: number;
-	lane: number;
 	player: PlayerType;
-}
-
-interface GameState {
-	checkers: Checker[];
-	currentPlayer: PlayerType;
 	dice: number[];
-	activeLane: number | null;
-	selectedDie: number | null;
-	error: string | null;
-	playerOneName: string;
-	playerTwoName: string;
-	displayedRoll: number[] | null;
-	winner: PlayerType | null;
-	isRolling: boolean;
-}
+	currentPlayer: PlayerType;
+	checkers: CheckerType[];
+	die: number;
+	dispatch: ( a: any ) => void;
+};
 
-describe( 'handleClick', () => {
-	let mockParams;
-	let mockDispatch;
-
-	beforeEach( () => {
-		// Reset mocks
-		vi.resetAllMocks();
-
-		// Setup default mock parameters
-		mockDispatch = vi.fn();
-		mockParams = {
+const setup = ( overrides: Partial< Params > = {} ): {
+	params: Params;
+	dispatched: any[];
+} => {
+	const dispatched: any[] = [];
+	const dispatch = ( a: any ) => {
+		dispatched.push( a );
+		return a;
+	};
+	return {
+		dispatched,
+		params: {
 			id: 1,
 			player: PlayerType.PLAYER_ONE,
 			dice: [ 3, 5 ],
 			currentPlayer: PlayerType.PLAYER_ONE,
-			checkers: [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 5 },
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 10 },
-				{ id: 3, player: PlayerType.PLAYER_TWO, lane: 15 },
-			],
+			checkers: [],
 			die: 3,
-			dispatch: mockDispatch,
-		};
+			dispatch,
+			...overrides,
+		},
+	};
+};
 
-		// Mock hasDiceBeenRolled to return true by default
-		( selectors.hasDiceBeenRolled as any ).mockReturnValue( true );
-		
-		// Mock other selectors with default values
-		( selectors.isCurrentPlayer as any ).mockReturnValue( true );
-		( selectors.isCheckerOnTheBoard as any ).mockReturnValue( true );
-		( selectors.isCheckerClearedOff as any ).mockReturnValue( false );
-		( selectors.isTargetOccupiedByCurrentPlayer as any ).mockReturnValue( false );
-		( selectors.isTargetOccupiedByOtherPlayer as any ).mockReturnValue( false );
-		( selectors.willHitOpponent as any ).mockReturnValue( false );
-		( selectors.getHitCheckerId as any ).mockReturnValue( null );
-		( selectors.hasPlayerWon as any ).mockReturnValue( false );
+describe( 'handleClick — bar precedence', () => {
+	it( 'rejects moving a non-bar checker while a checker is on the bar', () => {
+		const checkers: CheckerType[] = [
+			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 0 }, // bar
+			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 5 },
+		];
+		const { params, dispatched } = setup( {
+			id: 2,
+			checkers,
+			dice: [ 3 ],
+			die: 3,
+		} );
 
-		// Mock getTargetLane to return correct calculation based on direction
-		// Player 1 moves decreasing (24→1), Player 2 moves increasing (1→24)
-		( selectors.getTargetLane as any ).mockImplementation(
-			( { currentPlayer, lane, die } ) => {
-				if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-					if ( lane === 0 ) return 25 - die; // Bar entry
-					if ( lane >= 1 && lane <= 6 && lane - die < 1 ) return 0; // Bearing off
-					return lane - die; // Normal movement
-				} else {
-					if ( lane === 25 ) return die; // Bar entry
-					if ( lane >= 19 && lane <= 24 && lane + die > 24 ) return 25; // Bearing off
-					return lane + die; // Normal movement
-				}
-			}
+		handleClick( eventForLane( 5 ), params );
+
+		const notice = dispatched.find( ( a ) => a.type === 'SET_NOTICE' );
+		expect( notice ).toBeDefined();
+		expect( notice.notice.message ).toBe( MessageType.WAITING_CHECKER );
+	} );
+
+	it( 'allows moving the bar checker itself when it can re-enter', () => {
+		const checkers: CheckerType[] = [
+			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 0 },
+		];
+		const { params, dispatched } = setup( {
+			id: 1,
+			checkers,
+			dice: [ 3 ],
+			die: 3,
+		} );
+
+		handleClick( eventForLane( 0 ), params );
+
+		expect(
+			dispatched.some( ( a ) => a.type === 'MOVE_CHECKER' )
+		).toBe( true );
+	} );
+} );
+
+describe( 'handleClick — bearing off', () => {
+	it( 'rejects bear-off when a checker is still outside home', () => {
+		const checkers: CheckerType[] = [
+			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 6 },
+			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 13 }, // outside home
+		];
+		const { params, dispatched } = setup( {
+			id: 1,
+			checkers,
+			dice: [ 6 ],
+			die: 6,
+		} );
+
+		handleClick( eventForLane( 6 ), params );
+
+		const notice = dispatched.find( ( a ) => a.type === 'SET_NOTICE' );
+		expect( notice ).toBeDefined();
+		expect( notice.notice.message ).toBe(
+			MessageType.NOT_ALL_CHECKERS_IN_END_ZONE
 		);
 	} );
 
-	describe( 'Waiting Checker Logic', () => {
-		it( 'should enforce moving a waiting checker first', () => {
-			// Setup: Player has a waiting checker on the bar
-			mockParams.checkers = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 0 }, // Waiting checker on bar
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 5 },
-			];
-
-			( selectors.hasWaitingChecker as any ).mockReturnValue( true );
-
-			// Try to move a non-waiting checker from lane 5
-			const mockEvent = createMockEvent( 5 );
-			handleClick( mockEvent, mockParams );
-
-			// Should dispatch error notice about waiting checker
-			expect( mockDispatch ).toHaveBeenCalled();
-			// Note: The exact format of the error depends on implementation
+	it( 'allows bear-off when all checkers are in home', () => {
+		const checkers: CheckerType[] = [
+			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 6 },
+			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 },
+		];
+		const { params, dispatched } = setup( {
+			id: 1,
+			checkers,
+			dice: [ 6 ],
+			die: 6,
 		} );
 
-		it( 'should allow moving from the bar when there is a waiting checker', () => {
-			// Setup: Player has a waiting checker on the bar
-			mockParams.checkers = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 0 }, // Waiting checker on bar
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 5 },
-			];
-			mockParams.activeLane = 0; // Bar is selected
-			mockParams.selectedDie = 3; // Using die with value 3
+		handleClick( eventForLane( 6 ), params );
 
-			( selectors.hasWaitingChecker as any ).mockReturnValue( true );
+		expect(
+			dispatched.some( ( a ) => a.type === 'MOVE_CHECKER' )
+		).toBe( true );
+	} );
+} );
 
-			// Click on lane 22 (valid move from bar using die value 3: 25 - 3 = 22)
-			const mockEvent = createMockEvent( 22 );
-			handleClick( mockEvent, mockParams );
+describe( 'handleClick — basic guards', () => {
+	it( 'rejects clicking before dice are rolled', () => {
+		const { params, dispatched } = setup( { dice: [], die: 0 } );
 
-			// Should dispatch move action (updateGame is called)
-			expect( mockDispatch ).toHaveBeenCalled();
-		} );
+		handleClick( eventForLane( 5 ), params );
+
+		const notice = dispatched.find( ( a ) => a.type === 'SET_NOTICE' );
+		expect( notice.notice.message ).toBe( MessageType.ROLL_DICE_FIRST );
 	} );
 
-	describe( 'Bearing Off Logic', () => {
-		it( 'should prevent bearing off when checkers are outside home board', () => {
-			// Setup: Trying to bear off with checkers outside home
-			// Player 1 home board is 1-6, bears off to 0
-			mockParams.checkers = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 7 }, // Outside home board (home board is 1-6)
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 }, // In home board
-			];
-			mockParams.activeLane = 3;
-			mockParams.selectedDie = 3; // Would normally allow bearing off from 3 (3 - 3 = 0)
-
-			( selectors.hasWaitingChecker as any ).mockReturnValue( false );
-			( selectors.hasCheckersOutsideHomeBoard as any ).mockReturnValue(
-				true
-			); // Checkers outside home
-			( selectors.wouldClearOffChecker as any ).mockReturnValue( true ); // Would normally clear off
-
-			// Try to bear off (clicking on lane 0)
-			const mockEvent = createMockEvent( 0 );
-			handleClick( mockEvent, mockParams );
-
-			// Should set error message about bearing off not allowed yet
-			expect( mockDispatch ).toHaveBeenCalledWith(
-				expect.objectContaining( {
-					type: 'SET_NOTICE',
-					payload: expect.objectContaining( {
-						message: 'You cannot bear off until all your checkers are in your home board',
-					} ),
-				} )
-			);
+	it( "rejects clicking the opponent's checker", () => {
+		const checkers: CheckerType[] = [
+			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 5 },
+		];
+		const { params, dispatched } = setup( {
+			id: 1,
+			player: PlayerType.PLAYER_TWO,
+			currentPlayer: PlayerType.PLAYER_ONE,
+			checkers,
+			dice: [ 3 ],
+			die: 3,
 		} );
 
-		it( 'should allow bearing off when all checkers are in home board', () => {
-			// Setup: All checkers in home board
-			// Player 1 home board is 1-6, bears off to 0
-			mockParams.checkers = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 1 }, // In home board (home board is 1-6)
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 6 }, // In home board
-			];
-			mockParams.activeLane = 6;
-			mockParams.selectedDie = 6; // Allow bearing off from 6 (6 - 6 = 0)
+		handleClick( eventForLane( 5 ), params );
 
-			( selectors.hasWaitingChecker as any ).mockReturnValue( false );
-			( selectors.hasCheckersOutsideHomeBoard as any ).mockReturnValue(
-				false
-			); // All checkers in home
-			( selectors.wouldClearOffChecker as any ).mockReturnValue( true ); // Would clear off
-
-			// Try to bear off (clicking on lane 0)
-			const mockEvent = createMockEvent( 0 );
-			handleClick( mockEvent, mockParams );
-
-			// Should dispatch move action to bear off
-			expect( mockDispatch ).toHaveBeenCalledWith(
-				expect.objectContaining( {
-					type: 'MOVE_CHECKER',
-				} )
-			);
-		} );
-	} );
-
-	describe( 'Combined Game Logic', () => {
-		it( 'should prioritize waiting checker rule over bearing off rule', () => {
-			// Setup: Player has a waiting checker, but also all other checkers in home board
-			// Player 1 home board is 1-6, bears off to 0
-			mockParams.checkers = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 0 }, // Waiting checker on bar
-				{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 }, // In home board
-			];
-			mockParams.activeLane = 3; // Trying to move from home board
-			mockParams.selectedDie = 3; // Would normally allow bearing off (3 - 3 = 0)
-
-			( selectors.hasWaitingChecker as any ).mockReturnValue( true ); // Has waiting checker
-			( selectors.hasCheckersOutsideHomeBoard as any ).mockReturnValue(
-				false
-			); // All other checkers in home
-			( selectors.wouldClearOffChecker as any ).mockReturnValue( true ); // Would normally clear off
-
-			// Try to bear off (clicking on lane 0)
-			const mockEvent = createMockEvent( 0 );
-			handleClick( mockEvent, mockParams );
-
-			// Should set error message about waiting checker (prioritized)
-			expect( mockDispatch ).toHaveBeenCalledWith(
-				expect.objectContaining( {
-					type: 'SET_NOTICE',
-					payload: expect.objectContaining( {
-						message: 'You must move your waiting checker from the bar first',
-					} ),
-				} )
-			);
-		} );
+		const notice = dispatched.find( ( a ) => a.type === 'SET_NOTICE' );
+		expect( notice.notice.message ).toBe( MessageType.NOT_YOUR_CHECKER );
 	} );
 } );

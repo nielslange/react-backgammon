@@ -29,7 +29,6 @@ export const updateGame = (
 	dispatch( setNotice( notice ) );
 	dispatch( setDice( newDice ) );
 
-	// Update pip counts after each move
 	const pipCount = {
 		[ PlayerTypeEnum.PLAYER_ONE ]: calculatePipCount( {
 			checkers: newCheckers as any,
@@ -42,6 +41,7 @@ export const updateGame = (
 	};
 	dispatch( updatePipCount( pipCount ) );
 
+	// When the turn ends (all dice used), hand off and auto-roll for the opponent.
 	if ( ! newDice.length ) {
 		dispatch( toggleCurrentPlayer( currentPlayer ) );
 		dispatch( rollDice() );

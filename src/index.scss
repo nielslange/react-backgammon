@@ -1,3 +1,5 @@
+@use "sass:color";
+
 body {
 	background: #fff;
 	color: #3b4252;
@@ -31,19 +33,19 @@ table {
 
 	&.error {
 		border-color: #bf616a;
-		background-color: lighten(#bf616a, 10%);
+		background-color: color.adjust(#bf616a, $lightness: 10%);
 		color: #eceff4;
 	}
 
 	&.info {
 		border-color: #5e81ac;
-		background-color: lighten(#5e81ac, 10%);
+		background-color: color.adjust(#5e81ac, $lightness: 10%);
 		color: #eceff4;
 	}
 
 	&.success {
 		border-color: #a3be8c;
-		background-color: lighten(#a3be8c, 10%);
+		background-color: color.adjust(#a3be8c, $lightness: 10%);
 		color: #4c566a;
 	}
 }
@@ -64,7 +66,7 @@ table {
 			&:nth-child(10),
 			&:nth-child(12) {
 				&:before {
-					border-top: 230px solid lighten(#bf616a, 10%);
+					border-top: 230px solid color.adjust(#bf616a, $lightness: 10%);
 					border-right: 25px solid transparent;
 					border-left: 25px solid transparent;
 				}
@@ -76,7 +78,7 @@ table {
 			&:nth-child(11),
 			&:nth-child(13) {
 				&:before {
-					border-top: 230px solid lighten(#5e81ac, 10%);
+					border-top: 230px solid color.adjust(#5e81ac, $lightness: 10%);
 					border-right: 25px solid transparent;
 					border-left: 25px solid transparent;
 				}
@@ -109,7 +111,7 @@ table {
 			&:nth-child(10),
 			&:nth-child(12) {
 				&:before {
-					border-bottom: 230px solid lighten(#5e81ac, 10%);
+					border-bottom: 230px solid color.adjust(#5e81ac, $lightness: 10%);
 					border-top: 50px solid transparent;
 					border-right: 25px solid transparent;
 					border-left: 25px solid transparent;
@@ -122,7 +124,7 @@ table {
 			&:nth-child(11),
 			&:nth-child(13) {
 				&:before {
-					border-bottom: 230px solid lighten(#bf616a, 10%);
+					border-bottom: 230px solid color.adjust(#bf616a, $lightness: 10%);
 					border-top: 50px solid transparent;
 					border-right: 25px solid transparent;
 					border-left: 25px solid transparent;
@@ -177,11 +179,18 @@ table {
 				text-align: center;
 				line-height: 46px;
 				cursor: pointer;
+				color: #eceff4;
+				font-weight: bold;
+				font-size: 18px;
 				&[data-player="PLAYER_ONE"] {
 					background-color: #5e81ac;
 				}
 				&[data-player="PLAYER_TWO"] {
 					background-color: #bf616a;
+				}
+				.checker-count {
+					display: block;
+					line-height: 46px;
 				}
 			}
 

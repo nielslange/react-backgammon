@@ -446,8 +446,9 @@ describe( 'Backgammon Rules', () => {
 				currentPlayer: game.currentPlayer,
 			} );
 
-			// With die 4, from lane 4, checker should be able to bear off (4 - 4 = 0, exact)
-			expect( availableMoves ).toEqual( { 4: 0 } );
+			// With die 4 from lane 4, P1 bears off exactly. P1's borne-off
+			// lane is 25 (lane 0 is P1's bar).
+			expect( availableMoves ).toEqual( { 4: 25 } );
 		} );
 	} );
 

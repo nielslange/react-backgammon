@@ -17,16 +17,15 @@ React implementation of Backgammon.
 
 ## Additional rules
 
-- A player can use one die to move a piece if the other die is not a legal move.
-- A player can move a piece to a point occupied by two or more of their own pieces, called a "stack," but the piece on top of the stack must be moved first.
-- A player can only bear off a piece if all of their pieces are on their home board and all of the points in their home board are closed.
-- A player can only hit a blot if the point being hit is open, or if the point being hit is occupied by a single opposing piece.
-- A player can only hit an opponent's blot if the point being hit is open, or if the point being hit is occupied by a single opposing piece and the player has at least two pieces on the bar.
-- A player can only hit an opponent's blot if the point being hit is open, or if the point being hit is occupied by a single opposing piece and the player has at least two pieces on the bar.
-- A player can use the doubling cube to offer a gammon, which is worth twice the stakes of the game, or a backgammon, which is worth three times the stakes of the game.
-- A player can only offer a gammon or backgammon if they have at least one piece on the opponent's home board or if the opponent has not borne off any pieces.
-- A player can forfeit the game if they feel they have no chance of winning.
-- A player can request to use a clock to limit the time for each move.
+- **Compulsory use of both dice**: If both dice can be played in some order, the player must play both. If only one of the two can be played, it must be the higher.
+- **Bar precedence**: A player with a checker on the bar must re-enter it before making any other move. Re-entry uses the opponent's home board (die N → opponent's N-point).
+- **Stacking**: A player can stack any number of their own checkers on a single point — there is no maximum.
+- **Bearing off** is allowed only when all 15 of the player's checkers are in their home board (no checker on the bar). Exact rolls bear off from point N; overshoot rolls bear off from the highest occupied point only when no checker exists on a higher point.
+- **Hit during bear-off** sends the checker to the bar; the player must re-enter and bring it back into the home board before resuming bear-off.
+- **Win values**: 1 point for a single, 2 for a gammon (loser borne off zero), 3 for a backgammon (loser borne off zero AND has a checker on the bar OR in the winner's home board), all multiplied by the doubling cube's value.
+- **Doubling cube**: Either player may offer to double when they own the cube or it's centered. The opponent accepts (cube doubles, ownership transfers) or drops (forfeits the current pre-double stake).
+- **Match play**: Games accumulate to a target score (default 1; configurable to e.g. 5, 7, 11). The Crawford rule suppresses doubling in the game directly after either player first reaches `target − 1`; doubling resumes thereafter.
+- **No legal moves**: If no playable dice sequence exists, the turn is forfeited.
 
 ## Initial position
 

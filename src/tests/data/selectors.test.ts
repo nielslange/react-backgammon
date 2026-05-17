@@ -4,7 +4,6 @@ import {
 	hasCheckersOutsideHomeBoard,
 	wouldClearOffChecker,
 	isCheckerOnTheBoard,
-	validateDiceUse,
 } from '../../data/selectors';
 import { PlayerType } from '../../types';
 

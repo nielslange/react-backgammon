@@ -22,4 +22,15 @@ export const initialState: StateType = {
 		[ PlayerType.PLAYER_TWO ]: 167,
 	},
 	moveHistory: [],
+	cube: {
+		value: 1,
+		owner: null,
+		offered: false,
+	},
+	openingRoll: {
+		[ PlayerType.PLAYER_ONE ]: null,
+		[ PlayerType.PLAYER_TWO ]: null,
+	},
+	matchTarget: 1,
+	crawfordPlayed: false,
 } as StateType;

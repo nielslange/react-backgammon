@@ -3,17 +3,19 @@
  */
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, useStore } from 'react-redux';
 
 /**
  * Internal dependencies
  */
 import { toggleCurrentPlayer, rollDice } from '../data/actions';
+import { checkAndHandleNoValidMoves } from '../helpers/noValidMovesHelper';
 import { getFormattedPlayerNameWithEmoji } from '../helpers/playerNameHelper';
 import { PlayerType, StateType } from '../types';
 
 export const Players = () => {
 	const dispatch = useDispatch();
+	const store = useStore< StateType >();
 	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
 	);
@@ -30,6 +32,14 @@ export const Players = () => {
 			dispatch( toggleCurrentPlayer( currentPlayer ) );
 		}
 		dispatch( rollDice() );
+		const state = store.getState();
+		if ( state.currentPlayer === null ) return;
+		checkAndHandleNoValidMoves( {
+			dispatch,
+			checkers: state.checkers,
+			dice: state.dice,
+			currentPlayer: state.currentPlayer,
+		} );
 	};
 
 	return (
@@ -39,7 +49,7 @@ export const Players = () => {
 			<table>
 				<tbody>
 					<tr>
-						<td>Current player</td>
+						<td>Current</td>
 						<td>:</td>
 						<td>
 							{ getFormattedPlayerNameWithEmoji( currentPlayer ) }

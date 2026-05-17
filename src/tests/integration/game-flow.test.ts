@@ -78,9 +78,17 @@ const simulateMove = (
 	);
 
 	let winner = null;
-	if ( player1Checkers.every( ( c ) => c.lane === -1 ) ) {
+	// Borne-off lane: 0 for P1, 25 for P2 (matches real game logic).
+	// Only the player who just moved can win this turn — check them first.
+	if (
+		currentPlayer === PlayerType.PLAYER_ONE &&
+		player1Checkers.every( ( c ) => c.lane === 0 )
+	) {
 		winner = PlayerType.PLAYER_ONE;
-	} else if ( player2Checkers.every( ( c ) => c.lane === -1 ) ) {
+	} else if (
+		currentPlayer === PlayerType.PLAYER_TWO &&
+		player2Checkers.every( ( c ) => c.lane === 25 )
+	) {
 		winner = PlayerType.PLAYER_TWO;
 	}
 
@@ -249,8 +257,8 @@ describe( 'Game Flow', () => {
 				winner: null,
 			};
 
-			// Player 1 bears off last checker
-			const afterBearOff = simulateMove( gameState, 24, -1, 1 );
+			// Player 1 bears off last checker (P1 bear-off lane is 0)
+			const afterBearOff = simulateMove( gameState, 24, 0, 1 );
 
 			// Player 1 should be declared the winner
 			expect( afterBearOff.winner ).toBe( PlayerType.PLAYER_ONE );
@@ -272,8 +280,8 @@ describe( 'Game Flow', () => {
 				winner: null,
 			};
 
-			// Player 2 bears off last checker
-			const afterBearOff = simulateMove( gameState, 1, -1, 1 );
+			// Player 2 bears off last checker (P2 bear-off lane is 25)
+			const afterBearOff = simulateMove( gameState, 1, 25, 1 );
 
 			// Player 2 should be declared the winner
 			expect( afterBearOff.winner ).toBe( PlayerType.PLAYER_TWO );
@@ -354,12 +362,12 @@ describe( 'Game Flow', () => {
 			// Player 2 should win
 			expect( afterPlayer2Move2.winner ).toBe( PlayerType.PLAYER_TWO );
 
-			// Both players should have all checkers borne off
+			// Both players should have all checkers borne off (lane 0 for P1, 25 for P2).
 			const player1CheckersLeft = afterPlayer2Move2.checkers.filter(
-				( c ) => c.player === PlayerType.PLAYER_ONE && c.lane !== -1
+				( c ) => c.player === PlayerType.PLAYER_ONE && c.lane !== 0
 			);
 			const player2CheckersLeft = afterPlayer2Move2.checkers.filter(
-				( c ) => c.player === PlayerType.PLAYER_TWO && c.lane !== -1
+				( c ) => c.player === PlayerType.PLAYER_TWO && c.lane !== 25
 			);
 
 			expect( player1CheckersLeft ).toHaveLength( 0 );

@@ -3,6 +3,19 @@
  */
 import { CheckerType, NoticeType, PlayerType } from '../types';
 
+export type CubeOwner = PlayerType | null;
+
+export type CubeState = {
+	value: number;
+	owner: CubeOwner;
+	offered: boolean;
+};
+
+export type OpeningRoll = {
+	[ PlayerType.PLAYER_ONE ]: number | null;
+	[ PlayerType.PLAYER_TWO ]: number | null;
+};
+
 export type StateType = {
 	checkers: CheckerType[];
 	currentPlayer: PlayerType | null;
@@ -26,4 +39,8 @@ export type StateType = {
 			[ PlayerType.PLAYER_TWO ]: number;
 		};
 	} >;
+	cube: CubeState;
+	openingRoll: OpeningRoll;
+	matchTarget: number;
+	crawfordPlayed: boolean;
 };

@@ -2,6 +2,7 @@
  * Internal dependencies
  */
 import { PlayerType } from '../types';
+import { validateDiceUse } from '../helpers/validateMoveHelper';
 
 interface Checker {
 	id: number;
@@ -55,8 +56,9 @@ export const getTargetLane = ( {
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
 		if ( lane === 0 ) return 25 - die; // Coming from the bar
 
-		// Handle bearing off cases (Player 1 home board is 1-6, bears off to 0)
-		if ( lane >= 1 && lane <= 6 && lane - die < 1 ) return 0;
+		// Bearing off: P1's home board is 1-6, borne-off destination is 25.
+		// (Lane 0 is P1's bar, never the bear-off target.)
+		if ( lane >= 1 && lane <= 6 && lane - die < 1 ) return 25;
 
 		return lane - die; // Normal movement on the board (counterclockwise, 24→1)
 	}
@@ -64,8 +66,9 @@ export const getTargetLane = ( {
 	if ( currentPlayer === PlayerType.PLAYER_TWO ) {
 		if ( lane === 25 ) return die; // Coming from the bar
 
-		// Handle bearing off cases (Player 2 home board is 19-24, bears off to 25)
-		if ( lane >= 19 && lane <= 24 && lane + die > 24 ) return 25;
+		// Bearing off: P2's home board is 19-24, borne-off destination is 0.
+		// (Lane 25 is P2's bar, never the bear-off target.)
+		if ( lane >= 19 && lane <= 24 && lane + die > 24 ) return 0;
 
 		return lane + die; // Normal movement on the board (clockwise, 1→24)
 	}
@@ -95,80 +98,6 @@ export const getHitCheckerId = ( {
 	const checker = checkers?.find( ( checker ) => checker.lane === lane );
 
 	return checker?.id;
-};
-
-/**
- * Calculates and returns the count of the current player's checkers on the target lane.
- *
- * @param {Object} params - The function parameters.
- * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
- * @param {number} params.die - The value of a die roll.
- * @param {number} params.lane - The current lane of the player.
- *
- * @returns {number} The count of the current player's checkers on the target lane. Returns 0 if the target lane is the end of the board for the current player.
- *
- * @example
- *
- * getCurrentPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns count
- *
- */
-const getCurrentPlayerCheckerCount = ( {
-	checkers,
-	currentPlayer,
-	die,
-	lane,
-}: CheckerParams ): number => {
-	const targetLane = getTargetLane( { currentPlayer, lane, die } );
-
-	if ( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 25 ) {
-		return 0;
-	}
-
-	if ( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 0 ) {
-		return 0;
-	}
-
-	return checkers.reduce( ( acc, checker ) => {
-		return checker.lane === targetLane && checker.player === currentPlayer ? acc + 1 : acc; // prettier-ignore
-	}, 0 );
-};
-
-/**
- * Calculates and returns the count of the other player's checkers on the target lane.
- *
- * @param {Object} params - The function parameters.
- * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
- * @param {number} params.die - The value of a die roll.
- * @param {number} params.lane - The current lane of the player.
- *
- * @returns {number} The count of the other player's checkers on the target lane. Returns 0 if the target lane is the end of the board for the current player.
- *
- * @example
- *
- * getOtherPlayerCheckerCount({ checkers: [{id: 1, lane: 5, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns count
- *
- */
-const getOtherPlayerCheckerCount = ( {
-	checkers,
-	currentPlayer,
-	die,
-	lane,
-}: CheckerParams ): number => {
-	const targetLane = getTargetLane( { currentPlayer, lane, die } );
-
-	if ( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 25 ) {
-		return 0;
-	}
-
-	if ( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 0 ) {
-		return 0;
-	}
-
-	return checkers.reduce( ( acc, checker ) => {
-		return checker.lane === targetLane && checker.player !== currentPlayer ? acc + 1 : acc; // prettier-ignore
-	}, 0 );
 };
 
 /**
@@ -295,49 +224,6 @@ export const isCheckerOnTheBoard = ( { lane }: { lane: number } ): boolean => {
 };
 
 /**
- * Determines if the target lane is occupied by the current player's checker.
- *
- * @param {Object} params - The function parameters.
- * @param {Checker[]} params.checkers - An array of checker objects.
- * @param {PlayerType} params.currentPlayer - The current player, which can either be `PLAYER_ONE` or `PLAYER_TWO`.
- * @param {number} params.die - The value of a die roll.
- * @param {number} params.lane - The current lane of the checker.
- *
- * @returns {boolean} Returns `true` if the target lane is occupied by 5 checkers (the maximum allowed in backgammon), and `false` otherwise.
- *
- * @example
- *
- * isTargetOccupiedByCurrentPlayer({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 5, lane: 0 }); // returns true
- * isTargetOccupiedByCurrentPlayer({ checkers: [{id: 1, lane: 0, player: PlayerType.PLAYER_ONE}, {id: 2, lane: 3, player: PlayerType.PLAYER_TWO}], currentPlayer: PlayerType.PLAYER_ONE, die: 4, lane: 0 }); // returns false
- *
- */
-export const isTargetOccupiedByCurrentPlayer = ( {
-	checkers,
-	currentPlayer,
-	die,
-	lane,
-}: CheckerParams ): boolean => {
-	const targetLane = getTargetLane( { currentPlayer, lane, die } );
-
-	// If the target is the bearing off point, it's never considered occupied
-	if ( targetLane === 0 || targetLane === 25 ) {
-		return false;
-	}
-
-	// Count the current player's checkers on the target lane
-	const currentPlayerCheckerCount = checkers.reduce( ( count, checker ) => {
-		if ( checker.lane === targetLane && checker.player === currentPlayer ) {
-			return count + 1;
-		}
-		return count;
-	}, 0 );
-
-	// A lane is considered occupied by the current player if there are 5 checkers
-	// (the maximum allowed in backgammon)
-	return currentPlayerCheckerCount >= 5;
-};
-
-/**
  * Determines if the target lane is occupied by the other player's checker.
  *
  * @param {Object} params - The function parameters.
@@ -456,8 +342,15 @@ export const hasCheckersOutsideHomeBoard = ( {
 	// Check if there are any checkers outside of the home board
 	// For Player 1 (moves 24→1), home board is lanes 1-6 (last 6 points before bearing off)
 	// For Player 2 (moves 1→24), home board is lanes 19-24 (last 6 points before bearing off)
+	// Borne-off checkers (P1: lane 25, P2: lane 0) are off the board entirely
+	// and must not count as "outside home board" — otherwise bearing off one
+	// checker would block all subsequent bear-offs.
 	return playerCheckers.some( ( checker ) => {
 		if ( currentPlayer === PlayerType.PLAYER_ONE ) {
+			// Borne off — not on the board
+			if ( checker.lane === 25 ) {
+				return false;
+			}
 			// Bar is always outside home board
 			if ( checker.lane === 0 ) {
 				return true;
@@ -467,6 +360,10 @@ export const hasCheckersOutsideHomeBoard = ( {
 		}
 
 		// currentPlayer === PlayerType.PLAYER_TWO
+		// Borne off — not on the board
+		if ( checker.lane === 0 ) {
+			return false;
+		}
 		// Bar is always outside home board
 		if ( checker.lane === 25 ) {
 			return true;
@@ -647,6 +544,49 @@ export const hasPlayerWon = ( {
 	return false;
 };
 
+export type WinType = 'single' | 'gammon' | 'backgammon';
+
+/**
+ * Determines the win classification from the loser's checker positions.
+ *
+ *  - 'single':     loser has borne off ≥1 checker.
+ *  - 'gammon':     loser has borne off zero, no checker on bar or in winner's home board.
+ *  - 'backgammon': loser has borne off zero AND has a checker on the bar
+ *                  OR in the winner's home board.
+ *
+ * Winner's home board: lanes 1-6 for P1, lanes 19-24 for P2.
+ * Bar: lane 0 for P1, lane 25 for P2.
+ * Borne-off destination: lane 25 for P1, lane 0 for P2.
+ */
+export const getWinType = ( {
+	checkers,
+	winner,
+}: {
+	checkers: Checker[];
+	winner: PlayerType;
+} ): WinType => {
+	const loser =
+		winner === PlayerType.PLAYER_ONE
+			? PlayerType.PLAYER_TWO
+			: PlayerType.PLAYER_ONE;
+	const loserCheckers = checkers.filter( ( c ) => c.player === loser );
+	const borneOffLane = loser === PlayerType.PLAYER_ONE ? 25 : 0;
+	const loserBornOff = loserCheckers.some( ( c ) => c.lane === borneOffLane );
+
+	if ( loserBornOff ) return 'single';
+
+	const winnerHomeLanes =
+		winner === PlayerType.PLAYER_ONE
+			? new Set( [ 1, 2, 3, 4, 5, 6 ] )
+			: new Set( [ 19, 20, 21, 22, 23, 24 ] );
+	const loserBarLane = loser === PlayerType.PLAYER_ONE ? 0 : 25;
+	const inDangerZone = loserCheckers.some(
+		( c ) => c.lane === loserBarLane || winnerHomeLanes.has( c.lane )
+	);
+
+	return inDangerZone ? 'backgammon' : 'gammon';
+};
+
 /**
  * Calculates the pip count for a player.
  * The pip count is the total distance all checkers need to travel to be removed from the board.
@@ -697,153 +637,9 @@ export const calculatePipCount = ( {
 	}, 0 );
 };
 
-/**
- * Validates if using the current die is allowed according to backgammon rules.
- * If a player can't use both dice, they must use the larger one.
- *
- * @param {Object} params - The parameters object.
- * @param {Array} params.dice - The current dice values.
- * @param {Array} params.checkers - The current checkers on the board.
- * @param {PlayerType} params.currentPlayer - The current player.
- * @param {number} params.die - The die the player is trying to use.
- *
- * @returns {boolean} Whether the move with the current die is valid according to rules.
- */
-export const validateDiceUse = ( {
-	dice,
-	checkers,
-	currentPlayer,
-	die,
-}: {
-	dice: number[];
-	checkers: Checker[];
-	currentPlayer: PlayerType;
-	die: number;
-} ): boolean => {
-	// If only one die is left, it's valid to use
-	if ( dice.length === 1 ) {
-		return true;
-	}
-
-	// If there are two different dice values
-	if ( dice.length === 2 && dice[ 0 ] !== dice[ 1 ] ) {
-		const smallerDie = Math.min( ...dice );
-		const largerDie = Math.max( ...dice );
-
-		// If using the larger die, always allow it
-		if ( die === largerDie ) {
-			return true;
-		}
-
-		// If using the smaller die, check if both dice can be used
-		// Check if the player has at least one valid move with each die
-		const canUseSmaller = canUseDie( smallerDie, checkers, currentPlayer );
-		const canUseLarger = canUseDie( largerDie, checkers, currentPlayer );
-
-		// If both dice can be used, allow using either
-		if ( canUseSmaller && canUseLarger ) {
-			return true;
-		}
-
-		// If only the larger die can be used, force using it
-		return ! canUseLarger;
-	}
-
-	// For doubles or any other dice configuration, any die is valid
-	return true;
-};
-
-/**
- * Checks if a player can use a specific die value for any valid move.
- *
- * @param {number} die - The die value to check
- * @param {Array} checkers - The current checkers on the board
- * @param {PlayerType} currentPlayer - The current player
- * @returns {boolean} Whether the player can use this die for any valid move
- */
-function canUseDie(
-	die: number,
-	checkers: Checker[],
-	currentPlayer: PlayerType
-): boolean {
-	// First check if player has waiting checkers
-	const hasWaiting = hasWaitingChecker( { checkers, currentPlayer } );
-
-	// If player has waiting checkers, they must move those first
-	if ( hasWaiting ) {
-		// For waiting checkers, check if entry points are available
-		const entryLane =
-			currentPlayer === PlayerType.PLAYER_ONE ? die : 25 - die;
-
-		// Check if target is blocked by opponent
-		return ! isTargetOccupiedByOtherPlayer( {
-			checkers,
-			currentPlayer,
-			die,
-			lane: currentPlayer === PlayerType.PLAYER_ONE ? 0 : 25,
-		} );
-	}
-
-	// If no waiting checkers, check all player's checkers on the board
-	return checkers.some( ( checker ) => {
-		if ( checker.player !== currentPlayer ) {
-			return false;
-		}
-
-		// Skip checkers that are already borne off
-		if (
-			( currentPlayer === PlayerType.PLAYER_ONE &&
-				checker.lane === 25 ) ||
-			( currentPlayer === PlayerType.PLAYER_TWO && checker.lane === 0 )
-		) {
-			return false;
-		}
-
-		// Calculate the target lane for this die
-		let targetLane;
-		if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-			// Handle bar entry
-			if ( checker.lane === 0 ) {
-				targetLane = 25 - die;
-			} else {
-				targetLane = checker.lane - die; // Player 1 moves from 24 to 1 (decreasing)
-			}
-			// Cannot bear off if not in home board (Player 1 home board is 1-6)
-			if ( targetLane < 0 && checker.lane > 6 && checker.lane !== 0 ) {
-				return false;
-			}
-		} else {
-			// Handle bar entry
-			if ( checker.lane === 25 ) {
-				targetLane = die;
-			} else {
-				targetLane = checker.lane + die; // Player 2 moves from 1 to 24 (increasing)
-			}
-			// Cannot bear off if not in home board (Player 2 home board is 19-24)
-			if ( targetLane > 25 && checker.lane < 19 && checker.lane !== 25 ) {
-				return false;
-			}
-		}
-
-		// Check if target is blocked by opponent
-		const isBlocked = isTargetOccupiedByOtherPlayer( {
-			checkers,
-			currentPlayer,
-			die,
-			lane: checker.lane,
-		} );
-
-		// Check if target is blocked by own pieces (5+ checkers)
-		const isOccupiedBySelf = isTargetOccupiedByCurrentPlayer( {
-			checkers,
-			currentPlayer,
-			die,
-			lane: checker.lane,
-		} );
-
-		return ! isBlocked && ! isOccupiedBySelf;
-	} );
-}
+// `validateDiceUse` moved to ../helpers/validateMoveHelper to be the
+// single source of truth. Re-exported here for backward compatibility.
+export { validateDiceUse };
 
 /**
  * Returns the lanes that a checker can move to based on the current dice and game state.
@@ -928,14 +724,25 @@ export const getAvailableLanes = ( {
 	const availableMoves: { [ key: number ]: number } = {};
 
 	availableDice.forEach( ( die ) => {
-		// Calculate target lane based on die value and current player
+		// B7: respect must-use-larger-die rule. If using this die now would
+		// forfeit a playable larger die, suppress it from the move list.
+		if (
+			! validateDiceUse( {
+				dice: availableDice,
+				checkers,
+				currentPlayer,
+				die,
+			} )
+		) {
+			return;
+		}
+
 		const targetLane = getTargetLane( {
 			die,
 			lane,
 			currentPlayer,
 		} );
 
-		// Determine if this move would bear off a checker
 		const wouldBearOff = wouldClearOffChecker( {
 			die,
 			lane,
@@ -943,18 +750,13 @@ export const getAvailableLanes = ( {
 			checkers,
 		} );
 
-		// Check if the move is valid
 		if ( wouldBearOff ) {
-			// Bearing off is only allowed if all checkers are in home board
 			if ( canBearOff ) {
-				// For Player One, bearing off means target lane would be 0
-				// For Player Two, bearing off means target lane would be 25
+				// P1's borne-off lane is 25, P2's is 0.
 				availableMoves[ die ] =
-					currentPlayer === PlayerType.PLAYER_ONE ? 0 : 25;
+					currentPlayer === PlayerType.PLAYER_ONE ? 25 : 0;
 			}
 		} else if ( targetLane > 0 && targetLane < 25 ) {
-			// Normal move (not bearing off)
-			// Check if target lane is free or has fewer than 2 opponent checkers
 			const opponentCheckersCount = checkers.filter(
 				( checker ) =>
 					checker.player !== currentPlayer &&

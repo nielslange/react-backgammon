@@ -17,8 +17,8 @@ export const Game = () => {
 					<Board />
 				</div>
 				<div>
-					<Dice />
 					<Players />
+					<Dice />
 					<PipCount />
 					<GameState />
 					<Notice />

@@ -12,7 +12,7 @@ import { setNotice } from '../data/actions';
 import { MessageType, NoticeStatusType, PlayerType, StateType } from '../types';
 
 export const Checker = ( props: any ) => {
-	const { className, id, player } = props;
+	const { className, id, player, count } = props;
 	const dispatch = useDispatch();
 	const dice = useSelector( ( state: StateType ) => state.dice );
 	const currentPlayer = useSelector(
@@ -54,6 +54,10 @@ export const Checker = ( props: any ) => {
 			data-checker={ id }
 			data-player={ player }
 			onClick={ handleCheckerClick }
-		></div>
+		>
+			{ count !== undefined && (
+				<span className="checker-count">{ count }</span>
+			) }
+		</div>
 	);
 };

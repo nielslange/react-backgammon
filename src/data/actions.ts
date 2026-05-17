@@ -112,13 +112,12 @@ export const moveChecker = ( { checkers }: { checkers: CheckerType[] } ) => {
 };
 
 /**
- * This function sets the game over status to true.
- * The function returns an object with the type of action (SET_GAME_OVER) and the game over status.
- *
- * @returns {Object} An object containing the type of action and the game over status.
+ * Marks the game over and awards points to the winner.
+ * Points are 1 (single), 2 (gammon), or 3 (backgammon), multiplied by the
+ * doubling cube value if/when implemented (passed in by the caller).
  */
-export const setGameOver = () => {
-	return { type: ActionTypes.SET_GAME_OVER, gameOver: true };
+export const setGameOver = ( winner: PlayerType, points: number = 1 ) => {
+	return { type: ActionTypes.SET_GAME_OVER, winner, points };
 };
 
 /**
@@ -165,4 +164,44 @@ export const updatePipCount = ( pipCount: {
  */
 export const undoMove = () => {
 	return { type: ActionTypes.UNDO_MOVE };
+};
+
+/**
+ * Roll a single opening die for a specific player. When both players have
+ * rolled, the reducer either re-rolls (tie) or sets the higher roller as
+ * current player and stores both dice for their first turn.
+ */
+export const rollOpeningDie = ( player: PlayerType, value?: number ) => {
+	const die = value ?? Math.floor( Math.random() * 6 ) + 1;
+	return { type: ActionTypes.ROLL_OPENING_DIE, player, die };
+};
+
+/**
+ * Offer the doubling cube to the opponent. Only legal when the player owns
+ * the cube (or it's centered) and has not yet rolled this turn.
+ */
+export const offerDouble = () => {
+	return { type: ActionTypes.OFFER_DOUBLING_CUBE };
+};
+
+/**
+ * Accept an offered double: cube doubles, ownership transfers to the
+ * accepting player.
+ */
+export const acceptDouble = () => {
+	return { type: ActionTypes.ACCEPT_DOUBLE };
+};
+
+/**
+ * Drop an offered double: opponent loses the current stake (pre-double).
+ */
+export const dropDouble = () => {
+	return { type: ActionTypes.DROP_DOUBLE };
+};
+
+/**
+ * Set the match target (first to N points wins the match).
+ */
+export const setMatchTarget = ( target: number ) => {
+	return { type: ActionTypes.SET_MATCH_TARGET, target };
 };

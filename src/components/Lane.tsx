@@ -9,7 +9,6 @@ import { Checker } from './Checker';
  * Internal dependencies
  */
 import type { LaneType, StateType } from '../types';
-import { PlayerType } from '../types';
 
 export const Lane = ( {
 	from,
@@ -25,20 +24,45 @@ export const Lane = ( {
 	const lanes = [];
 
 	const renderChecker = ( lane: number, keySuffix: string = '' ) => {
-		const filteredCheckers = checkers.filter(
-			( item: any ) =>
-				item.lane === lane &&
-				( keySuffix ? item.player === player : true )
+		const laneOwner = bar ? player : off ? off : undefined;
+		const filteredCheckers = checkers.filter( ( item: any ) => {
+			if ( item.lane !== lane ) return false;
+			// Bar (lanes 0/25) and off (lanes 0/25) overlap — filter by owner
+			// so a P1 checker on the bar (lane 0) isn't rendered in the P2 off
+			// zone (also lane 0), and vice-versa.
+			if ( laneOwner ) return item.player === laneOwner;
+			if ( keySuffix ) return item.player === player;
+			return true;
+		} );
+		const isStackedLane = ! bar && ! off;
+		const maxVisible = 5;
+		const visibleCheckers =
+			isStackedLane && filteredCheckers.length > maxVisible
+				? filteredCheckers.slice( 0, maxVisible )
+				: filteredCheckers;
+		// Lanes 1–12 sit on the bottom half (justify-content: flex-end), so
+		// the innermost (toward board center) checker is index 0. Lanes 13–24
+		// sit on the top half (flex-start), where the innermost is the last.
+		const isBottomLane = lane >= 1 && lane <= 12;
+		const overflowIndex = isBottomLane ? 0 : maxVisible - 1;
+		const checkerElements = visibleCheckers.map(
+			( item: any, index: number ) => (
+				<Checker
+					className="checker"
+					currentPlayer={ currentPlayer }
+					id={ item.id }
+					key={ item.id }
+					player={ item.player }
+					count={
+						isStackedLane &&
+						filteredCheckers.length > maxVisible &&
+						index === overflowIndex
+							? filteredCheckers.length
+							: undefined
+					}
+				/>
+			)
 		);
-		const checkerElements = filteredCheckers.map( ( item: any ) => (
-			<Checker
-				className="checker"
-				currentPlayer={ currentPlayer }
-				id={ item.id }
-				key={ item.id }
-				player={ item.player }
-			/>
-		) );
 		const key = keySuffix ? `${ player }-${ lane }` : lane.toString();
 		return (
 			<div
@@ -48,13 +72,6 @@ export const Lane = ( {
 				data-off={ off }
 				key={ key }
 			>
-				{ bar && (
-					<div className="bar-label">
-						{ player === PlayerType.PLAYER_ONE
-							? 'Player 1 Bar'
-							: 'Player 2 Bar' }
-					</div>
-				) }
 				{ checkerElements }
 			</div>
 		);

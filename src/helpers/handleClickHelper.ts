@@ -1,22 +1,18 @@
 /**
  * Internal dependencies
  */
-import { Dispatch } from 'redux';
-import { setGameOver, setNotice } from '../data/actions';
+import { setNotice } from '../data/actions';
 import {
 	hasDiceBeenRolled,
 	isCurrentPlayer,
 	hasWaitingChecker,
 	isCheckerClearedOff,
-	isCheckerOnTheBoard,
-	isTargetOccupiedByCurrentPlayer,
 	isTargetOccupiedByOtherPlayer,
 	willHitOpponent,
 	getTargetLane,
 	getHitCheckerId,
 	hasCheckersOutsideHomeBoard,
 	wouldClearOffChecker,
-	hasPlayerWon,
 } from '../data/selectors';
 import { MessageType, NoticeStatusType, PlayerType } from '../types';
 import { checkForWin } from './checkForWinHelper';
@@ -90,17 +86,10 @@ export const handleClick = (
 		);
 	}
 
-	// Check if player has a checker on the bar
-	const hasWaiting = hasWaitingChecker( { checkers, currentPlayer } );
-	console.log( 'Has waiting checker:', hasWaiting );
-
 	// If player has a checker on the bar, they must move it first
-	if ( hasWaiting ) {
+	if ( hasWaitingChecker( { checkers, currentPlayer } ) ) {
 		// If trying to move a checker that's not on the bar
 		if ( lane !== 0 && lane !== 25 ) {
-			console.log(
-				'Waiting checker condition triggered - trying to move a checker on the board when there are checkers on the bar'
-			);
 			return dispatch(
 				setNotice(
 					createNotice(
@@ -110,17 +99,6 @@ export const handleClick = (
 				)
 			);
 		}
-	}
-
-	if ( isTargetOccupiedByCurrentPlayer( playerObject ) ) {
-		return dispatch(
-			setNotice(
-				createNotice(
-					NoticeStatusType.ERROR,
-					MessageType.TARGET_OCCUPIED_BY_YOU
-				)
-			)
-		);
 	}
 
 	if ( isTargetOccupiedByOtherPlayer( playerObject ) ) {
@@ -160,7 +138,6 @@ export const handleClick = (
 	}
 
 	if ( hasWaitingChecker( { checkers, currentPlayer } ) ) {
-		console.log( 'hasWaitingChecker' );
 		newCheckers[ id - 1 ].lane = targetLane;
 		newDice.shift();
 
@@ -195,18 +172,15 @@ export const handleClick = (
 		return;
 	}
 
-	// Check if attempting to bear off when checkers are outside home board
-	// This check must happen BEFORE any bearing off logic, as bearing off is only allowed
-	// when ALL checkers are in the home board
-	// Player 1 (moves 24→1) bears off to 0, Player 2 (moves 1→24) bears off to 25
+	// Check if attempting to bear off when checkers are outside home board.
+	// Bearing off is only allowed when ALL checkers are in the home board.
+	// P1's borne-off lane is 25, P2's is 0. (Lanes 0/25 are also the bars,
+	// but the bar is the *source* of moves, never the target.)
 	const isBearingOff =
-		( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 0 ) ||
-		( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 25 );
+		( currentPlayer === PlayerType.PLAYER_ONE && targetLane === 25 ) ||
+		( currentPlayer === PlayerType.PLAYER_TWO && targetLane === 0 );
 
 	if ( isBearingOff && hasCheckersOutsideHomeBoard( { checkers, currentPlayer } ) ) {
-		console.log( 'Preventing bearing off due to checkers outside endzone' );
-		console.log( 'Current lane:', lane );
-		console.log( 'Target lane:', targetLane );
 		return dispatch(
 			setNotice(
 				createNotice(
