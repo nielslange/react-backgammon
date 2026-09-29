@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { PlayerType } from '../../types';
 // Remove the conflicting imports and use the local functions
 // import { getTargetLane } from '../../data/selectors';
@@ -301,19 +301,6 @@ describe( 'Dice Usage Rules', () => {
 	describe( 'Bearing Off Rules', () => {
 		it( 'should require exact count for bearing off when higher points have checkers', () => {
 			// Player 1 with checkers on 3, 4, 6 (home board is 1-6)
-			const gameState: GameState = {
-				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 3 },
-					{ id: 2, player: PlayerType.PLAYER_ONE, lane: 4 },
-					{ id: 3, player: PlayerType.PLAYER_ONE, lane: 6 },
-				],
-				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 2, 3 ],
-				activeLane: null,
-				selectedDie: null,
-				error: null,
-			};
-
 			// Check valid bear off for lane 6 with die 6 (exact)
 			expect(
 				isValidBearOff( {
@@ -347,17 +334,6 @@ describe( 'Dice Usage Rules', () => {
 
 		it( 'should allow bearing off with higher dice when no checkers on higher points', () => {
 			// Player 1 with checker only on lane 3 (home board is 1-6)
-			const gameState: GameState = {
-				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 3 },
-				],
-				currentPlayer: PlayerType.PLAYER_ONE,
-				dice: [ 3, 6 ],
-				activeLane: null,
-				selectedDie: null,
-				error: null,
-			};
-
 			// Can bear off with lane 3 and die 3 (exact)
 			expect(
 				isValidBearOff( {
@@ -381,19 +357,6 @@ describe( 'Dice Usage Rules', () => {
 
 		it( 'should handle Player 2 bearing off correctly', () => {
 			// Player 2 with checkers on lanes 20, 21, 22 (home board is 19-24)
-			const gameState: GameState = {
-				checkers: [
-					{ id: 1, player: PlayerType.PLAYER_TWO, lane: 20 },
-					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 21 },
-					{ id: 3, player: PlayerType.PLAYER_TWO, lane: 22 },
-				],
-				currentPlayer: PlayerType.PLAYER_TWO,
-				dice: [ 4, 5 ],
-				activeLane: null,
-				selectedDie: null,
-				error: null,
-			};
-
 			// Can bear off with lane 20 and die 5 (exact: 20 + 5 = 25)
 			expect(
 				isValidBearOff( {
@@ -425,15 +388,6 @@ describe( 'Dice Usage Rules', () => {
 			).toBe( false );
 
 			// Player 2 with checker only on lane 20
-			const modifiedGameState: GameState = {
-				checkers: [ { id: 1, player: PlayerType.PLAYER_TWO, lane: 20 } ],
-				currentPlayer: PlayerType.PLAYER_TWO,
-				dice: [ 5, 6 ],
-				activeLane: null,
-				selectedDie: null,
-				error: null,
-			};
-
 			// Can bear off with lane 20 and die 6 (higher die, no checkers on higher points)
 			expect(
 				isValidBearOff( {

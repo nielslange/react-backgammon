@@ -11,7 +11,8 @@ import { useSelector, useDispatch, useStore } from 'react-redux';
 import { toggleCurrentPlayer, rollDice } from '../data/actions';
 import { checkAndHandleNoValidMoves } from '../helpers/noValidMovesHelper';
 import { getFormattedPlayerNameWithEmoji } from '../helpers/playerNameHelper';
-import { PlayerType, StateType } from '../types';
+import { startGame } from '../helpers/startGameHelper';
+import { StateType } from '../types';
 
 export const Players = () => {
 	const dispatch = useDispatch();
@@ -23,14 +24,11 @@ export const Players = () => {
 
 	const handleToggleCurrentPlayer = () => {
 		if ( currentPlayer === null ) {
-			// If no player is selected yet, first roll establishes PLAYER_ONE
-			dispatch( {
-				type: 'TOGGLE_CURRENT_PLAYER',
-				player: PlayerType.PLAYER_ONE,
-			} );
-		} else {
-			dispatch( toggleCurrentPlayer( currentPlayer ) );
+			// Opening roll decides who moves first (higher die, ties re-roll).
+			startGame( { dispatch, getState: () => store.getState() } );
+			return;
 		}
+		dispatch( toggleCurrentPlayer( currentPlayer ) );
 		dispatch( rollDice() );
 		const state = store.getState();
 		if ( state.currentPlayer === null ) return;

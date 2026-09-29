@@ -25,7 +25,9 @@ export const reducer = ( state = initialState, action: any ) => {
 			};
 
 		case ActionTypes.TOGGLE_CURRENT_PLAYER:
-			return { ...state, currentPlayer: action.player };
+			// A turn is final once it has been handed over: the opponent must
+			// not be able to undo moves from a completed turn.
+			return { ...state, currentPlayer: action.player, moveHistory: [] };
 
 		case ActionTypes.MOVE_CHECKER:
 			// Save current state to history before applying move
@@ -93,10 +95,10 @@ export const reducer = ( state = initialState, action: any ) => {
 			// Update notice with the surrender message
 			const message = MessageType.PLAYER_SURRENDERED;
 
-			// Create a new scores object with the winner's score incremented
+			// Resigning concedes a single game at the current cube value.
 			const updatedScores = {
 				...state.scores,
-				[ winner ]: state.scores[ winner ] + 1,
+				[ winner ]: state.scores[ winner ] + state.cube.value,
 			};
 
 			return {

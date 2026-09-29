@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { PlayerType } from '../../types';
 
 // Define interfaces for testing
@@ -58,7 +58,7 @@ const simulateMove = (
 
 	// Remove the used die
 	const newDice = dice.filter(
-		( d, index ) => index !== dice.indexOf( die )
+		( _, index ) => index !== dice.indexOf( die )
 	);
 
 	// Toggle player if no dice left
@@ -103,13 +103,6 @@ const simulateMove = (
 	};
 };
 
-// Function to roll dice
-const rollDice = (): number[] => {
-	return [
-		Math.floor( Math.random() * 6 ) + 1,
-		Math.floor( Math.random() * 6 ) + 1,
-	];
-};
 
 describe( 'Game Flow', () => {
 	describe( 'Turn Alternation', () => {

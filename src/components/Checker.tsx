@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { handleClick } from '../helpers/handleClickHelper';
 import { createNotice } from '../helpers/createNoticeHelper';
 import { setNotice } from '../data/actions';
-import { MessageType, NoticeStatusType, PlayerType, StateType } from '../types';
+import { MessageType, NoticeStatusType, StateType } from '../types';
 
 export const Checker = ( props: any ) => {
 	const { className, id, player, count } = props;
@@ -19,6 +19,8 @@ export const Checker = ( props: any ) => {
 		( state: StateType ) => state.currentPlayer
 	);
 	const checkers = useSelector( ( state: StateType ) => state.checkers );
+	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
+	const cubeValue = useSelector( ( state: StateType ) => state.cube.value );
 	const die = dice[ 0 ];
 
 	const handleCheckerClick = ( event: any ) => {
@@ -43,6 +45,8 @@ export const Checker = ( props: any ) => {
 			checkers,
 			die,
 			dispatch,
+			gameOver,
+			cubeValue,
 		} );
 	};
 

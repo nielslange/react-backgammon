@@ -399,16 +399,17 @@ const hasCheckersOnHigherPoints = ( {
 	);
 
 	if ( currentPlayer === PlayerType.PLAYER_ONE ) {
-		// For Player 1 (moves 24→1), higher points are lanes greater than the current lane (1-6 range)
-		// Higher means closer to 6 (the highest point in Player 1's home board)
+		// Player 1 moves 24→1 and bears off past lane 1, so a "higher" point
+		// (further from bearing off) is a greater lane number within 1-6.
 		return playerCheckers.some(
 			( checker ) => checker.lane > lane && checker.lane >= 1 && checker.lane <= 6
 		);
 	} else {
-		// For Player 2 (moves 1→24), higher points are lanes greater than the current lane (19-24 range)
-		// Higher means closer to 24 (the highest point in Player 2's home board)
+		// Player 2 moves 1→24 and bears off past lane 24, so a "higher" point
+		// (further from bearing off) is a SMALLER lane number within 19-24.
+		// Lane 19 is Player 2's 6-point, lane 24 is their 1-point.
 		return playerCheckers.some(
-			( checker ) => checker.lane > lane && checker.lane >= 19 && checker.lane <= 24
+			( checker ) => checker.lane < lane && checker.lane >= 19 && checker.lane <= 24
 		);
 	}
 };
@@ -489,9 +490,9 @@ export const wouldClearOffChecker = ( {
 
 		// If overshooting (target > 25), check if it's allowed
 		if ( targetLane > 25 ) {
-			// Can only overshoot if no checkers on higher points (closer to 24)
-			// e.g., from lane 20, die 6 goes to lane 26, which is overshoot
-			// Only valid if no checkers on lanes 21-24
+			// Can only overshoot if no checkers on higher points (closer to 19)
+			// e.g., from lane 21, die 6 goes to lane 27, which is overshoot
+			// Only valid if no checkers on lanes 19-20
 			return ! hasCheckersOnHigherPoints( {
 				checkers,
 				lane,
@@ -610,7 +611,8 @@ export const calculatePipCount = ( {
 		}
 
 		if ( player === PlayerType.PLAYER_ONE ) {
-			// For Player One, count distance from current lane to lane 25 (bearing off point)
+			// Player One moves 24→1 and bears off past lane 1, so a checker on
+			// lane N still has N pips to travel. Lane 25 is the borne-off sentinel.
 			if ( checker.lane === 0 ) {
 				// Checker on bar needs to enter and then travel to bearing off
 				return total + 25;
@@ -619,10 +621,11 @@ export const calculatePipCount = ( {
 				return total;
 			} else {
 				// Regular checker on board - distance to bearing off point
-				return total + ( 25 - checker.lane );
+				return total + checker.lane;
 			}
 		} else {
-			// For Player Two, count distance from current lane to lane 0 (bearing off point)
+			// Player Two moves 1→24 and bears off past lane 24, so a checker on
+			// lane N still has 25 - N pips to travel. Lane 0 is the borne-off sentinel.
 			if ( checker.lane === 25 ) {
 				// Checker on bar needs to enter and then travel to bearing off
 				return total + 25;
@@ -631,7 +634,7 @@ export const calculatePipCount = ( {
 				return total;
 			} else {
 				// Regular checker on board - distance to bearing off point
-				return total + checker.lane;
+				return total + ( 25 - checker.lane );
 			}
 		}
 	}, 0 );

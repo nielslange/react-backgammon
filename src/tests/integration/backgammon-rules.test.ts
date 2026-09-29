@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { PlayerType } from '../../types';
 import { getAvailableLanes } from '../../data/selectors';
 
@@ -266,11 +266,6 @@ describe( 'Backgammon Rules', () => {
 		it( 'should send hit checker to the bar', () => {
 			// This would typically be tested in a reducer or game logic test
 			// Simulating the change that would happen after hitting
-			const beforeHit: Checker[] = [
-				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 10 },
-				{ id: 2, player: PlayerType.PLAYER_TWO, lane: 14 }, // About to be hit
-			];
-
 			const afterHit: Checker[] = [
 				{ id: 1, player: PlayerType.PLAYER_ONE, lane: 14 }, // Moved to hit
 				{ id: 2, player: PlayerType.PLAYER_TWO, lane: 25 }, // Sent to the bar (25 for Player 2)

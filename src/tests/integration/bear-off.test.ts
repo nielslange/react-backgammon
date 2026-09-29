@@ -158,10 +158,10 @@ describe( 'Bear-off overshoot rule', () => {
 		).toBe( true );
 	} );
 
-	it( 'P2: cannot use die 6 to bear off lane 21 if a checker is on lane 22 or 23', () => {
+	it( 'P2: cannot use die 6 to bear off lane 21 if a checker is on lane 19 or 20', () => {
 		const checkers = makeCheckers( [
 			{ player: PlayerType.PLAYER_TWO, lane: 21 },
-			{ player: PlayerType.PLAYER_TWO, lane: 22 }, // higher (closer to 24)
+			{ player: PlayerType.PLAYER_TWO, lane: 20 }, // higher (further from bearing off)
 		] );
 		expect(
 			wouldClearOffChecker( {
@@ -176,7 +176,7 @@ describe( 'Bear-off overshoot rule', () => {
 	it( 'P2: can use die 6 to bear off lane 21 when no higher checkers exist', () => {
 		const checkers = makeCheckers( [
 			{ player: PlayerType.PLAYER_TWO, lane: 21 },
-			{ player: PlayerType.PLAYER_TWO, lane: 19 },
+			{ player: PlayerType.PLAYER_TWO, lane: 23 }, // lower (closer to bearing off)
 		] );
 		expect(
 			wouldClearOffChecker( {

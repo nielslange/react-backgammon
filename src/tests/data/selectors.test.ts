@@ -277,25 +277,42 @@ describe( 'wouldClearOffChecker', () => {
 
 	it( 'should prevent bearing off with higher die when checkers exist on higher points (Player 2)', () => {
 		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 24 }, // Higher point (closer to 24)
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 20 }, // Lower point (closer to 19)
+			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 19 }, // Higher point (P2's 6-point)
+			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 21 }, // Lower point (P2's 4-point)
 		];
 
-		// Cannot bear off from lane 20 with die 6 (overshoot: 20 + 6 = 26) when checker exists on lane 24
+		// Cannot bear off from lane 21 with die 6 (overshoot: 21 + 6 = 27) when checker exists on lane 19
 		expect(
 			wouldClearOffChecker( {
 				die: 6,
-				lane: 20,
+				lane: 21,
 				currentPlayer: PlayerType.PLAYER_TWO,
 				checkers,
 			} )
 		).toBe( false );
 
-		// Can bear off from lane 24 with die 1 (exact match: 24 + 1 = 25)
+		// Can bear off from lane 19 with die 6 (exact match: 19 + 6 = 25)
 		expect(
 			wouldClearOffChecker( {
-				die: 1,
-				lane: 24,
+				die: 6,
+				lane: 19,
+				currentPlayer: PlayerType.PLAYER_TWO,
+				checkers,
+			} )
+		).toBe( true );
+	} );
+
+	it( 'should allow bearing off with higher die when remaining checkers are on lower points (Player 2)', () => {
+		const checkers = [
+			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 21 }, // Highest occupied point
+			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 24 }, // Lower point (P2's 1-point)
+		];
+
+		// Lane 24 is closer to bearing off than lane 21, so it does not block the overshoot
+		expect(
+			wouldClearOffChecker( {
+				die: 6,
+				lane: 21,
 				currentPlayer: PlayerType.PLAYER_TWO,
 				checkers,
 			} )

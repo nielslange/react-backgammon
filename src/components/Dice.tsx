@@ -9,6 +9,7 @@ import ButtonGroup from 'react-bootstrap/ButtonGroup';
  */
 import { useDispatch, useSelector } from 'react-redux';
 import { flipDice, rollDice, shiftDice } from '../data/actions';
+import { canUseDie } from '../helpers/validateMoveHelper';
 import { StateType } from '../types';
 
 export const Dice = () => {
@@ -19,6 +20,16 @@ export const Dice = () => {
 	const bonusOne = useSelector( ( state: StateType ) => state.dice[ 2 ] );
 	const bonusTwo = useSelector( ( state: StateType ) => state.dice[ 3 ] );
 	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
+	const checkers = useSelector( ( state: StateType ) => state.checkers );
+	const currentPlayer = useSelector(
+		( state: StateType ) => state.currentPlayer
+	);
+	// A playable die must be played, so Shift may only discard a die that
+	// cannot be used in the current position.
+	const headDiePlayable =
+		dice.length > 0 &&
+		currentPlayer !== null &&
+		canUseDie( dice[ 0 ], checkers, currentPlayer );
 
 	return (
 		<div>
@@ -58,7 +69,12 @@ export const Dice = () => {
 					aria-label="Roll the dice"
 					variant="outline-primary btn-sm"
 					onClick={ () => dispatch( rollDice() ) }
-					disabled={ gameOver }
+					disabled={ gameOver || dice.length > 0 }
+					title={
+						dice.length > 0
+							? 'You have already rolled this turn'
+							: undefined
+					}
 				>
 					Roll
 				</Button>
@@ -74,7 +90,14 @@ export const Dice = () => {
 					aria-label="Shift the dice"
 					variant="outline-secondary btn-sm"
 					onClick={ () => dispatch( shiftDice( dice ) ) }
-					disabled={ gameOver }
+					disabled={
+						gameOver || dice.length === 0 || headDiePlayable
+					}
+					title={
+						headDiePlayable
+							? 'This die can be played and must not be discarded'
+							: undefined
+					}
 				>
 					Shift
 				</Button>

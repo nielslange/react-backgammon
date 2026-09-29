@@ -8,15 +8,20 @@ import { Dispatch } from 'redux';
  */
 import {
 	moveChecker,
-	rollDice,
 	setDice,
 	setNotice,
-	toggleCurrentPlayer,
 	updatePipCount,
 } from '../data/actions';
-import { calculatePipCount } from '../data/selectors';
+import { calculatePipCount, hasPlayerWon } from '../data/selectors';
+import { createNotice } from './createNoticeHelper';
+import { handOffTurn } from './noValidMovesHelper';
+import { findPlayableDiceSequence } from './validateMoveHelper';
 import type { NoticeType, PlayerType, CheckerType } from '../types';
-import { PlayerType as PlayerTypeEnum } from '../types';
+import {
+	MessageType,
+	NoticeStatusType,
+	PlayerType as PlayerTypeEnum,
+} from '../types';
 
 export const updateGame = (
 	dispatch: Dispatch,
@@ -41,9 +46,33 @@ export const updateGame = (
 	};
 	dispatch( updatePipCount( pipCount ) );
 
+	// The winning move ends the game — the opponent does not get another roll.
+	if ( hasPlayerWon( { checkers: newCheckers, currentPlayer } ) ) {
+		return;
+	}
+
 	// When the turn ends (all dice used), hand off and auto-roll for the opponent.
 	if ( ! newDice.length ) {
-		dispatch( toggleCurrentPlayer( currentPlayer ) );
-		dispatch( rollDice() );
+		handOffTurn( { dispatch, checkers: newCheckers, currentPlayer } );
+		return;
+	}
+
+	// Dice remain but none of them can be played: the turn is over as well.
+	const playable = findPlayableDiceSequence(
+		newCheckers,
+		currentPlayer,
+		newDice
+	);
+	if ( playable.length === 0 ) {
+		dispatch(
+			setNotice(
+				createNotice(
+					NoticeStatusType.INFO,
+					MessageType.REMAINING_DICE_UNPLAYABLE
+				)
+			)
+		);
+		dispatch( setDice( [] ) );
+		handOffTurn( { dispatch, checkers: newCheckers, currentPlayer } );
 	}
 };

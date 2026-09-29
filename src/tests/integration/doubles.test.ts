@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { rollDice, setDice, moveChecker } from '../../data/actions';
 import { PlayerType } from '../../types';
+import type { CheckerType } from '../../types';
 import { createTestStore, padToFifteen } from './test-utils';
 
 describe( 'Doubles', () => {
@@ -47,7 +48,7 @@ describe( 'Doubles', () => {
 		const advance = ( fromLane: number, toLane: number ) => {
 			const next = store
 				.getState()
-				.checkers.map( ( c ) =>
+				.checkers.map( ( c: CheckerType ) =>
 					c.lane === fromLane && c.player === PlayerType.PLAYER_ONE
 						? { ...c, lane: toLane }
 						: c
