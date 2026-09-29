@@ -9,7 +9,7 @@
 - Built assets output to `dist/`; public HTML shell is `index.html`.
 
 ## Build, Test, and Development Commands
-- Install deps: `pnpm install` (pnpm lockfile committed). Use `nvm use` (Node 20.12.2) first.
+- Install deps: `pnpm install` (pnpm lockfile committed). Use `nvm use` (Node 22.14.0, required by Vite 8 and pnpm 10+) first.
 - Local dev server with HMR: `pnpm dev`.
 - Production build: `pnpm build` (type-check via `tsc`, then Vite build).
 - Preview build locally: `pnpm preview`.

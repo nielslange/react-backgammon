@@ -29,7 +29,7 @@ export const reducer = ( state = initialState, action: any ) => {
 			// not be able to undo moves from a completed turn.
 			return { ...state, currentPlayer: action.player, moveHistory: [] };
 
-		case ActionTypes.MOVE_CHECKER:
+		case ActionTypes.MOVE_CHECKER: {
 			// Save current state to history before applying move
 			const historyEntry = {
 				checkers: [ ...state.checkers ],
@@ -43,8 +43,9 @@ export const reducer = ( state = initialState, action: any ) => {
 				checkers: action.checkers,
 				moveHistory: [ ...state.moveHistory, historyEntry ],
 			};
+		}
 
-		case ActionTypes.UNDO_MOVE:
+		case ActionTypes.UNDO_MOVE: {
 			// If there are no moves to undo
 			if ( state.moveHistory.length === 0 ) {
 				return {
@@ -72,6 +73,7 @@ export const reducer = ( state = initialState, action: any ) => {
 					status: NoticeStatusType.INFO,
 				},
 			};
+		}
 
 		case ActionTypes.SET_GAME_OVER: {
 			const winnerScores = action.winner
@@ -85,7 +87,7 @@ export const reducer = ( state = initialState, action: any ) => {
 			return { ...state, gameOver: true, scores: winnerScores };
 		}
 
-		case ActionTypes.SURRENDER_GAME:
+		case ActionTypes.SURRENDER_GAME: {
 			// Determine the winner based on who surrendered
 			const winner =
 				state.currentPlayer === PlayerType.PLAYER_ONE
@@ -110,6 +112,7 @@ export const reducer = ( state = initialState, action: any ) => {
 					status: NoticeStatusType.INFO,
 				},
 			};
+		}
 
 		case ActionTypes.UPDATE_PIP_COUNT:
 			return { ...state, pipCount: action.pipCount };

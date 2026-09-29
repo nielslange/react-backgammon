@@ -1,6 +1,7 @@
 /**
  * External dependencies
  */
+import type React from 'react';
 import { clsx } from 'clsx';
 import { useSelector } from 'react-redux';
 import { Checker } from './Checker';
@@ -16,7 +17,7 @@ export const Lane = ( {
 	player,
 	bar,
 	off,
-}: LaneType ): JSX.Element => {
+}: LaneType ): React.JSX.Element => {
 	const checkers = useSelector( ( state: StateType ) => state.checkers );
 	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
