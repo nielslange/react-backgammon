@@ -24,6 +24,7 @@ export enum MessageType {
 	PLAYER_SURRENDERED = 'The current player has surrendered the game.',
 	GAME_RESTARTED = 'Game has been restarted. Good luck!',
 	GAME_LOADED = 'Position loaded. Good luck!',
+	INVALID_POSITION = 'Position rejected: a point cannot hold checkers of both players.',
 	MOVE_UNDONE = 'Last move has been undone.',
 	NO_MOVES_TO_UNDO = 'There are no moves to undo.',
 }

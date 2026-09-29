@@ -170,6 +170,24 @@ export const reducer = ( state = initialState, action: any ) => {
 			};
 
 		case ActionTypes.LOAD_GAME: {
+			// A point (1-24) can only ever hold one player's checkers.
+			const owners = new Map< number, PlayerType >();
+			const mixed = ( action.checkers as CheckerType[] ).some( ( c ) => {
+				if ( c.lane < 1 || c.lane > 24 ) return false;
+				const owner = owners.get( c.lane );
+				owners.set( c.lane, c.player );
+				return owner !== undefined && owner !== c.player;
+			} );
+			if ( mixed ) {
+				return {
+					...state,
+					notice: {
+						message: MessageType.INVALID_POSITION,
+						status: NoticeStatusType.ERROR,
+					},
+				};
+			}
+
 			const loaded: CheckerType[] = action.checkers.map(
 				( c: CheckerType ) => ( { ...c } )
 			);

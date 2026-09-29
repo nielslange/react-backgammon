@@ -43,4 +43,38 @@ describe( 'loadGame', () => {
 		checkers[ 0 ].lane = 1;
 		expect( store.getState().checkers[ 0 ].lane ).toBe( 6 );
 	} );
+
+	it( 'rejects a position with both players on the same point', () => {
+		const store = createTestStore();
+		const before = store.getState().checkers;
+		store.dispatch(
+			loadGame( {
+				checkers: makeCheckers( [
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 5 },
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 5 },
+				] ),
+				currentPlayer: PlayerType.PLAYER_ONE,
+			} )
+		);
+		expect( store.getState().checkers ).toBe( before );
+		expect( store.getState().notice.message ).toBe(
+			MessageType.INVALID_POSITION
+		);
+	} );
+
+	it( 'allows both players on the bar/off lanes 0 and 25', () => {
+		const store = createTestStore();
+		store.dispatch(
+			loadGame( {
+				checkers: makeCheckers( [
+					{ id: 1, player: PlayerType.PLAYER_ONE, lane: 0 }, // P1 bar
+					{ id: 2, player: PlayerType.PLAYER_TWO, lane: 0 }, // P2 off
+				] ),
+				currentPlayer: PlayerType.PLAYER_ONE,
+			} )
+		);
+		expect( store.getState().notice.message ).toBe(
+			MessageType.GAME_LOADED
+		);
+	} );
 } );

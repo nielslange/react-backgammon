@@ -267,7 +267,7 @@ const fmt = ( st: Step ) => `${ st.lane === 25 ? 'bar' : st.lane }→${ st.targe
 /** Play Red's whole turn if it is Red's turn. Returns a log of what happened. */
 export const playRedTurn = async ( page: Page, strength: Strength = 'normal' ): Promise< string[] > => {
 	const log: string[] = [];
-	let st = await readState( page );
+	const st = await readState( page );
 	if ( st.current !== ME || ! st.dice.length ) {
 		log.push( st.current === OPP ? 'Not my turn: Blue to move.' : 'Game not started or no dice.' );
 		return log;
@@ -296,7 +296,7 @@ export const startNewGame = async ( page: Page ) => {
  */
 export const MIDGAME: Array< { player: PlayerType; lane: number; count: number } > = [
 	{ player: OPP, lane: 6, count: 3 },
-	{ player: OPP, lane: 5, count: 2 },
+	{ player: OPP, lane: 7, count: 2 },
 	{ player: OPP, lane: 4, count: 2 },
 	{ player: OPP, lane: 8, count: 3 },
 	{ player: OPP, lane: 13, count: 3 },
@@ -309,6 +309,25 @@ export const MIDGAME: Array< { player: PlayerType; lane: number; count: number }
 	{ player: ME, lane: 5, count: 2 },
 	{ player: ME, lane: 1, count: 1 },
 ];
+
+/** A point can hold one colour only; 15 checkers per side. */
+export const assertLegalLayout = ( layout: typeof MIDGAME ) => {
+	const byLane = new Map< number, Set< PlayerType > >();
+	const totals: Record< string, number > = {};
+	for ( const { player, lane, count } of layout ) {
+		totals[ player ] = ( totals[ player ] ?? 0 ) + count;
+		if ( lane >= 1 && lane <= 24 ) {
+			byLane.set( lane, ( byLane.get( lane ) ?? new Set() ).add( player ) );
+		}
+	}
+	for ( const [ lane, players ] of byLane ) {
+		if ( players.size > 1 ) throw new Error( `Illegal layout: both colours on point ${ lane }` );
+	}
+	for ( const player of [ OPP, ME ] ) {
+		if ( totals[ player ] !== 15 ) throw new Error( `Illegal layout: ${ player } has ${ totals[ player ] ?? 0 } checkers` );
+	}
+};
+assertLegalLayout( MIDGAME );
 
 export const loadMidgame = async ( page: Page ) => {
 	await page.reload();
