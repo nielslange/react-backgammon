@@ -3,66 +3,83 @@
  */
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import { clsx } from 'clsx';
+import { useDispatch, useSelector } from 'react-redux';
 
 /**
  * Internal dependencies
  */
-import { useDispatch, useSelector } from 'react-redux';
-import { flipDice, rollDice, shiftDice } from '../data/actions';
-import { canUseDie } from '../helpers/validateMoveHelper';
+import { rollDice, selectDie } from '../data/actions';
+import {
+	getEffectiveDie,
+	getPlayableDice,
+} from '../helpers/moveSelectionHelper';
 import { StateType } from '../types';
+import diceOne from '../icons/dice-one-solid.svg';
+import diceTwo from '../icons/dice-two-solid.svg';
+import diceThree from '../icons/dice-three-solid.svg';
+import diceFour from '../icons/dice-four-solid.svg';
+import diceFive from '../icons/dice-five-solid.svg';
+import diceSix from '../icons/dice-six-solid.svg';
+
+const DIE_ICONS: Record< number, string > = {
+	1: diceOne,
+	2: diceTwo,
+	3: diceThree,
+	4: diceFour,
+	5: diceFive,
+	6: diceSix,
+};
 
 export const Dice = () => {
 	const dispatch = useDispatch();
 	const dice = useSelector( ( state: StateType ) => state.dice );
-	const diceOne = useSelector( ( state: StateType ) => state.dice[ 0 ] );
-	const diceTwo = useSelector( ( state: StateType ) => state.dice[ 1 ] );
-	const bonusOne = useSelector( ( state: StateType ) => state.dice[ 2 ] );
-	const bonusTwo = useSelector( ( state: StateType ) => state.dice[ 3 ] );
+	const selectedDie = useSelector(
+		( state: StateType ) => state.selectedDie
+	);
 	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
 	const checkers = useSelector( ( state: StateType ) => state.checkers );
 	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
 	);
-	// A playable die must be played, so Shift may only discard a die that
-	// cannot be used in the current position.
-	const headDiePlayable =
-		dice.length > 0 &&
-		currentPlayer !== null &&
-		canUseDie( dice[ 0 ], checkers, currentPlayer );
+
+	const playableDice = getPlayableDice( { dice, checkers, currentPlayer } );
+	const effectiveDie = getEffectiveDie( { dice, selectedDie, playableDice } );
 
 	return (
 		<div>
 			<h2 className="h6">Dice.tsx</h2>
-			<table>
-				<tbody>
-					<tr>
-						<td>Dice</td>
-						<td>:</td>
-						<td>{ dice }</td>
-					</tr>
-					<tr>
-						<td>Dice one</td>
-						<td>:</td>
-						<td>{ diceOne }</td>
-					</tr>
-					<tr>
-						<td>Dice two</td>
-						<td>:</td>
-						<td>{ diceTwo }</td>
-					</tr>
-					<tr>
-						<td>Bonus one</td>
-						<td>:</td>
-						<td>{ bonusOne }</td>
-					</tr>
-					<tr>
-						<td>Bonus two</td>
-						<td>:</td>
-						<td>{ bonusTwo }</td>
-					</tr>
-				</tbody>
-			</table>
+
+			<div className="dice-tray" aria-label="Dice">
+				{ dice.length === 0 && (
+					<span className="dice-tray__empty">No dice rolled</span>
+				) }
+				{ dice.map( ( die, index ) => {
+					const playable = ! gameOver && playableDice.includes( die );
+					return (
+						<button
+							key={ `${ index }-${ die }` }
+							type="button"
+							className={ clsx(
+								'die',
+								effectiveDie === die && 'die--selected'
+							) }
+							data-die={ die }
+							aria-label={ `Die ${ die }` }
+							aria-pressed={ effectiveDie === die }
+							title={
+								playable
+									? `Play the ${ die }`
+									: 'This die cannot be played right now'
+							}
+							disabled={ ! playable }
+							onClick={ () => dispatch( selectDie( die ) ) }
+						>
+							<img src={ DIE_ICONS[ die ] } alt="" />
+						</button>
+					);
+				} ) }
+			</div>
 
 			<ButtonGroup aria-label="Dice actions" className="mb-3">
 				<Button
@@ -77,29 +94,6 @@ export const Dice = () => {
 					}
 				>
 					Roll
-				</Button>
-				<Button
-					aria-label="Flip the dice"
-					variant="outline-secondary btn-sm"
-					onClick={ () => dispatch( flipDice( dice ) ) }
-					disabled={ gameOver }
-				>
-					Flip
-				</Button>
-				<Button
-					aria-label="Shift the dice"
-					variant="outline-secondary btn-sm"
-					onClick={ () => dispatch( shiftDice( dice ) ) }
-					disabled={
-						gameOver || dice.length === 0 || headDiePlayable
-					}
-					title={
-						headDiePlayable
-							? 'This die can be played and must not be discarded'
-							: undefined
-					}
-				>
-					Shift
 				</Button>
 			</ButtonGroup>
 		</div>

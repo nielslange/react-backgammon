@@ -12,8 +12,25 @@ import checkers from './checkers-start.json';
 
 export const reducer = ( state = initialState, action: any ) => {
 	switch ( action.type ) {
-		case ActionTypes.SET_DICE:
-			return { ...state, dice: [ ...action.dice ] };
+		case ActionTypes.SET_DICE: {
+			const dice: number[] = [ ...action.dice ];
+			return {
+				...state,
+				dice,
+				preview: null,
+				// Keep the chosen die only while it is still available.
+				selectedDie:
+					state.selectedDie !== null && dice.includes( state.selectedDie )
+						? state.selectedDie
+						: null,
+			};
+		}
+
+		case ActionTypes.SELECT_DIE:
+			return { ...state, selectedDie: action.die, preview: null };
+
+		case ActionTypes.SET_PREVIEW:
+			return { ...state, preview: action.preview };
 
 		case ActionTypes.SET_NOTICE:
 			return {
@@ -27,7 +44,13 @@ export const reducer = ( state = initialState, action: any ) => {
 		case ActionTypes.TOGGLE_CURRENT_PLAYER:
 			// A turn is final once it has been handed over: the opponent must
 			// not be able to undo moves from a completed turn.
-			return { ...state, currentPlayer: action.player, moveHistory: [] };
+			return {
+				...state,
+				currentPlayer: action.player,
+				moveHistory: [],
+				selectedDie: null,
+				preview: null,
+			};
 
 		case ActionTypes.MOVE_CHECKER: {
 			// Save current state to history before applying move
@@ -41,6 +64,7 @@ export const reducer = ( state = initialState, action: any ) => {
 			return {
 				...state,
 				checkers: action.checkers,
+				preview: null,
 				moveHistory: [ ...state.moveHistory, historyEntry ],
 			};
 		}
@@ -68,6 +92,8 @@ export const reducer = ( state = initialState, action: any ) => {
 				dice: lastState.dice,
 				pipCount: lastState.pipCount,
 				moveHistory: newHistory,
+				selectedDie: null,
+				preview: null,
 				notice: {
 					message: MessageType.MOVE_UNDONE,
 					status: NoticeStatusType.INFO,

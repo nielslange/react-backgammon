@@ -8,6 +8,8 @@ export const initialState: StateType = {
 	checkers,
 	currentPlayer: null,
 	dice: [],
+	selectedDie: null,
+	preview: null,
 	gameOver: false,
 	notice: {
 		message: MessageType.WELCOME,

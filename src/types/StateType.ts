@@ -16,10 +16,23 @@ export type OpeningRoll = {
 	[ PlayerType.PLAYER_TWO ]: number | null;
 };
 
+/**
+ * A move the player has previewed but not yet confirmed: the checker,
+ * where it stands, where it would land and which die it uses.
+ */
+export type MovePreview = {
+	checkerId: number;
+	from: number;
+	to: number;
+	die: number;
+};
+
 export type StateType = {
 	checkers: CheckerType[];
 	currentPlayer: PlayerType | null;
 	dice: number[];
+	selectedDie: number | null;
+	preview: MovePreview | null;
 	gameOver: boolean;
 	notice: NoticeType;
 	scores: {

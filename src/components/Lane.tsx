@@ -3,12 +3,13 @@
  */
 import type React from 'react';
 import { clsx } from 'clsx';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { Checker } from './Checker';
 
 /**
  * Internal dependencies
  */
+import { confirmPreview } from '../helpers/moveSelectionHelper';
 import type { LaneType, StateType } from '../types';
 
 export const Lane = ( {
@@ -18,11 +19,21 @@ export const Lane = ( {
 	bar,
 	off,
 }: LaneType ): React.JSX.Element => {
+	const dispatch = useDispatch();
+	const store = useStore< StateType >();
 	const checkers = useSelector( ( state: StateType ) => state.checkers );
 	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
 	);
+	const previewTarget = useSelector(
+		( state: StateType ) => state.preview?.to ?? null
+	);
 	const lanes = [];
+
+	// The previewed landing point. Lanes 0/25 double as bar and off tray,
+	// so only the current player's own off tray can be a target there.
+	const isTargetLane = ( lane: number ) =>
+		previewTarget === lane && ! bar && ( ! off || off === currentPlayer );
 
 	const renderChecker = ( lane: number, keySuffix: string = '' ) => {
 		const laneOwner = bar ? player : off ? off : undefined;
@@ -65,13 +76,24 @@ export const Lane = ( {
 			)
 		);
 		const key = keySuffix ? `${ player }-${ lane }` : lane.toString();
+		const isTarget = isTargetLane( lane );
 		return (
 			<div
-				className={ clsx( 'lane', bar && 'bar', off && 'off' ) }
+				className={ clsx(
+					'lane',
+					bar && 'bar',
+					off && 'off',
+					isTarget && 'lane--target'
+				) }
 				data-lane={ lane }
 				data-bar={ bar }
 				data-off={ off }
 				key={ key }
+				onClick={
+					isTarget
+						? () => confirmPreview( dispatch, store.getState() )
+						: undefined
+				}
 			>
 				{ checkerElements }
 			</div>

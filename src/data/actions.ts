@@ -1,7 +1,7 @@
 /**
  * Internal dependencies
  */
-import type { CheckerType, NoticeType } from '../types';
+import type { CheckerType, MovePreview, NoticeType } from '../types';
 import { ActionTypes, PlayerType } from '../types';
 
 /**
@@ -64,6 +64,20 @@ export const shiftDice = ( dice: number[] ) => {
  */
 export const setDice = ( dice: number[] ) => {
 	return { type: ActionTypes.SET_DICE, dice };
+};
+
+/**
+ * Select which die the player wants to play next. `null` clears the choice.
+ */
+export const selectDie = ( die: number | null ) => {
+	return { type: ActionTypes.SELECT_DIE, die };
+};
+
+/**
+ * Store (or clear) the move the player is previewing before confirming it.
+ */
+export const setPreview = ( preview: MovePreview | null ) => {
+	return { type: ActionTypes.SET_PREVIEW, preview };
 };
 
 /**
