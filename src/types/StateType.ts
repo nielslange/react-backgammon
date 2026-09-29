@@ -16,21 +16,33 @@ export type OpeningRoll = {
 	[ PlayerType.PLAYER_TWO ]: number | null;
 };
 
+/** One legal landing point for a previewed checker and the die it uses. */
+export type MoveOption = {
+	die: number;
+	to: number;
+};
+
 /**
- * A move the player has previewed but not yet confirmed: the checker,
- * where it stands, where it would land and which die it uses.
+ * The checker the player has clicked, where it stands, and every legal
+ * landing point it has with the remaining dice.
  */
 export type MovePreview = {
 	checkerId: number;
 	from: number;
-	to: number;
-	die: number;
+	options: MoveOption[];
 };
+
+/**
+ * Beginner: click a checker, its landing points light up, click one.
+ * Advanced: pick a die first, then a checker click moves immediately.
+ */
+export type GameMode = 'beginner' | 'advanced';
 
 export type StateType = {
 	checkers: CheckerType[];
 	currentPlayer: PlayerType | null;
 	dice: number[];
+	mode: GameMode;
 	selectedDie: number | null;
 	preview: MovePreview | null;
 	gameOver: boolean;

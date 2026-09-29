@@ -8,6 +8,7 @@ export const initialState: StateType = {
 	checkers,
 	currentPlayer: null,
 	dice: [],
+	mode: 'beginner',
 	selectedDie: null,
 	preview: null,
 	gameOver: false,

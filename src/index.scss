@@ -247,7 +247,6 @@ table {
 		border: 3px solid transparent;
 		border-radius: 10px;
 		background: #eceff4;
-		cursor: pointer;
 		transition: border-color 0.15s, background-color 0.15s;
 
 		img {
@@ -256,8 +255,8 @@ table {
 			height: 100%;
 		}
 
-		&:hover:not(:disabled) {
-			background: #d8dee9;
+		&--unplayable {
+			opacity: 0.35;
 		}
 
 		&--selected {
@@ -265,9 +264,16 @@ table {
 			background: #d8dee9;
 		}
 
-		&:disabled {
-			opacity: 0.35;
-			cursor: not-allowed;
+		&:is(button) {
+			cursor: pointer;
+
+			&:hover:not(:disabled) {
+				background: #d8dee9;
+			}
+
+			&:disabled {
+				cursor: not-allowed;
+			}
 		}
 	}
 }

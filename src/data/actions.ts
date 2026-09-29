@@ -1,7 +1,7 @@
 /**
  * Internal dependencies
  */
-import type { CheckerType, MovePreview, NoticeType } from '../types';
+import type { CheckerType, GameMode, MovePreview, NoticeType } from '../types';
 import { ActionTypes, PlayerType } from '../types';
 
 /**
@@ -67,10 +67,18 @@ export const setDice = ( dice: number[] ) => {
 };
 
 /**
- * Select which die the player wants to play next. `null` clears the choice.
+ * Select which die to play next (advanced mode). `null` clears the choice.
  */
 export const selectDie = ( die: number | null ) => {
 	return { type: ActionTypes.SELECT_DIE, die };
+};
+
+/**
+ * Switch between beginner mode (preview landing points) and advanced
+ * mode (select a die, then click a checker to move).
+ */
+export const setMode = ( mode: GameMode ) => {
+	return { type: ActionTypes.SET_MODE, mode };
 };
 
 /**
@@ -142,6 +150,22 @@ export const setGameOver = ( winner: PlayerType, points: number = 1 ) => {
  */
 export const restartGame = () => {
 	return { type: ActionTypes.RESTART_GAME };
+};
+
+/**
+ * Load a position: checkers, the player to move and (optionally) their
+ * dice. Used to resume a saved game or start from a prepared position.
+ */
+export const loadGame = ( {
+	checkers,
+	currentPlayer,
+	dice = [],
+}: {
+	checkers: CheckerType[];
+	currentPlayer: PlayerType | null;
+	dice?: number[];
+} ) => {
+	return { type: ActionTypes.LOAD_GAME, checkers, currentPlayer, dice };
 };
 
 /**

@@ -3,13 +3,14 @@
  */
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import Form from 'react-bootstrap/Form';
 import { clsx } from 'clsx';
 import { useDispatch, useSelector } from 'react-redux';
 
 /**
  * Internal dependencies
  */
-import { rollDice, selectDie } from '../data/actions';
+import { rollDice, selectDie, setMode } from '../data/actions';
 import {
 	getEffectiveDie,
 	getPlayableDice,
@@ -31,9 +32,16 @@ const DIE_ICONS: Record< number, string > = {
 	6: diceSix,
 };
 
+/**
+ * Shows the dice still to be played this turn; dice that cannot be played
+ * are dimmed. In beginner mode they are indicators only (click a checker,
+ * then a highlighted point). In advanced mode click a die to select it,
+ * then a checker click moves immediately.
+ */
 export const Dice = () => {
 	const dispatch = useDispatch();
 	const dice = useSelector( ( state: StateType ) => state.dice );
+	const mode = useSelector( ( state: StateType ) => state.mode );
 	const selectedDie = useSelector(
 		( state: StateType ) => state.selectedDie
 	);
@@ -43,40 +51,79 @@ export const Dice = () => {
 		( state: StateType ) => state.currentPlayer
 	);
 
+	const advanced = mode === 'advanced';
 	const playableDice = getPlayableDice( { dice, checkers, currentPlayer } );
-	const effectiveDie = getEffectiveDie( { dice, selectedDie, playableDice } );
+	const effectiveDie = advanced
+		? getEffectiveDie( { dice, selectedDie, playableDice } )
+		: null;
 
 	return (
 		<div>
 			<h2 className="h6">Dice.tsx</h2>
 
-			<div className="dice-tray" aria-label="Dice">
+			<Form.Check
+				type="switch"
+				id="beginner-mode"
+				className="mb-2"
+				label={
+					advanced
+						? 'Advanced mode: select a die, then click a checker'
+						: 'Beginner mode: click a checker, then a highlighted point'
+				}
+				checked={ ! advanced }
+				onChange={ ( event ) =>
+					dispatch(
+						setMode(
+							event.target.checked ? 'beginner' : 'advanced'
+						)
+					)
+				}
+			/>
+
+			<div className="dice-tray" aria-label="Dice" data-mode={ mode }>
 				{ dice.length === 0 && (
 					<span className="dice-tray__empty">No dice rolled</span>
 				) }
 				{ dice.map( ( die, index ) => {
 					const playable = ! gameOver && playableDice.includes( die );
-					return (
+					const className = clsx(
+						'die',
+						! playable && 'die--unplayable',
+						effectiveDie === die && 'die--selected'
+					);
+					const title = playable
+						? advanced
+							? `Play the ${ die }`
+							: `${ die } can be played`
+						: `${ die } cannot be played right now`;
+
+					return advanced ? (
 						<button
 							key={ `${ index }-${ die }` }
 							type="button"
-							className={ clsx(
-								'die',
-								effectiveDie === die && 'die--selected'
-							) }
+							className={ className }
 							data-die={ die }
+							data-playable={ playable }
 							aria-label={ `Die ${ die }` }
 							aria-pressed={ effectiveDie === die }
-							title={
-								playable
-									? `Play the ${ die }`
-									: 'This die cannot be played right now'
-							}
+							title={ title }
 							disabled={ ! playable }
 							onClick={ () => dispatch( selectDie( die ) ) }
 						>
 							<img src={ DIE_ICONS[ die ] } alt="" />
 						</button>
+					) : (
+						<div
+							key={ `${ index }-${ die }` }
+							className={ className }
+							data-die={ die }
+							data-playable={ playable }
+							role="img"
+							aria-label={ `Die ${ die }` }
+							title={ title }
+						>
+							<img src={ DIE_ICONS[ die ] } alt="" />
+						</div>
 					);
 				} ) }
 			</div>

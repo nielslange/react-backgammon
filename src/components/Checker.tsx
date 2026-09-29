@@ -7,7 +7,10 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { handleCheckerSelection } from '../helpers/moveSelectionHelper';
+import {
+	handleCheckerSelection,
+	handleDirectMove,
+} from '../helpers/moveSelectionHelper';
 import { StateType } from '../types';
 
 export const Checker = ( props: any ) => {
@@ -22,7 +25,12 @@ export const Checker = ( props: any ) => {
 		// The lane underneath confirms a preview on click; a checker click
 		// must not double as a lane click.
 		event.stopPropagation();
-		handleCheckerSelection( dispatch, store.getState(), { id, player } );
+		const state = store.getState();
+		if ( state.mode === 'advanced' ) {
+			handleDirectMove( dispatch, state, { id, player } );
+		} else {
+			handleCheckerSelection( dispatch, state, { id, player } );
+		}
 	};
 
 	return (

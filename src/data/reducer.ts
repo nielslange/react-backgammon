@@ -8,7 +8,9 @@ import {
 	NoticeStatusType,
 	PlayerType,
 } from '../types';
+import type { CheckerType } from '../types';
 import checkers from './checkers-start.json';
+import { calculatePipCount } from './selectors';
 
 export const reducer = ( state = initialState, action: any ) => {
 	switch ( action.type ) {
@@ -20,7 +22,8 @@ export const reducer = ( state = initialState, action: any ) => {
 				preview: null,
 				// Keep the chosen die only while it is still available.
 				selectedDie:
-					state.selectedDie !== null && dice.includes( state.selectedDie )
+					state.selectedDie !== null &&
+					dice.includes( state.selectedDie )
 						? state.selectedDie
 						: null,
 			};
@@ -28,6 +31,14 @@ export const reducer = ( state = initialState, action: any ) => {
 
 		case ActionTypes.SELECT_DIE:
 			return { ...state, selectedDie: action.die, preview: null };
+
+		case ActionTypes.SET_MODE:
+			return {
+				...state,
+				mode: action.mode,
+				selectedDie: null,
+				preview: null,
+			};
 
 		case ActionTypes.SET_PREVIEW:
 			return { ...state, preview: action.preview };
@@ -108,7 +119,7 @@ export const reducer = ( state = initialState, action: any ) => {
 						[ action.winner ]:
 							state.scores[ action.winner as PlayerType ] +
 							( action.points ?? 1 ),
-				  }
+					}
 				: state.scores;
 			return { ...state, gameOver: true, scores: winnerScores };
 		}
@@ -146,8 +157,9 @@ export const reducer = ( state = initialState, action: any ) => {
 		case ActionTypes.RESTART_GAME:
 			return {
 				...initialState,
-				// Preserve scores when restarting
+				// Preserve scores and the chosen mode when restarting
 				scores: state.scores,
+				mode: state.mode,
 				// Reset checkers to starting position
 				checkers: JSON.parse( JSON.stringify( checkers ) ),
 				// Set a restart message
@@ -156,6 +168,36 @@ export const reducer = ( state = initialState, action: any ) => {
 					status: NoticeStatusType.INFO,
 				},
 			};
+
+		case ActionTypes.LOAD_GAME: {
+			const loaded: CheckerType[] = action.checkers.map(
+				( c: CheckerType ) => ( { ...c } )
+			);
+			return {
+				...state,
+				checkers: loaded,
+				currentPlayer: action.currentPlayer,
+				dice: [ ...action.dice ],
+				selectedDie: null,
+				preview: null,
+				gameOver: false,
+				moveHistory: [],
+				pipCount: {
+					[ PlayerType.PLAYER_ONE ]: calculatePipCount( {
+						checkers: loaded,
+						player: PlayerType.PLAYER_ONE,
+					} ),
+					[ PlayerType.PLAYER_TWO ]: calculatePipCount( {
+						checkers: loaded,
+						player: PlayerType.PLAYER_TWO,
+					} ),
+				},
+				notice: {
+					message: MessageType.GAME_LOADED,
+					status: NoticeStatusType.INFO,
+				},
+			};
+		}
 
 		case ActionTypes.ROLL_OPENING_DIE: {
 			const nextOpening = {
@@ -183,7 +225,8 @@ export const reducer = ( state = initialState, action: any ) => {
 					p1 > p2 ? PlayerType.PLAYER_ONE : PlayerType.PLAYER_TWO;
 				const high = Math.max( p1, p2 );
 				const low = Math.min( p1, p2 );
-				const dice = high === low ? [ high, high, high, high ] : [ high, low ];
+				const dice =
+					high === low ? [ high, high, high, high ] : [ high, low ];
 
 				return {
 					...state,

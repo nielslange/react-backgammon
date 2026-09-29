@@ -25,15 +25,16 @@ export const Lane = ( {
 	const currentPlayer = useSelector(
 		( state: StateType ) => state.currentPlayer
 	);
-	const previewTarget = useSelector(
-		( state: StateType ) => state.preview?.to ?? null
-	);
+	const preview = useSelector( ( state: StateType ) => state.preview );
 	const lanes = [];
 
-	// The previewed landing point. Lanes 0/25 double as bar and off tray,
+	// A previewed landing point. Lanes 0/25 double as bar and off tray,
 	// so only the current player's own off tray can be a target there.
 	const isTargetLane = ( lane: number ) =>
-		previewTarget === lane && ! bar && ( ! off || off === currentPlayer );
+		preview !== null &&
+		preview.options.some( ( o ) => o.to === lane ) &&
+		! bar &&
+		( ! off || off === currentPlayer );
 
 	const renderChecker = ( lane: number, keySuffix: string = '' ) => {
 		const laneOwner = bar ? player : off ? off : undefined;
@@ -91,7 +92,12 @@ export const Lane = ( {
 				key={ key }
 				onClick={
 					isTarget
-						? () => confirmPreview( dispatch, store.getState() )
+						? () =>
+								confirmPreview(
+									dispatch,
+									store.getState(),
+									lane
+								)
 						: undefined
 				}
 			>
