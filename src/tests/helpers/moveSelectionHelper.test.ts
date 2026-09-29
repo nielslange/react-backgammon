@@ -271,6 +271,58 @@ describe( 'handleCheckerSelection', () => {
 		expect( store.getState().currentPlayer ).toBe( PlayerType.PLAYER_TWO );
 	} );
 
+	it( 'clicking an own checker on a highlighted point moves there', () => {
+		// Blue on 13 and a Blue stack on 8: 13→8 with the 5 lands on the stack.
+		const checkers = makeCheckers( [
+			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 13 },
+			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 8 },
+			{ id: 3, player: PlayerType.PLAYER_ONE, lane: 8 },
+			{ id: 4, player: PlayerType.PLAYER_TWO, lane: 1 },
+		] );
+		const store = createTestStore( {
+			currentPlayer: PlayerType.PLAYER_ONE,
+			dice: [ 3, 5 ],
+			checkers,
+		} );
+		handleCheckerSelection( store.dispatch, store.getState(), {
+			id: 1,
+			player: PlayerType.PLAYER_ONE,
+		} );
+		handleCheckerSelection( store.dispatch, store.getState(), {
+			id: 2,
+			player: PlayerType.PLAYER_ONE,
+		} );
+		expect( lanesOf( store.getState().checkers ) ).toEqual( [
+			8, 8, 8, 1,
+		] );
+		expect( store.getState().dice ).toEqual( [ 3 ] );
+		expect( store.getState().preview ).toBe( null );
+	} );
+
+	it( "clicking the opponent's blot on a highlighted point hits it", () => {
+		const checkers = makeCheckers( [
+			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 13 },
+			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 10 }, // blot
+		] );
+		const store = createTestStore( {
+			currentPlayer: PlayerType.PLAYER_ONE,
+			dice: [ 3, 5 ],
+			checkers,
+		} );
+		handleCheckerSelection( store.dispatch, store.getState(), {
+			id: 1,
+			player: PlayerType.PLAYER_ONE,
+		} );
+		handleCheckerSelection( store.dispatch, store.getState(), {
+			id: 2,
+			player: PlayerType.PLAYER_TWO,
+		} );
+		expect( lanesOf( store.getState().checkers ) ).toEqual( [ 10, 25 ] );
+		expect( store.getState().notice.message ).toBe(
+			MessageType.MOVE_CHECKER_AND_HIT
+		);
+	} );
+
 	it( 'switching checkers replaces the preview instead of moving', () => {
 		const store = createTestStore( {
 			currentPlayer: PlayerType.PLAYER_ONE,

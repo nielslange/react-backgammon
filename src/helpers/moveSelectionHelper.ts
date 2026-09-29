@@ -160,6 +160,21 @@ export const handleCheckerSelection = (
 		return reject( MessageType.ROLL_DICE_FIRST );
 	}
 
+	// Clicking a checker that stands on a highlighted landing point (own
+	// stack, or the opponent's blot about to be hit) means "move there".
+	if ( preview !== null && preview.checkerId !== id ) {
+		const clickedLane = checkers.find( ( c ) => c.id === id )?.lane;
+		const onBoard =
+			clickedLane !== undefined && clickedLane >= 1 && clickedLane <= 24;
+		const isLandingPoint =
+			clickedLane !== undefined &&
+			preview.options.some( ( o ) => o.to === clickedLane ) &&
+			( onBoard || player === currentPlayer );
+		if ( isLandingPoint ) {
+			return confirmPreview( dispatch, state, clickedLane );
+		}
+	}
+
 	const { options, rejection } = getMoveOptions( state, { id, player } );
 	if ( ! options.length ) {
 		return reject( rejection ?? MessageType.NO_MOVE_FOR_CHECKER );
