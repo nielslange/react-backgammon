@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { AppShell } from '../../components/AppShell';
 import { makeStore } from '../../data/createStore';
+import { newGame } from '../../data/gameSlice';
 
 let pathname = '/';
 vi.mock( 'next/navigation', () => ( { usePathname: () => pathname } ) );
@@ -33,20 +34,60 @@ describe( 'AppShell', () => {
 	it( 'offers a new game in the header during a game, not on the start screen', () => {
 		pathname = '/game';
 		renderShell();
-		expect( screen.getByRole( 'link', { name: 'New game' } ) ).toHaveAttribute( 'href', '/' );
+		expect(
+			screen.getByRole( 'link', { name: 'New game' } )
+		).toHaveAttribute( 'href', '/' );
 	} );
 
 	it( 'has no new-game link on the start screen', () => {
 		pathname = '/';
 		renderShell();
-		expect( screen.queryByRole( 'link', { name: 'New game' } ) ).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole( 'link', { name: 'New game' } )
+		).not.toBeInTheDocument();
 	} );
 
 	it( 'renders a header with a home link and the page content', () => {
 		renderShell();
 		expect( screen.getByRole( 'banner' ) ).toBeInTheDocument();
-		expect( screen.getByRole( 'link', { name: /backgammon/i } ) ).toHaveAttribute( 'href', '/' );
+		expect(
+			screen.getByRole( 'link', { name: /backgammon/i } )
+		).toHaveAttribute( 'href', '/' );
 		expect( screen.getByRole( 'main' ) ).toHaveTextContent( 'content' );
+	} );
+
+	it( 'names the game being played in the header and the tab title', () => {
+		pathname = '/game';
+		const store = makeStore();
+		store.dispatch( newGame( { variant: 'triktrak' } ) );
+		render(
+			<Provider store={ store }>
+				<AppShell>
+					<p>content</p>
+				</AppShell>
+			</Provider>
+		);
+		expect(
+			screen.getByRole( 'link', { name: 'Triktrak' } )
+		).toHaveAttribute( 'href', '/' );
+		expect( document.title ).toBe( 'Triktrak' );
+	} );
+
+	it( 'shows Backgammon on the start screen whatever was played last', () => {
+		pathname = '/';
+		const store = makeStore();
+		store.dispatch( newGame( { variant: 'triktrak' } ) );
+		render(
+			<Provider store={ store }>
+				<AppShell>
+					<p>content</p>
+				</AppShell>
+			</Provider>
+		);
+		expect(
+			screen.getByRole( 'link', { name: 'Backgammon' } )
+		).toBeInTheDocument();
+		expect( document.title ).toBe( 'Backgammon' );
 	} );
 
 	it( 'cycles the theme system → light → dark → system and sets data-theme', async () => {
@@ -55,9 +96,15 @@ describe( 'AppShell', () => {
 		expect( document.documentElement ).not.toHaveAttribute( 'data-theme' );
 		await userEvent.click( toggle );
 		expect( store.getState().ui.theme ).toBe( 'light' );
-		expect( document.documentElement ).toHaveAttribute( 'data-theme', 'light' );
+		expect( document.documentElement ).toHaveAttribute(
+			'data-theme',
+			'light'
+		);
 		await userEvent.click( toggle );
-		expect( document.documentElement ).toHaveAttribute( 'data-theme', 'dark' );
+		expect( document.documentElement ).toHaveAttribute(
+			'data-theme',
+			'dark'
+		);
 		await userEvent.click( toggle );
 		expect( store.getState().ui.theme ).toBe( 'system' );
 		expect( document.documentElement ).not.toHaveAttribute( 'data-theme' );
