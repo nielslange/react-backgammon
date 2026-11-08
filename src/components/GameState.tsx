@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
  */
 import { newGame, resign, undoStep } from '../data/gameSlice';
 import type { AppDispatch, RootState } from '../data/store';
-import { Button } from './Button';
+import { Button } from './primitives/Button';
 
 export const GameState = () => {
 	const dispatch = useDispatch< AppDispatch >();

@@ -7,7 +7,7 @@ import { Board, Dice, GameState, Notice, PipCount, Players } from '.';
 
 export const Game = () => {
 	return (
-		<main className="game mx-auto flex max-w-[1200px] flex-wrap gap-6 p-4">
+		<div className="game flex flex-wrap gap-6">
 			<div className="rounded-card border border-line bg-surface p-6 shadow-raised">
 				<Board />
 			</div>
@@ -18,6 +18,6 @@ export const Game = () => {
 				<GameState />
 				<Notice />
 			</div>
-		</main>
+		</div>
 	);
 };

@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { newGame } from '../data/gameSlice';
 import type { AppDispatch, RootState } from '../data/store';
 import { getFormattedPlayerNameWithEmoji } from '../helpers/playerNameHelper';
-import { Button } from './Button';
+import { Button } from './primitives/Button';
 
 export const Players = () => {
 	const dispatch = useDispatch< AppDispatch >();
