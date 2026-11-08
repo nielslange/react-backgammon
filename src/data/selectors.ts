@@ -75,6 +75,8 @@ const errorMessage = ( code: EngineErrorCode, game: GameState ): MessageType => 
 			return MessageType.CUBE_NOT_ALLOWED;
 		case 'INVALID_POSITION':
 			return MessageType.INVALID_POSITION;
+		case 'UNKNOWN_VARIANT':
+			return MessageType.UNKNOWN_VARIANT;
 	}
 };
 

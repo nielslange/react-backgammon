@@ -4,7 +4,8 @@ export type EngineErrorCode =
 	| 'ILLEGAL_STEP'
 	| 'NOTHING_TO_UNDO'
 	| 'CUBE_NOT_ALLOWED'
-	| 'INVALID_POSITION';
+	| 'INVALID_POSITION'
+	| 'UNKNOWN_VARIANT';
 
 /**
  * Thrown by every engine function on an illegal call. The Redux layer

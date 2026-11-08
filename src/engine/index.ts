@@ -3,6 +3,7 @@
  * DOM or Node imports anywhere below this file.
  */
 import { backgammon } from './backgammon';
+import { EngineError } from './errors';
 import type { RulesEngine } from './RulesEngine';
 import type { VariantId } from './types';
 
@@ -10,12 +11,19 @@ const ENGINES: Partial< Record< VariantId, RulesEngine > > = {
 	backgammon,
 };
 
+/** Whether an engine is registered for this variant id. */
+export const hasEngine = ( variant: unknown ): variant is VariantId =>
+	typeof variant === 'string' &&
+	Object.prototype.hasOwnProperty.call( ENGINES, variant );
+
 export const getEngine = ( variant: VariantId ): RulesEngine => {
-	const engine = ENGINES[ variant ];
-	if ( ! engine ) {
-		throw new Error( `Unknown variant: ${ String( variant ) }` );
+	if ( ! hasEngine( variant ) ) {
+		throw new EngineError(
+			'UNKNOWN_VARIANT',
+			`Unknown variant: ${ String( variant ) }`
+		);
 	}
-	return engine;
+	return ENGINES[ variant ]!;
 };
 
 export * from './types';

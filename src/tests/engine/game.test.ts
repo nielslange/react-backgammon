@@ -274,6 +274,6 @@ describe( 'snapshot and restore', () => {
 	} );
 	it( 'rejects garbage', () => {
 		expect( code( () => restore( null ) ) ).toBe( 'INVALID_POSITION' );
-		expect( code( () => restore( { variant: 'chess' } ) ) ).toBe( 'INVALID_POSITION' );
+		expect( code( () => restore( { variant: 'chess' } ) ) ).toBe( 'UNKNOWN_VARIANT' );
 	} );
 } );

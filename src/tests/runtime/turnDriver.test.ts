@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeStore } from '../../data/createStore';
 import { loadSnapshot, newGame, playStep } from '../../data/gameSlice';
-import { selectLegalSteps } from '../../data/selectors';
+import { selectLegalSteps, selectNotice } from '../../data/selectors';
+import { MessageType } from '../../types';
 import { configureSession } from '../../data/sessionSlice';
 import { setMode } from '../../data/uiSlice';
 import { rollDie, scripted, seeded } from '../../runtime/rng';
@@ -171,5 +172,42 @@ describe( 'turnDriver', () => {
 		store.dispatch( playStep( { step } ) );
 		expect( store.getState().game.state.phase ).toBe( 'over' );
 		expect( store.getState().session.scores ).toEqual( { [ P1 ]: 2, [ P2 ]: 0 } );
+	} );
+} );
+
+describe( 'turnDriver notices', () => {
+	beforeEach( () => vi.useFakeTimers() );
+	afterEach( () => vi.useRealTimers() );
+
+	it( 'keeps telling the player that the previous roll was forfeited after the auto-roll', async () => {
+		const store = storeWith( [ 2, 1, 3, 3 ] );
+		store.dispatch( configureSession( { players: twoHumans, matchTarget: 1 } ) );
+		store.dispatch( newGame( { variant: 'backgammon' } ) );
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 1 },
+			{ player: P1, lane: 12, count: 14 },
+			{ player: P2, lane: 19, count: 2 },
+			{ player: P2, lane: 20, count: 2 },
+			{ player: P2, lane: 21, count: 2 },
+			{ player: P2, lane: 22, count: 2 },
+			{ player: P2, lane: 23, count: 2 },
+			{ player: P2, lane: 24, count: 2 },
+			{ player: P2, lane: 10, count: 3 },
+		] );
+		store.dispatch(
+			loadSnapshot( {
+				snapshot: {
+					...store.getState().game.state,
+					checkers,
+					phase: 'awaiting-roll' as const,
+					player: P1,
+					firstMover: P1,
+				},
+			} )
+		);
+		await vi.advanceTimersByTimeAsync( DELAYS.roll );
+		await vi.advanceTimersByTimeAsync( DELAYS.roll );
+		expect( store.getState().game.state.dice ).toEqual( [ 3, 3, 3, 3 ] );
+		expect( selectNotice( store.getState() ).message ).toBe( MessageType.OPPONENT_FORFEITED );
 	} );
 } );

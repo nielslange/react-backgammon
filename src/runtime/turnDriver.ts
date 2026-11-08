@@ -16,6 +16,9 @@ import {
 } from '../data/gameSlice';
 import { selectSeatToAct } from '../data/selectors';
 import { gameEnded } from '../data/sessionSlice';
+import { setHint } from '../data/uiSlice';
+import { MessageType } from '../types/MessageType';
+import { NoticeStatusType } from '../types/NoticeStatusType';
 import { PlayerType } from '../types/PlayerType';
 import { rollDice, rollDie, type Rng } from './rng';
 
@@ -60,6 +63,17 @@ export const startTurnDriver = (
 			await api.delay( delays.roll );
 			if ( api.getState().game.state !== before ) return;
 			api.dispatch( roll( { roll: rollDice( rng ) } ) );
+			// Keep explaining a forfeited previous roll until the next move,
+			// unless this roll is itself forfeited (that shows its own notice).
+			const after = api.getState().game.state;
+			if ( before.lastEvent === 'forfeit' && after.lastEvent !== 'forfeit' ) {
+				api.dispatch(
+					setHint( {
+						message: MessageType.OPPONENT_FORFEITED,
+						status: NoticeStatusType.INFO,
+					} )
+				);
+			}
 		},
 	} );
 
