@@ -101,25 +101,28 @@
 	color-scheme: dark;
 }
 
-body {
-	background: var( --color-canvas );
-	color: var( --color-ink );
-	font-family: var( --font-sans );
-	-webkit-font-smoothing: antialiased;
-}
+/* Base rules live in the base layer so utilities (outline-none, …) can override them. */
+@layer base {
+	body {
+		background: var( --color-canvas );
+		color: var( --color-ink );
+		font-family: var( --font-sans );
+		-webkit-font-smoothing: antialiased;
+	}
 
-:focus-visible {
-	outline: 2px solid var( --color-accent );
-	outline-offset: 2px;
-}
+	:focus-visible {
+		outline: 2px solid var( --color-accent );
+		outline-offset: 2px;
+	}
 
-@media ( prefers-reduced-motion: reduce ) {
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
-		scroll-behavior: auto !important;
+	@media ( prefers-reduced-motion: reduce ) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
 	}
 }
