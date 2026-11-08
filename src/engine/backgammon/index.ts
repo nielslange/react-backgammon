@@ -2,28 +2,14 @@
  * The backgammon rules engine.
  */
 import startCheckers from '../../data/checkers-start.json';
-import { EngineError } from '../errors';
-import { opponent } from '../constants';
+import { applyLegalStep, handOff } from '../common';
 import type { RulesEngine } from '../RulesEngine';
 import type { Checker, GameState, Roll, Step } from '../types';
-import { moveOne } from './movement';
 import { pipCount } from './pips';
 import { gameResult } from './result';
 import { legalSteps, legalTurns } from './turns';
 
 const ORDERED = false;
-
-/** Hand the turn to the opponent, who must now roll. */
-const handOff = ( state: GameState, forfeited: boolean ): GameState => ( {
-	...state,
-	player: state.player === null ? null : opponent( state.player ),
-	phase: 'awaiting-roll',
-	roll: null,
-	dice: [],
-	turnSteps: [],
-	rerolls: 0,
-	lastEvent: forfeited ? 'forfeit' : 'hand-off',
-} );
 
 export const backgammon: RulesEngine = {
 	id: 'backgammon',
@@ -46,34 +32,8 @@ export const backgammon: RulesEngine = {
 			? []
 			: legalTurns( state.checkers, state.player, state.dice, ORDERED ),
 
-	applyStep: ( state, step: Step ) => {
-		if ( state.player === null ) {
-			throw new EngineError( 'NOT_YOUR_TURN' );
-		}
-		const legal = backgammon
-			.legalSteps( state )
-			.find( ( s ) => s.from === step.from && s.die === step.die );
-		if ( ! legal ) {
-			throw new EngineError( 'ILLEGAL_STEP' );
-		}
-		const { checkers, hit, moverId } = moveOne(
-			state.checkers,
-			state.player,
-			step.checkerId,
-			legal.from,
-			legal.to
-		);
-		const dice = [ ...state.dice ];
-		dice.splice( dice.indexOf( step.die ), 1 );
-		const played: Step = { ...legal, checkerId: moverId, hit };
-		return {
-			...state,
-			checkers,
-			dice,
-			turnSteps: [ ...state.turnSteps, played ],
-			lastEvent: hit ? 'hit' : null,
-		};
-	},
+	applyStep: ( state, step: Step ) =>
+		applyLegalStep( state, step, backgammon.legalSteps( state ) ),
 
 	afterStep: ( state ) => {
 		const result = gameResult( state.checkers, state.cube.value );

@@ -23,14 +23,14 @@ const valid = () => ( { ...createGame( 'backgammon' ), phase: 'moving', player: 
 
 describe( 'unknown variants', () => {
 	it( 'getEngine throws UNKNOWN_VARIANT', () => {
-		expect( code( () => getEngine( 'triktrak' ) ) ).toBe( 'UNKNOWN_VARIANT' );
+		expect( code( () => getEngine( 'chess' as never ) ) ).toBe( 'UNKNOWN_VARIANT' );
 	} );
 	it( 'newGame and loadSnapshot with an unregistered variant set lastError instead of throwing', () => {
 		const store = makeStore();
-		expect( () => store.dispatch( newGame( { variant: 'triktrak' } ) ) ).not.toThrow();
+		expect( () => store.dispatch( newGame( { variant: 'chess' as never } ) ) ).not.toThrow();
 		expect( store.getState().game.lastError ).toBe( 'UNKNOWN_VARIANT' );
 		expect( () =>
-			store.dispatch( loadSnapshot( { snapshot: { ...valid(), variant: 'triktrak' } } ) )
+			store.dispatch( loadSnapshot( { snapshot: { ...valid(), variant: 'chess' } } ) )
 		).not.toThrow();
 		expect( store.getState().game.lastError ).toBe( 'UNKNOWN_VARIANT' );
 	} );

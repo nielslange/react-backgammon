@@ -3,12 +3,14 @@
  * DOM or Node imports anywhere below this file.
  */
 import { backgammon } from './backgammon';
+import { triktrak } from './triktrak';
 import { EngineError } from './errors';
 import type { RulesEngine } from './RulesEngine';
 import type { VariantId } from './types';
 
 const ENGINES: Partial< Record< VariantId, RulesEngine > > = {
 	backgammon,
+	triktrak,
 };
 
 /** Whether an engine is registered for this variant id. */
