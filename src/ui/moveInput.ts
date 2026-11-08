@@ -11,14 +11,8 @@ import type { AppDispatch, RootState } from '../data/createStore';
 import { playStep } from '../data/gameSlice';
 import { selectLegalSteps, selectPlayableDice } from '../data/selectors';
 import { setHint, setPreview } from '../data/uiSlice';
-import { allInHome } from '../engine/backgammon/bearOff';
-import {
-	hasBarChecker,
-	isBlocked,
-	targetLane,
-} from '../engine/backgammon/movement';
-import { stepsForDie } from '../engine/backgammon/turns';
-import { BAR, OFF, isOnBoard } from '../engine/constants';
+import { getEngine } from '../engine';
+import { isOnBoard } from '../engine/constants';
 import type { Checker, Step } from '../engine/types';
 import { MessageType, NoticeStatusType } from '../types';
 
@@ -59,26 +53,7 @@ const rejectionFor = ( root: RootState, checkerId: number ): MessageType => {
 	if ( ! checker || checker.player !== game.player ) {
 		return MessageType.NOT_YOUR_CHECKER;
 	}
-	const player = game.player;
-	if ( checker.lane === OFF[ player ] ) return MessageType.FINISHED_CHECKER;
-	if ( hasBarChecker( game.checkers, player ) && checker.lane !== BAR[ player ] ) {
-		return MessageType.WAITING_CHECKER;
-	}
-	const dice = [ ...new Set( game.dice ) ];
-	const targets = dice.map( ( die ) => targetLane( player, checker.lane, die ) );
-	if ( targets.some( ( to ) => isBlocked( game.checkers, player, to ) ) ) {
-		return MessageType.TARGET_OCCUPIED_BY_OPPONENT;
-	}
-	if (
-		targets.some( ( to ) => to === OFF[ player ] ) &&
-		! allInHome( game.checkers, player )
-	) {
-		return MessageType.NOT_ALL_CHECKERS_IN_END_ZONE;
-	}
-	const rawMove = dice.some( ( die ) =>
-		stepsForDie( game.checkers, player, die ).some( ( s ) => s.from === checker.lane )
-	);
-	return rawMove ? MessageType.MUST_PLAY_MAX_DICE : MessageType.NO_MOVE_FOR_CHECKER;
+	return getEngine( game.variant ).explainRefusal( game, checkerId ) ?? MessageType.NO_MOVE_FOR_CHECKER;
 };
 
 const hint = (

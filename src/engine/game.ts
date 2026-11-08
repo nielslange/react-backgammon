@@ -20,6 +20,12 @@ import { DEFAULT_OPTIONS } from './types';
 
 const PLAYERS: Player[] = [ PlayerType.PLAYER_ONE, PlayerType.PLAYER_TWO ];
 
+/** Checkers on each player's bar lane. */
+const barCounts = ( checkers: Checker[] ): Record< Player, number > => ( {
+	[ PlayerType.PLAYER_ONE ]: checkers.filter( ( c ) => c.player === PlayerType.PLAYER_ONE && c.lane === BAR[ PlayerType.PLAYER_ONE ] ).length,
+	[ PlayerType.PLAYER_TWO ]: checkers.filter( ( c ) => c.player === PlayerType.PLAYER_TWO && c.lane === BAR[ PlayerType.PLAYER_TWO ] ).length,
+} );
+
 export const createGame = (
 	variant: VariantId,
 	options: Partial< VariantOptions > = {}
@@ -27,6 +33,8 @@ export const createGame = (
 	variant,
 	options: { ...DEFAULT_OPTIONS, ...options },
 	checkers: getEngine( variant ).initialCheckers(),
+	// At the start every checker on a bar lane is waiting for its first entry.
+	waiting: barCounts( getEngine( variant ).initialCheckers() ),
 	player: null,
 	firstMover: null,
 	phase: 'opening',
@@ -112,10 +120,14 @@ export const undoStep = ( state: GameState ): GameState => {
 	const dice = engine.orderedDice
 		? [ last.die, ...state.dice ]
 		: [ ...state.dice, last.die ];
+	const waiting = last.firstEntry
+		? { ...state.waiting, [ state.player ]: state.waiting[ state.player ] + 1 }
+		: state.waiting;
 	return {
 		...state,
 		checkers,
 		dice,
+		waiting,
 		turnSteps: state.turnSteps.slice( 0, -1 ),
 		lastEvent: 'undo',
 	};
@@ -267,11 +279,26 @@ const readStep = ( value: unknown, ids: Set< number > ): Step => {
 		! isInt( value.from, 0, 25 ) ||
 		! isInt( value.to, 0, 25 ) ||
 		! isDie( value.die ) ||
-		typeof value.hit !== 'boolean'
+		typeof value.hit !== 'boolean' ||
+		( value.firstEntry !== undefined && typeof value.firstEntry !== 'boolean' )
 	) {
 		return invalid( 'malformed step' );
 	}
-	return { checkerId: value.checkerId, from: value.from, to: value.to, die: value.die, hit: value.hit };
+	const step: Step = { checkerId: value.checkerId, from: value.from, to: value.to, die: value.die, hit: value.hit };
+	if ( value.firstEntry ) step.firstEntry = true;
+	return step;
+};
+
+/** Waiting counts from a snapshot; older snapshots treat Triktrak bar checkers as never entered. */
+const readWaiting = ( value: unknown, variant: VariantId, checkers: Checker[] ): Record< Player, number > => {
+	const bar = barCounts( checkers );
+	if ( value === undefined ) {
+		return variant === 'triktrak' ? bar : { [ PlayerType.PLAYER_ONE ]: 0, [ PlayerType.PLAYER_TWO ]: 0 };
+	}
+	if ( ! isObject( value ) || ! PLAYERS.every( ( p ) => isInt( value[ p ], 0, bar[ p ] ) ) ) {
+		return invalid( 'malformed waiting' );
+	}
+	return { [ PlayerType.PLAYER_ONE ]: value[ PlayerType.PLAYER_ONE ] as number, [ PlayerType.PLAYER_TWO ]: value[ PlayerType.PLAYER_TWO ] as number };
 };
 
 /**
@@ -321,6 +348,7 @@ export const restore = ( json: unknown ): GameState => {
 		dice: [ ...dice ],
 		turnSteps: stepsRaw.map( ( s ) => readStep( s, ids ) ),
 		rerolls: pick( 'rerolls', ( v ) => isInt( v, 0, 1000 ) ),
+		waiting: readWaiting( json.waiting, json.variant, checkers ),
 		cube: { value: cube.value, owner: cube.owner, offered: cube.offered },
 		result: result === null ? null : { winner: result.winner, points: result.points, kind: result.kind },
 		lastEvent: pick( 'lastEvent', ( v ) => EVENTS.includes( v as GameState[ 'lastEvent' ] ) ),

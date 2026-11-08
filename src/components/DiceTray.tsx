@@ -51,6 +51,8 @@ export const DiceTray = () => {
 	const mode = useSelector( ( root: RootState ) => root.ui.mode );
 	const playable = useSelector( selectPlayableDice );
 	const chosen = useSelector( effectiveDie );
+	const ordered = useSelector( ( root: RootState ) => getEngine( root.game.state.variant ).orderedDice );
+	const nextIndex = faces.findIndex( ( f ) => ! f.used );
 	const advanced = mode === 'advanced';
 	// Remounting the dice on every new roll replays the roll animation.
 	const rollKey = roll ? roll.join( '-' ) + faces.length : 'none';
@@ -60,13 +62,15 @@ export const DiceTray = () => {
 			<div key={ rollKey } className="dice-tray flex min-h-14 flex-wrap items-center gap-2" data-mode={ mode }>
 				{ faces.length === 0 && <span className="text-sm text-muted">{ status }</span> }
 				{ faces.map( ( face, index ) => {
-					const blocked = ! face.used && ! playable.includes( face.value );
+					const isNext = ordered && index === nextIndex;
+					const blocked = ! face.used && ( ordered ? isNext : true ) && ! playable.includes( face.value );
 					const die = (
 						<Die
 							value={ face.value }
 							used={ face.used }
 							blocked={ blocked }
-							selected={ advanced && ! face.used && chosen === face.value }
+							selected={ advanced && ! face.used && ! ordered && chosen === face.value }
+							next={ isNext }
 							decorative={ advanced && ! face.used }
 							className="animate-die-roll"
 						/>

@@ -3,6 +3,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { getEngine } from '../../engine';
+import { createGame, openingRoll, play, restore, roll, undoStep } from '../../engine/game';
+import { rollDice, rollDie, seeded } from '../../runtime/rng';
+import { MessageType } from '../../types/MessageType';
 import { expandRoll, isDouble, isTricTrac } from '../../engine/triktrak/rolls';
 import { DEFAULT_OPTIONS } from '../../engine/types';
 import type { GameState } from '../../engine/types';
@@ -10,8 +13,15 @@ import { P1, P2, pos, stateWith } from './fixtures';
 
 const triktrak = getEngine( 'triktrak' );
 
-const tt = ( partial: Partial< GameState > ): GameState =>
-	stateWith( { variant: 'triktrak', ...partial } );
+/** By default every checker on a bar lane is still waiting for its first entry. */
+const tt = ( partial: Partial< GameState > ): GameState => {
+	const checkers = partial.checkers ?? [];
+	const waiting = {
+		[ P1 ]: checkers.filter( ( c ) => c.player === P1 && c.lane === 0 ).length,
+		[ P2 ]: checkers.filter( ( c ) => c.player === P2 && c.lane === 25 ).length,
+	};
+	return stateWith( { variant: 'triktrak', waiting, ...partial } );
+};
 
 /** Both players fully entered and spread out, nothing blocked near P1. */
 const spread = () =>
@@ -359,5 +369,116 @@ describe( 'Triktrak final turn and draw', () => {
 		const s = bearOffLast( endgame( [ { lane: 23, count: 2 } ], { options } ) );
 		expect( s.phase ).toBe( 'over' );
 		expect( s.result ).toEqual( { winner: P1, points: 1, kind: 'single' } );
+	} );
+} );
+
+describe( 'Triktrak refusal messages', () => {
+	it( 'explains a blocked next die', () => {
+		// 13-6 = 7 and 13-2 = 11 are both held, so no later die helps either.
+		const checkers = pos( [
+			{ player: P1, lane: 13, count: 1 },
+			{ player: P1, lane: 20, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 7, count: 2 },
+			{ player: P2, lane: 11, count: 2 },
+			{ player: P2, lane: 25, count: 11 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 6, 2 ], roll: [ 6, 2 ] } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.TARGET_OCCUPIED_BY_OPPONENT );
+		expect( triktrak.explainRefusal( state, 2 ) ).toBeNull();
+	} );
+
+	it( 'explains that checkers enter only on doubles when that option is on', () => {
+		const options = { ...DEFAULT_OPTIONS, enterOnlyOnDoubles: true };
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 14 },
+			{ player: P1, lane: 18, count: 1 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 5, 3 ], roll: [ 5, 3 ], options } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.ENTER_ON_DOUBLES );
+	} );
+
+	it( 'explains that the dice are played in order', () => {
+		const later = pos( [
+			{ player: P1, lane: 13, count: 1 },
+			{ player: P1, lane: 20, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 7, count: 1 },
+			{ player: P2, lane: 9, count: 2 },
+			{ player: P2, lane: 25, count: 12 },
+		] );
+		// Next die 4: 13-4 = 9 held; the later 2 would work (13-2 = 11).
+		const s = tt( { checkers: later, player: P1, dice: [ 4, 2 ], roll: [ 4, 2 ] } );
+		expect( triktrak.explainRefusal( s, 1 ) ).toBe( MessageType.PLAY_DICE_IN_ORDER );
+	} );
+} );
+
+describe( 'Triktrak whole games', () => {
+	it( 'a scripted two-player game reaches the end', () => {
+		const rng = seeded( 7 );
+		let g = createGame( 'triktrak' );
+		for ( let guard = 0; g.phase === 'opening' && guard < 50; guard++ ) {
+			g = openingRoll( g, rollDie( rng ), rollDie( rng ) );
+		}
+		let moves = 0;
+		for ( let guard = 0; g.phase !== 'over' && guard < 20000; guard++ ) {
+			if ( g.phase === 'awaiting-roll' ) g = roll( g, rollDice( rng ) );
+			else if ( g.phase === 'moving' ) {
+				g = play( g, triktrak.legalSteps( g )[ 0 ] );
+				moves++;
+			}
+		}
+		expect( g.phase ).toBe( 'over' );
+		expect( g.result ).not.toBeNull();
+		expect( moves ).toBeGreaterThan( 30 );
+	} );
+} );
+
+describe( 'Triktrak hit checkers enter first', () => {
+	it( 'a new game has fifteen checkers per player waiting for their first entry', () => {
+		expect( createGame( 'triktrak' ).waiting ).toEqual( { [ P1 ]: 15, [ P2 ]: 15 } );
+		expect( createGame( 'backgammon' ).waiting ).toEqual( { [ P1 ]: 0, [ P2 ]: 0 } );
+	} );
+
+	it( 'a hit checker must enter before checkers on the board move', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 1 },
+			{ player: P1, lane: 18, count: 14 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		// No first entries pending: the bar checker was hit.
+		const state = tt( { checkers, player: P1, dice: [ 4, 2 ], roll: [ 4, 2 ], waiting: { [ P1 ]: 0, [ P2 ]: 15 } } );
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ) ).toEqual( [ 0 ] );
+		expect( triktrak.explainRefusal( state, 2 ) ).toBe( MessageType.WAITING_CHECKER );
+	} );
+
+	it( 'with a hit checker among first entries, entering frees the board again', () => {
+		// 11 on the bar, 10 of them never entered: one is a hit checker.
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 11 },
+			{ player: P1, lane: 18, count: 4 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		let state = tt( { checkers, player: P1, dice: [ 4, 2 ], roll: [ 4, 2 ], waiting: { [ P1 ]: 10, [ P2 ]: 15 } } );
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ) ).toEqual( [ 0 ] );
+		state = triktrak.afterStep( triktrak.applyStep( state, triktrak.legalSteps( state )[ 0 ] ) );
+		expect( state.waiting[ P1 ] ).toBe( 10 );
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ).sort( ( a, b ) => a - b ) ).toEqual( [ 0, 18, 21 ] );
+	} );
+
+	it( 'a first entry counts down the waiting checkers, and undo counts it back', () => {
+		const start = tt( { checkers: triktrak.initialCheckers(), player: P1, dice: [ 5, 3 ], roll: [ 5, 3 ] } );
+		const entered = play( start, triktrak.legalSteps( start )[ 0 ] );
+		expect( entered.waiting[ P1 ] ).toBe( 14 );
+		expect( undoStep( entered ).waiting[ P1 ] ).toBe( 15 );
+	} );
+
+	it( 'restores the waiting counts from a snapshot and derives them when missing', () => {
+		const g = { ...createGame( 'triktrak' ), waiting: { [ P1 ]: 12, [ P2 ]: 15 } };
+		expect( restore( JSON.parse( JSON.stringify( g ) ) ).waiting ).toEqual( { [ P1 ]: 12, [ P2 ]: 15 } );
+		const old: Partial< GameState > = { ...g };
+		delete old.waiting;
+		expect( restore( JSON.parse( JSON.stringify( old ) ) ).waiting ).toEqual( { [ P1 ]: 15, [ P2 ]: 15 } );
 	} );
 } );

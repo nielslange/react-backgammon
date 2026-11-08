@@ -9,6 +9,7 @@ import type {
 	VariantId,
 	VariantOptions,
 } from './types';
+import type { MessageType } from '../types/MessageType';
 
 /**
  * One implementation per variant. Everything is pure: same input, same
@@ -34,4 +35,9 @@ export interface RulesEngine {
 	onRoll( state: GameState, roll: Roll ): GameState;
 	result( state: GameState ): GameResult | null;
 	pipCount( state: GameState, player: Player ): number;
+	/**
+	 * Why this checker of the player to move has no legal step, or null if
+	 * it has one. Phase and ownership are checked by the caller.
+	 */
+	explainRefusal( state: GameState, checkerId: number ): MessageType | null;
 }

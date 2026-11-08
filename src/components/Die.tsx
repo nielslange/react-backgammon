@@ -19,16 +19,18 @@ type Props = {
 	/** Cannot be played right now. */
 	blocked?: boolean;
 	selected?: boolean;
+	/** The die to play next when dice are played in order. */
+	next?: boolean;
 	decorative?: boolean;
 	className?: string;
 };
 
 /** One die drawn as SVG, ivory with dark pips. */
-export const Die = ( { value, used, blocked, selected, decorative, className }: Props ) => {
+export const Die = ( { value, used, blocked, selected, next, decorative, className }: Props ) => {
 	// Played and unplayable dice are drawn as outlines instead of being faded,
 	// so they stay legible (3:1) while reading as inactive.
 	const inactive = used || blocked;
-	const label = `Die showing ${ value }${ used ? ', used' : '' }${ blocked && ! used ? ', cannot be played' : '' }`;
+	const label = `Die showing ${ value }${ used ? ', used' : '' }${ blocked && ! used ? ', cannot be played' : '' }${ next ? ', next' : '' }`;
 	return (
 		<svg
 			viewBox="0 0 48 48"
@@ -48,8 +50,8 @@ export const Die = ( { value, used, blocked, selected, decorative, className }: 
 				height="44"
 				rx="10"
 				fill={ inactive ? 'none' : 'var(--color-checker-light)' }
-				stroke={ selected ? 'var(--color-focus)' : inactive ? 'var(--color-control)' : 'var(--color-die-edge)' }
-				strokeWidth={ selected ? 4 : 2 }
+				stroke={ selected || next ? 'var(--color-focus)' : inactive ? 'var(--color-control)' : 'var(--color-die-edge)' }
+				strokeWidth={ selected || next ? 4 : 2 }
 				strokeDasharray={ used ? '5 4' : undefined }
 			/>
 			{ PIPS[ value ]?.map( ( [ col, row ], i ) => (

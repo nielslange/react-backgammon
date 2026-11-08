@@ -22,6 +22,8 @@ export type Step = {
 	to: number;
 	die: number;
 	hit: boolean;
+	/** Triktrak: this step was a checker's first entry (undo counts it back). */
+	firstEntry?: boolean;
 };
 
 export type Turn = Step[];
@@ -100,6 +102,11 @@ export type GameState = {
 	turnSteps: Step[];
 	/** Triktrak: re-rolls taken this turn. */
 	rerolls: number;
+	/**
+	 * Triktrak: checkers per player on the bar that have never entered.
+	 * Bar checkers beyond this count were hit and must enter first.
+	 */
+	waiting: Record< Player, number >;
 	cube: CubeState;
 	result: GameResult | null;
 	/** What the last transition did, for notices and sounds. */

@@ -15,6 +15,8 @@ import { Switch } from './primitives/Switch';
 
 type Opponent = 'local' | 'ai' | 'online';
 type Length = '1' | '3' | '5' | '7';
+type Rerolls = 'unlimited' | '1' | '2';
+type PerPoint = 'none' | '5' | '3';
 
 const VARIANTS: Array< {
 	id: VariantId;
@@ -32,7 +34,7 @@ const VARIANTS: Array< {
 		id: 'triktrak',
 		title: 'Triktrak',
 		blurb: 'The Dutch game: enter all fifteen checkers, doubles roll again.',
-		available: false,
+		available: true,
 	},
 ];
 
@@ -85,6 +87,11 @@ export const StartScreen = () => {
 	const [ red, setRed ] = useState( 'Dark' );
 	const [ length, setLength ] = useState< Length >( '1' );
 	const [ cube, setCube ] = useState( true );
+	const [ rerolls, setRerolls ] = useState< Rerolls >( 'unlimited' );
+	const [ onlyIfCompleted, setOnlyIfCompleted ] = useState( true );
+	const [ enterOnDoubles, setEnterOnDoubles ] = useState( false );
+	const [ perPoint, setPerPoint ] = useState< PerPoint >( 'none' );
+	const [ finalTurn, setFinalTurn ] = useState( true );
 	const variantLabel = useId();
 
 	const start = () => {
@@ -97,8 +104,19 @@ export const StartScreen = () => {
 				matchTarget: Number( length ),
 			} )
 		);
-		// A double cannot change a 1-point match, so it plays without the cube.
-		dispatch( newGame( { variant, options: { cube: cube && length !== '1' } } ) );
+		const options =
+			variant === 'triktrak'
+				? {
+						cube: false,
+						rerollLimit: rerolls === 'unlimited' ? null : Number( rerolls ),
+						rerollOnlyIfCompleted: onlyIfCompleted,
+						enterOnlyOnDoubles: enterOnDoubles,
+						maxCheckersPerPoint: perPoint === 'none' ? null : Number( perPoint ),
+						finalTurnForSecondPlayer: finalTurn,
+				  }
+				: // A double cannot change a 1-point match, so it plays without the cube.
+				  { cube: cube && length !== '1' };
+		dispatch( newGame( { variant, options } ) );
 		router.push( '/game' );
 	};
 
@@ -192,14 +210,59 @@ export const StartScreen = () => {
 						{ value: '7', label: '7 points' },
 					] }
 				/>
-				<Switch
-					label="Doubling cube"
-					checked={ cube && length !== '1' }
-					onChange={ setCube }
-					disabled={ length === '1' }
-					className="pb-2"
-				/>
+				{ variant === 'backgammon' && (
+					<Switch
+						label="Doubling cube"
+						checked={ cube && length !== '1' }
+						onChange={ setCube }
+						disabled={ length === '1' }
+						className="pb-2"
+					/>
+				) }
 			</div>
+
+			{ variant === 'triktrak' && (
+				<fieldset className="flex flex-col gap-5 rounded-card border-2 border-line p-4">
+					<legend className="px-1 text-xs font-medium uppercase tracking-wide text-muted">
+						Triktrak rules
+					</legend>
+					<div className="flex flex-wrap gap-6">
+						<Segmented< Rerolls >
+							label="Bonus rolls per turn"
+							value={ rerolls }
+							onChange={ setRerolls }
+							options={ [
+								{ value: 'unlimited', label: 'Unlimited' },
+								{ value: '1', label: 'Once' },
+								{ value: '2', label: 'Twice' },
+							] }
+						/>
+						<Segmented< PerPoint >
+							label="Checkers per point"
+							value={ perPoint }
+							onChange={ setPerPoint }
+							options={ [
+								{ value: 'none', label: 'No limit' },
+								{ value: '5', label: '5' },
+								{ value: '3', label: '3' },
+							] }
+						/>
+					</div>
+					<div className="flex flex-col gap-3">
+						<Switch
+							label="Bonus roll only when all dice were played"
+							checked={ onlyIfCompleted }
+							onChange={ setOnlyIfCompleted }
+						/>
+						<Switch label="Enter only on doubles" checked={ enterOnDoubles } onChange={ setEnterOnDoubles } />
+						<Switch
+							label="Final turn for the second player"
+							checked={ finalTurn }
+							onChange={ setFinalTurn }
+						/>
+					</div>
+				</fieldset>
+			) }
 
 			<div>
 				<Button variant="primary" onClick={ start } className="min-h-11 px-6 text-base">

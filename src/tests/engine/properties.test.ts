@@ -8,6 +8,7 @@ import { pipCount } from '../../engine/backgammon/pips';
 import { legalSteps, legalTurns } from '../../engine/backgammon/turns';
 import { OFF } from '../../engine/constants';
 import { play } from '../../engine/game';
+import { getEngine } from '../../engine';
 import { DEFAULT_OPTIONS } from '../../engine/types';
 import type { Checker, Player, Roll } from '../../engine/types';
 import { P1, P2, stateWith } from './fixtures';
@@ -115,6 +116,50 @@ describe( 'engine properties', () => {
 				}
 				expect( state.player === p && state.phase === 'moving' ).toBe( false );
 			} )
+		);
+	} );
+} );
+
+describe( 'Triktrak properties', () => {
+	const triktrak = getEngine( 'triktrak' );
+	const ttState = ( checkers: Checker[], r: Roll, p: Player ) =>
+		stateWith( {
+			variant: 'triktrak',
+			checkers,
+			player: p,
+			roll: r,
+			dice: triktrak.expandRoll( r, DEFAULT_OPTIONS ),
+		} );
+
+	it( 'every legal step uses the next die and keeps 15 checkers per player', () => {
+		fc.assert(
+			fc.property( position, roll, player, ( checkers, r, p ) => {
+				const state = ttState( checkers, r, p );
+				for ( const step of triktrak.legalSteps( state ) ) {
+					expect( step.die ).toBe( state.dice[ 0 ] );
+					const next = play( state, step );
+					expect( next.checkers.filter( ( c ) => c.player === P1 ) ).toHaveLength( 15 );
+					expect( next.checkers.filter( ( c ) => c.player === P2 ) ).toHaveLength( 15 );
+				}
+			} ),
+			{ numRuns: 60 }
+		);
+	} );
+
+	it( 'every legal step starts a line that plays the most dice (non-tric-trac rolls)', () => {
+		fc.assert(
+			fc.property( position, roll.filter( ( [ a, b ] ) => ! ( Math.min( a, b ) === 1 && Math.max( a, b ) === 2 ) ), player, ( checkers, r, p ) => {
+				const state = ttState( checkers, r, p );
+				const turns = triktrak.legalTurns( state );
+				const max = Math.max( 0, ...turns.map( ( t ) => t.length ) );
+				for ( const step of triktrak.legalSteps( state ) ) {
+					const after = triktrak.applyStep( state, step );
+					const rest = triktrak.legalTurns( { ...after, dice: after.dice } );
+					const longest = Math.max( 0, ...rest.map( ( t ) => t.length ) );
+					expect( 1 + longest ).toBe( max );
+				}
+			} ),
+			{ numRuns: 60 }
 		);
 	} );
 } );

@@ -83,4 +83,15 @@ describe( 'BoardSvg', () => {
 		await userEvent.click( checker );
 		expect( onCheckerClick ).toHaveBeenCalledWith( 1 );
 	} );
+
+	it( 'shows how many checkers wait on the bar', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 15 },
+			{ player: P2, lane: 25, count: 3 },
+			{ player: P2, lane: 20, count: 12 },
+		] );
+		const { container } = renderBoard( { checkers } );
+		const labels = [ ...container.querySelectorAll( '[data-bar-count]' ) ].map( ( e ) => e.textContent );
+		expect( labels.sort() ).toEqual( [ '15', '3' ] );
+	} );
 } );

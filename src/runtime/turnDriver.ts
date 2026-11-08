@@ -57,15 +57,18 @@ export const startTurnDriver = (
 		before: RootState[ 'game' ][ 'state' ]
 	) => {
 		api.dispatch( roll( { roll: rollDice( rng ) } ) );
-		// Unless this roll is itself forfeited (that shows its own notice).
+		// Keep explaining why this roll happened (a forfeited turn, a bonus
+		// roll, the final turn) until the next move, unless this roll is
+		// itself forfeited, which shows its own notice.
 		const after = api.getState().game.state;
-		if ( before.lastEvent === 'forfeit' && after.lastEvent !== 'forfeit' ) {
-			api.dispatch(
-				setHint( {
-					message: MessageType.OPPONENT_FORFEITED,
-					status: NoticeStatusType.INFO,
-				} )
-			);
+		const why: Partial< Record< NonNullable< typeof before.lastEvent >, MessageType > > = {
+			forfeit: MessageType.OPPONENT_FORFEITED,
+			reroll: MessageType.BONUS_ROLL,
+			'final-turn': MessageType.FINAL_TURN,
+		};
+		const message = before.lastEvent ? why[ before.lastEvent ] : undefined;
+		if ( message && after.lastEvent !== 'forfeit' ) {
+			api.dispatch( setHint( { message, status: NoticeStatusType.INFO } ) );
 		}
 	};
 

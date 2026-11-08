@@ -40,6 +40,7 @@ export const stateWith = ( partial: Partial< GameState > ): GameState => ( {
 	dice: [],
 	turnSteps: [],
 	rerolls: 0,
+	waiting: { [ P1 ]: 0, [ P2 ]: 0 },
 	cube: { value: 1, owner: null, offered: false },
 	result: null,
 	lastEvent: null,

@@ -98,6 +98,29 @@ describe( 'DiceTray', () => {
 	} );
 } );
 
+describe( 'DiceTray in Triktrak', () => {
+	const triktrakMoving = ( dice: number[], roll: [ number, number ] ) => {
+		const store = makeStore();
+		store.dispatch( newGame( { variant: 'triktrak' } ) );
+		store.dispatch(
+			loadSnapshot( {
+				snapshot: { ...store.getState().game.state, phase: 'moving', player: P1, firstMover: P1, roll, dice },
+			} )
+		);
+		return store;
+	};
+
+	it( 'shows all eight dice of a tric trac and marks the next one', () => {
+		const store = triktrakMoving( [ 1, 1, 2, 2, 5, 5, 6, 6 ], [ 1, 2 ] );
+		withProvider( store, <DiceTray /> );
+		const dice = screen.getAllByRole( 'img', { name: /^Die showing/ } );
+		expect( dice ).toHaveLength( 8 );
+		expect( dice[ 0 ] ).toHaveAccessibleName( 'Die showing 1, next' );
+		// Later dice are waiting their turn, not blocked.
+		expect( dice.filter( ( d ) => d.getAttribute( 'aria-disabled' ) === 'true' ) ).toHaveLength( 0 );
+	} );
+} );
+
 describe( 'PlayerCard', () => {
 	const setup = () => {
 		const store = makeStore();

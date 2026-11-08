@@ -24,6 +24,10 @@ export enum MessageType {
 	TURN_FORFEITED = 'No playable dice — the turn passes to the opponent.',
 	ROLL_AGAIN = 'Roll again!',
 	GAME_DRAWN = 'The game is a draw.',
+	ENTER_ON_DOUBLES = 'Checkers can only enter on a double or a tric trac.',
+	PLAY_DICE_IN_ORDER = 'The dice are played in order: this checker cannot use the next die.',
+	POINT_FULL = 'That point already holds the most checkers allowed.',
+	BONUS_ROLL = 'All dice played: a bonus roll.',
 	FINAL_TURN = 'All checkers of the first player are off: the other player gets one final roll to draw level.',
 	CUBE_NOT_ALLOWED = 'You cannot double right now.',
 }

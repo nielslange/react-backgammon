@@ -54,6 +54,8 @@ type Placed = {
 	y: number;
 	slab?: Rect;
 	count?: number;
+	/** Checkers waiting on the bar, shown on the top one of the stack. */
+	barCount?: number;
 };
 
 /** Where every checker is drawn, in viewBox units. */
@@ -79,7 +81,8 @@ const layout = ( checkers: Checker[] ): Placed[] => {
 				} );
 			} else if ( lane === BAR_LANE[ player ] ) {
 				const { x, y } = barCenter( player, index, group.length );
-				placed.push( { checker, place: 'bar', x, y } );
+				const top = index === group.length - 1;
+				placed.push( { checker, place: 'bar', x, y, barCount: top && group.length > 1 ? group.length : undefined } );
 			} else {
 				const slab = offSlot( player, index );
 				placed.push( {
@@ -243,7 +246,7 @@ export const BoardSvg = ( {
 			} ) }
 
 			{ /* Checkers, keyed by id so moves animate */ }
-			{ placed.map( ( { checker, place, x, y, slab, count } ) => {
+			{ placed.map( ( { checker, place, x, y, slab, count, barCount } ) => {
 				const dragging = drag?.id === checker.id;
 				const cx = dragging ? drag.x : x;
 				const cy = dragging ? drag.y : y;
@@ -310,6 +313,22 @@ export const BoardSvg = ( {
 								<circle r={ CHECKER_R + 4 } stroke="var(--color-target-inner)" strokeWidth="7" />
 								<circle r={ CHECKER_R + 4 } stroke="var(--color-target-outer)" strokeWidth="3.5" />
 							</g>
+						) }
+						{ barCount !== undefined && (
+							<text
+								data-bar-count={ barCount }
+								textAnchor="middle"
+								dominantBaseline="central"
+								fontSize="20"
+								fontWeight="700"
+								fill={
+									checker.player === PlayerType.PLAYER_ONE
+										? 'var(--color-count-on-light)'
+										: 'var(--color-count-on-dark)'
+								}
+							>
+								{ barCount }
+							</text>
 						) }
 						{ count !== undefined && (
 							<text

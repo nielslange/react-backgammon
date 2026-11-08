@@ -211,3 +211,30 @@ describe( 'turnDriver notices', () => {
 		expect( selectNotice( store.getState() ).message ).toBe( MessageType.OPPONENT_FORFEITED );
 	} );
 } );
+
+describe( 'turnDriver and Triktrak', () => {
+	beforeEach( () => vi.useFakeTimers() );
+	afterEach( () => vi.useRealTimers() );
+
+	it( 'rolls the bonus roll for the same player and says so', async () => {
+		const store = storeWith( [ 5, 3, 4, 4 ] );
+		store.dispatch( configureSession( { players: twoHumans, matchTarget: 1 } ) );
+		store.dispatch( newGame( { variant: 'triktrak' } ) );
+		store.dispatch(
+			loadSnapshot( {
+				snapshot: {
+					...store.getState().game.state,
+					phase: 'awaiting-roll' as const,
+					player: P1,
+					firstMover: P1,
+					rerolls: 1,
+					lastEvent: 'reroll' as const,
+				},
+			} )
+		);
+		await vi.advanceTimersByTimeAsync( DELAYS.roll );
+		expect( store.getState().game.state.player ).toBe( P1 );
+		expect( store.getState().game.state.dice.length ).toBeGreaterThan( 0 );
+		expect( selectNotice( store.getState() ).message ).toBe( MessageType.BONUS_ROLL );
+	} );
+} );

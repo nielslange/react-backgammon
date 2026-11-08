@@ -67,9 +67,27 @@ describe( 'StartScreen', () => {
 		expect( store.getState().session.players[ P1 ].name ).toBe( 'Light' );
 	} );
 
-	it( 'shows Triktrak, the AI and online play as not yet available', () => {
+	it( 'starts a Triktrak game with its own options and no cube', async () => {
+		const store = renderStart();
+		await userEvent.click( screen.getByRole( 'radio', { name: /triktrak/i } ) );
+		expect( screen.queryByRole( 'switch', { name: /doubling cube/i } ) ).not.toBeInTheDocument();
+		await userEvent.click( screen.getByRole( 'switch', { name: /enter only on doubles/i } ) );
+		await userEvent.click( screen.getByRole( 'radio', { name: 'Once' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
+		const { options, variant } = store.getState().game.state;
+		expect( variant ).toBe( 'triktrak' );
+		expect( options ).toMatchObject( {
+			cube: false,
+			enterOnlyOnDoubles: true,
+			rerollLimit: 1,
+			rerollOnlyIfCompleted: true,
+			finalTurnForSecondPlayer: true,
+			maxCheckersPerPoint: null,
+		} );
+	} );
+
+	it( 'shows the computer and online play as not yet available', () => {
 		renderStart();
-		expect( screen.getByRole( 'radio', { name: /triktrak/i } ) ).toBeDisabled();
 		expect( screen.getByRole( 'radio', { name: /computer/i } ) ).toBeDisabled();
 		expect( screen.getByRole( 'radio', { name: /online/i } ) ).toBeDisabled();
 	} );
