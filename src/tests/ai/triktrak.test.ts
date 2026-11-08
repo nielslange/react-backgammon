@@ -3,9 +3,9 @@ import fc from 'fast-check';
 import { chooseTurn, evaluatorFor } from '../../ai/bot';
 import { evaluateTriktrak } from '../../ai/features/triktrak';
 import { getEngine } from '../../engine';
-import { play } from '../../engine/game';
+import { createGame, openingRoll, play, roll } from '../../engine/game';
 import type { Checker, GameState, Roll, Turn } from '../../engine/types';
-import { seeded } from '../../runtime/rng';
+import { rollDice, seeded } from '../../runtime/rng';
 import { P1, P2, pos, stateWith } from '../engine/fixtures';
 
 const triktrak = getEngine( 'triktrak' );
@@ -76,4 +76,28 @@ describe( 'the bot in Triktrak', () => {
 			{ numRuns: 40 }
 		);
 	}, 60000 );
+} );
+
+describe( 'Triktrak search speed', () => {
+	// Wall-clock: retried, since a busy machine can slow one run; a real
+	// regression fails every attempt.
+	it( 'keeps every Hard turn of a self-play game under a second', { timeout: 60000, retry: 2 }, () => {
+		const rng = seeded( 6 );
+		let g = createGame( 'triktrak' );
+		while ( g.phase === 'opening' ) g = openingRoll( g, Math.ceil( rng() * 6 ), Math.ceil( rng() * 6 ) );
+		let slowest = 0;
+		for ( let i = 0; i < 300 && g.phase !== 'over'; i++ ) {
+			if ( g.phase === 'awaiting-roll' ) {
+				g = roll( g, rollDice( rng ) );
+				continue;
+			}
+			const started = performance.now();
+			const turn = chooseTurn( g, 'hard', seeded( i ) );
+			slowest = Math.max( slowest, performance.now() - started );
+			g = replay( g, turn );
+		}
+		expect( g.phase ).toBe( 'over' );
+		// Was 1.4 s before the search reused legal steps (measured 0.55 s after).
+		expect( slowest ).toBeLessThan( 1000 );
+	} );
 } );

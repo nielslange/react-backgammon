@@ -11,7 +11,7 @@ import { applyLegalStep, handOff } from '../common';
 import { BAR, HOME, OFF, opponent } from '../constants';
 import { orderedLegalSteps, orderedLegalTurns, type StepsFn } from '../ordered';
 import type { RulesEngine } from '../RulesEngine';
-import type { Checker, GameState, Player, Roll } from '../types';
+import type { Checker, GameState, Player, Roll, Step } from '../types';
 import { PlayerType } from '../../types/PlayerType';
 import { expandRoll, isDouble, isTricTrac } from './rolls';
 import { quarterGate } from './quarters';
@@ -104,6 +104,8 @@ const endSequence = ( state: GameState, completed: boolean ): GameState => {
 	return handOff( state, ! completed );
 };
 
+const legalCache = new WeakMap< GameState, Step[] >();
+
 export const triktrak: RulesEngine = {
 	id: 'triktrak',
 	supportsCube: false,
@@ -124,10 +126,16 @@ export const triktrak: RulesEngine = {
 
 	expandRoll: ( roll: Roll ) => expandRoll( roll ),
 
-	legalSteps: ( state ) =>
-		state.player === null
-			? []
-			: orderedLegalSteps( state.checkers, state.player, state.dice, stepsFor( state ) ),
+	legalSteps: ( state ) => {
+		if ( state.player === null ) return [];
+		// States are immutable, so the answer can be kept per state object:
+		// applyStep and afterStep ask again for the state just asked about.
+		const cached = legalCache.get( state );
+		if ( cached ) return cached;
+		const steps = orderedLegalSteps( state.checkers, state.player, state.dice, stepsFor( state ) );
+		legalCache.set( state, steps );
+		return steps;
+	},
 
 	legalTurns: ( state ) =>
 		state.player === null

@@ -60,7 +60,7 @@ export const winProbability = ( state: GameState, player: Player ): number => {
 			dice: engine.expandRoll( roll, state.options ),
 			turnSteps: [],
 		};
-		const best = onePly( s, evaluator, 6 )[ 0 ];
+		const best = onePly( s, evaluator, { beamWidth: 6 } )[ 0 ];
 		expected += weight * ( best ? best.score : evaluator( s, player ) );
 	}
 	return 1 / ( 1 + Math.exp( -expected / SCALE ) );

@@ -31,14 +31,20 @@ const positionKey = ( checkers: Checker[] ) =>
 		)
 		.join( '|' );
 
-const dedupe = ( state: GameState, turns: Turn[] ): Turn[] => {
+type Candidate = { turn: Turn; checkers: Checker[] };
+
+/** Turns with their final checkers, one per distinct final position. */
+const dedupe = ( state: GameState, turns: Turn[] ): Candidate[] => {
 	const seen = new Set< string >();
-	return turns.filter( ( turn ) => {
-		const key = positionKey( finalCheckers( state, turn ) );
-		if ( seen.has( key ) ) return false;
+	const out: Candidate[] = [];
+	for ( const turn of turns ) {
+		const checkers = finalCheckers( state, turn );
+		const key = positionKey( checkers );
+		if ( seen.has( key ) ) continue;
 		seen.add( key );
-		return true;
-	} );
+		out.push( { turn, checkers } );
+	}
+	return out;
 };
 
 /** How far a checker still has to go: moving it earlier in a canonical order. */
@@ -76,17 +82,17 @@ const canonicalDoubles = ( checkers: Checker[], player: Player, die: number, cou
  * die, keeping the `width` best positions after each die. Every step comes
  * from the engine's legal steps, so the result is always legal.
  */
-const beamTurns = ( state: GameState, evaluator: Evaluator, width: number ): Turn[] => {
+const beamTurns = ( state: GameState, evaluator: Evaluator, width: number ): Candidate[] => {
 	const engine = getEngine( state.variant );
 	const player = state.player!;
 	let frontier: Array< { s: GameState; path: Turn } > = [ { s: state, path: [] } ];
-	let finished: Turn[] = [];
+	let finished: Candidate[] = [];
 	while ( frontier.length ) {
 		const next = new Map< string, { s: GameState; path: Turn; score: number } >();
 		for ( const node of frontier ) {
 			const steps = node.s.dice.length ? engine.legalSteps( node.s ) : [];
 			if ( steps.length === 0 ) {
-				finished.push( node.path );
+				finished.push( { turn: node.path, checkers: node.s.checkers } );
 				continue;
 			}
 			for ( const step of steps ) {
@@ -98,34 +104,47 @@ const beamTurns = ( state: GameState, evaluator: Evaluator, width: number ): Tur
 		}
 		frontier = [ ...next.values() ].sort( ( a, b ) => b.score - a.score ).slice( 0, width );
 	}
-	const max = Math.max( 0, ...finished.map( ( t ) => t.length ) );
-	finished = finished.filter( ( t ) => t.length === max && max > 0 );
+	const max = Math.max( 0, ...finished.map( ( c ) => c.turn.length ) );
+	finished = finished.filter( ( c ) => c.turn.length === max && max > 0 );
 	return finished;
 };
 
 const BEAM_WIDTH = 24;
 
-/** Distinct legal turns for the player to move. */
-export const candidateTurns = ( state: GameState, evaluator: Evaluator, beamWidth = BEAM_WIDTH ): Turn[] => {
+type SearchOptions = {
+	/** Positions kept per die in the beam. */
+	beamWidth?: number;
+	/** Ordered rolls with more dice than this are searched with the beam. */
+	beamAbove?: number;
+};
+
+const candidates = (
+	state: GameState,
+	evaluator: Evaluator,
+	{ beamWidth = BEAM_WIDTH, beamAbove = 4 }: SearchOptions = {}
+): Candidate[] => {
 	if ( state.player === null || state.dice.length === 0 ) return [];
 	const engine = getEngine( state.variant );
 	const { dice } = state;
-	if ( engine.orderedDice && dice.length > 4 ) return beamTurns( state, evaluator, beamWidth );
+	if ( engine.orderedDice && dice.length > beamAbove ) return beamTurns( state, evaluator, beamWidth );
 	if ( ! engine.orderedDice && dice.length > 2 && dice.every( ( d ) => d === dice[ 0 ] ) ) {
 		return dedupe( state, canonicalDoubles( state.checkers, state.player, dice[ 0 ], dice.length ) );
 	}
 	return dedupe( state, engine.legalTurns( state ) );
 };
 
-export const onePly = ( state: GameState, evaluator: Evaluator, beamWidth = BEAM_WIDTH ): Ranked[] => {
+/** Distinct legal turns for the player to move. */
+export const candidateTurns = ( state: GameState, evaluator: Evaluator, options?: SearchOptions ): Turn[] =>
+	candidates( state, evaluator, options ).map( ( c ) => c.turn );
+
+export const onePly = ( state: GameState, evaluator: Evaluator, options?: SearchOptions ): Ranked[] => {
 	const player = state.player;
 	if ( player === null ) return [];
-	return candidateTurns( state, evaluator, beamWidth )
-		.map( ( turn ) => ( { turn, score: evaluator( { ...state, checkers: finalCheckers( state, turn ) }, player ) } ) )
+	return candidates( state, evaluator, options )
+		.map( ( { turn, checkers } ) => ( { turn, score: evaluator( { ...state, checkers }, player ) } ) )
 		.sort( ( a, b ) => b.score - a.score );
 };
 
-/** The 21 distinct rolls with their chance out of 36. */
 export const ROLLS: Array< { roll: Roll; weight: number } > = [];
 for ( let a = 1; a <= 6; a++ ) {
 	for ( let b = a; b <= 6; b++ ) ROLLS.push( { roll: [ a, b ], weight: a === b ? 1 / 36 : 2 / 36 } );
@@ -140,7 +159,8 @@ export const twoPly = ( state: GameState, evaluator: Evaluator, { topN = 8 }: { 
 	if ( player === null ) return [];
 	const engine = getEngine( state.variant );
 	const other = opponent( player );
-	const ranked = onePly( state, evaluator ).slice( 0, topN );
+	// Eight-die turns (a tric trac) look deeper at fewer candidates.
+	const ranked = onePly( state, evaluator ).slice( 0, state.dice.length > 4 ? Math.min( topN, 4 ) : topN );
 	return ranked
 		.map( ( { turn } ) => {
 			const checkers = finalCheckers( state, turn );
@@ -155,8 +175,8 @@ export const twoPly = ( state: GameState, evaluator: Evaluator, { topN = 8 }: { 
 					dice: engine.expandRoll( roll, state.options ),
 					turnSteps: [],
 				};
-				// A narrow beam keeps eight-die replies affordable.
-				const best = onePly( reply, evaluator, 6 )[ 0 ];
+				// A narrow beam keeps replies with doubles and tric tracs affordable.
+				const best = onePly( reply, evaluator, { beamWidth: 6, beamAbove: 2 } )[ 0 ];
 				expected += weight * ( best ? best.score : evaluator( reply, other ) );
 			}
 			return { turn, score: -expected };
