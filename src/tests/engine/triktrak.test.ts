@@ -186,10 +186,10 @@ const playOut = ( state: GameState ): GameState => {
 const rolled = ( checkers: ReturnType< typeof pos >, roll: [ number, number ], extra: Partial< GameState > = {} ) =>
 	triktrak.onRoll( tt( { checkers, player: P1, phase: 'awaiting-roll', ...extra } ), roll );
 
-/** P1: one checker on 13, the rest borne off; P2 waits on its bar. */
-const lone = ( p2Points: number[] ) =>
+/** P1: one checker on `from` (13 by default), the rest borne off; P2 waits on its bar. */
+const lone = ( p2Points: number[], from = 13 ) =>
 	pos( [
-		{ player: P1, lane: 13, count: 1 },
+		{ player: P1, lane: from, count: 1 },
 		{ player: P1, lane: 25, count: 14 },
 		...p2Points.map( ( lane ) => ( { player: P2, lane, count: 2 } ) ),
 		{ player: P2, lane: 25, count: 15 - 2 * p2Points.length },
@@ -220,7 +220,8 @@ describe( 'Triktrak forfeits and re-rolls', () => {
 	} );
 
 	it( 'a completed double earns another roll for the same player', () => {
-		const s = playOut( rolled( lone( [] ), [ 2, 2 ] ) );
+		// From 20 a 2-2 (2, 2, 5, 5 = 14 pips) keeps the checker on the board.
+		const s = playOut( rolled( lone( [], 20 ), [ 2, 2 ] ) );
 		expect( s.player ).toBe( P1 );
 		expect( s.phase ).toBe( 'awaiting-roll' );
 		expect( s.lastEvent ).toBe( 'reroll' );
@@ -241,7 +242,7 @@ describe( 'Triktrak forfeits and re-rolls', () => {
 
 	it( 'rerollLimit stops further bonus rolls and resets the count on hand-off', () => {
 		const options = { ...DEFAULT_OPTIONS, rerollLimit: 1 };
-		const s = playOut( rolled( lone( [] ), [ 2, 2 ], { options, rerolls: 1 } ) );
+		const s = playOut( rolled( lone( [], 20 ), [ 2, 2 ], { options, rerolls: 1 } ) );
 		expect( s.player ).toBe( P2 );
 		expect( s.lastEvent ).toBe( 'hand-off' );
 		expect( s.rerolls ).toBe( 0 );
@@ -258,5 +259,105 @@ describe( 'Triktrak forfeits and re-rolls', () => {
 		const s = playOut( rolled( lone( [] ), [ 5, 3 ] ) );
 		expect( s.player ).toBe( P2 );
 		expect( s.lastEvent ).toBe( 'hand-off' );
+	} );
+} );
+
+describe( 'Triktrak final turn and draw', () => {
+	/** P1 (first mover) has one checker left on 2; P2 is spread over its home. */
+	const endgame = ( p2: Array< { lane: number; count: number } >, extra: Partial< GameState > = {} ) =>
+		tt( {
+			checkers: pos( [
+				{ player: P1, lane: 2, count: 1 },
+				{ player: P1, lane: 25, count: 14 },
+				...p2.map( ( p ) => ( { player: P2, ...p } ) ),
+				{ player: P2, lane: 0, count: 15 - p2.reduce( ( n, p ) => n + p.count, 0 ) },
+			] ),
+			player: P1,
+			firstMover: P1,
+			roll: [ 3, 1 ],
+			dice: [ 3, 1 ],
+			...extra,
+		} );
+
+	const bearOffLast = ( state: GameState ) =>
+		triktrak.afterStep( triktrak.applyStep( state, triktrak.legalSteps( state )[ 0 ] ) );
+
+	it( 'gives the second player one final roll when the first mover finishes', () => {
+		const s = bearOffLast( endgame( [ { lane: 23, count: 2 } ] ) );
+		expect( s.phase ).toBe( 'awaiting-roll' );
+		expect( s.player ).toBe( P2 );
+		expect( s.result ).toBeNull();
+		expect( s.lastEvent ).toBe( 'final-turn' );
+	} );
+
+	it( 'is a draw when the second player also bears off everything', () => {
+		const final = bearOffLast( endgame( [ { lane: 23, count: 2 } ] ) );
+		const s = playOut( triktrak.onRoll( final, [ 3, 2 ] ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: null, points: 0, kind: 'draw' } );
+	} );
+
+	it( 'the first mover wins when the final roll does not finish', () => {
+		const final = bearOffLast( endgame( [ { lane: 19, count: 3 } ] ) );
+		const s = playOut( triktrak.onRoll( final, [ 4, 3 ] ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P1, points: 1, kind: 'single' } );
+	} );
+
+	it( 'the final turn earns no bonus roll, even for a completed double', () => {
+		// 1-1 plays 1, 1, 6, 6: four checkers off from 24 and 19, but one remains.
+		const final = bearOffLast( endgame( [ { lane: 24, count: 2 }, { lane: 19, count: 3 } ] ) );
+		const s = playOut( triktrak.onRoll( final, [ 1, 1 ] ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result?.winner ).toBe( P1 );
+	} );
+
+	it( 'an unplayable final roll ends the game for the first mover', () => {
+		// P2's last checker waits on the bar and may only enter on doubles.
+		const options = { ...DEFAULT_OPTIONS, enterOnlyOnDoubles: true };
+		const state = tt( {
+			checkers: pos( [
+				{ player: P1, lane: 2, count: 1 },
+				{ player: P1, lane: 25, count: 14 },
+				{ player: P2, lane: 25, count: 1 },
+				{ player: P2, lane: 0, count: 14 },
+			] ),
+			player: P1,
+			firstMover: P1,
+			roll: [ 3, 1 ],
+			dice: [ 3, 1 ],
+			options,
+		} );
+		const final = bearOffLast( state );
+		expect( final.player ).toBe( P2 );
+		const s = triktrak.onRoll( final, [ 5, 3 ] );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P1, points: 1, kind: 'single' } );
+	} );
+
+	it( 'the second player wins at once when they finish first', () => {
+		const s = bearOffLast(
+			tt( {
+				checkers: pos( [
+					{ player: P2, lane: 23, count: 1 },
+					{ player: P2, lane: 0, count: 14 },
+					{ player: P1, lane: 2, count: 3 },
+					{ player: P1, lane: 25, count: 12 },
+				] ),
+				player: P2,
+				firstMover: P1,
+				roll: [ 3, 1 ],
+				dice: [ 3, 1 ],
+			} )
+		);
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P2, points: 1, kind: 'single' } );
+	} );
+
+	it( 'without finalTurnForSecondPlayer the first mover wins at once', () => {
+		const options = { ...DEFAULT_OPTIONS, finalTurnForSecondPlayer: false };
+		const s = bearOffLast( endgame( [ { lane: 23, count: 2 } ], { options } ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P1, points: 1, kind: 'single' } );
 	} );
 } );

@@ -196,7 +196,7 @@ const invalid = ( why: string ): never => {
 type Raw = Record< string, unknown >;
 
 const PHASES: GameState[ 'phase' ][] = [ 'idle', 'opening', 'awaiting-roll', 'moving', 'over' ];
-const EVENTS: Array< GameState[ 'lastEvent' ] > = [ null, 'hit', 'hand-off', 'forfeit', 'reroll', 'game-over', 'undo' ];
+const EVENTS: Array< GameState[ 'lastEvent' ] > = [ null, 'hit', 'hand-off', 'forfeit', 'reroll', 'game-over', 'undo', 'final-turn' ];
 const KINDS = [ 'single', 'gammon', 'backgammon', 'draw', 'resign', 'drop' ];
 
 const isObject = ( v: unknown ): v is Raw => typeof v === 'object' && v !== null && ! Array.isArray( v );

@@ -122,6 +122,8 @@ const computeNotice = (
 	switch ( game.lastEvent ) {
 		case 'forfeit':
 			return notice( MessageType.TURN_FORFEITED, NoticeStatusType.INFO );
+		case 'final-turn':
+			return notice( MessageType.FINAL_TURN, NoticeStatusType.INFO );
 		case 'reroll':
 			return notice( MessageType.ROLL_AGAIN, NoticeStatusType.INFO );
 		case 'undo':

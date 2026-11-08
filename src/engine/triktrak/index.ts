@@ -5,10 +5,10 @@
 import { stepsForDie } from '../backgammon/turns';
 import { pipCount } from '../backgammon/pips';
 import { applyLegalStep, handOff } from '../common';
-import { BAR } from '../constants';
+import { BAR, OFF, opponent } from '../constants';
 import { orderedLegalSteps, orderedLegalTurns, type StepsFn } from '../ordered';
 import type { RulesEngine } from '../RulesEngine';
-import type { Checker, GameState, Roll } from '../types';
+import type { Checker, GameState, Player, Roll } from '../types';
 import { PlayerType } from '../../types/PlayerType';
 import { expandRoll, isDouble, isTricTrac } from './rolls';
 
@@ -27,12 +27,32 @@ const stepsFor = ( state: GameState ): StepsFn => {
 	return ( checkers, player, die ) => stepsForDie( checkers, player, die, rules );
 };
 
+const allOff = ( checkers: Checker[], player: Player ) =>
+	checkers.every( ( c ) => c.player !== player || c.lane === OFF[ player ] );
+
+const finish = ( state: GameState, winner: Player | null ): GameState => ( {
+	...state,
+	phase: 'over',
+	roll: null,
+	dice: [],
+	result: winner === null ? { winner: null, points: 0, kind: 'draw' } : { winner, points: 1, kind: 'single' },
+	lastEvent: 'game-over',
+} );
+
+/** The second player is taking the one roll they get after the first mover finished. */
+const inFinalTurn = ( state: GameState ): boolean =>
+	state.firstMover !== null &&
+	state.player === opponent( state.firstMover ) &&
+	allOff( state.checkers, state.firstMover );
+
 /**
  * The dice of this roll are done (`completed`) or blocked. A double or a
  * tric trac earns the same player another roll, within the options;
  * otherwise the turn passes.
  */
 const endSequence = ( state: GameState, completed: boolean ): GameState => {
+	// The final turn is one roll: when it ends, the first mover has won.
+	if ( inFinalTurn( state ) ) return finish( state, state.firstMover );
 	const { options, roll, rerolls } = state;
 	const special = roll !== null && ( isDouble( roll ) || isTricTrac( roll ) );
 	const earned = completed || ! options.rerollOnlyIfCompleted;
@@ -84,6 +104,15 @@ export const triktrak: RulesEngine = {
 	applyStep: ( state, step ) => applyLegalStep( state, step, triktrak.legalSteps( state ) ),
 
 	afterStep: ( state ) => {
+		const mover = state.player;
+		if ( mover !== null && allOff( state.checkers, mover ) ) {
+			if ( inFinalTurn( state ) ) return finish( state, null );
+			const second = opponent( mover );
+			if ( mover === state.firstMover && state.options.finalTurnForSecondPlayer ) {
+				return { ...handOff( state, false ), player: second, lastEvent: 'final-turn' };
+			}
+			return finish( state, mover );
+		}
 		if ( state.dice.length === 0 ) return endSequence( state, true );
 		if ( triktrak.legalSteps( state ).length === 0 ) return endSequence( state, false );
 		return state;

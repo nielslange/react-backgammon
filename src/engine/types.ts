@@ -56,7 +56,8 @@ export type GameEvent =
 	| 'forfeit'
 	| 'reroll'
 	| 'game-over'
-	| 'undo';
+	| 'undo'
+	| 'final-turn';
 
 export type VariantOptions = {
 	/** Backgammon: doubling cube in play. */

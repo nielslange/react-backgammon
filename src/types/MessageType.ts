@@ -24,5 +24,6 @@ export enum MessageType {
 	TURN_FORFEITED = 'No playable dice — the turn passes to the opponent.',
 	ROLL_AGAIN = 'Roll again!',
 	GAME_DRAWN = 'The game is a draw.',
+	FINAL_TURN = 'All checkers of the first player are off: the other player gets one final roll to draw level.',
 	CUBE_NOT_ALLOWED = 'You cannot double right now.',
 }
