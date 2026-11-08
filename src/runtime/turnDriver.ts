@@ -15,7 +15,7 @@ import {
 	roll,
 } from '../data/gameSlice';
 import { requestRoll } from '../data/intents';
-import { selectCanDouble, selectSeatToAct } from '../data/selectors';
+import { selectAwaitsHumanRoll, selectSeatToAct } from '../data/selectors';
 import { gameEnded } from '../data/sessionSlice';
 import { setHint } from '../data/uiSlice';
 import { MessageType } from '../types/MessageType';
@@ -81,7 +81,7 @@ export const startTurnDriver = (
 			const before = root.game.state;
 			const seat = selectSeatToAct( root );
 			if ( ! seat || seat.kind === 'remote' || before.cube.offered ) return;
-			if ( seat.kind === 'human' && selectCanDouble( root ) ) return;
+			if ( selectAwaitsHumanRoll( root ) ) return;
 			await api.delay( delays.roll );
 			if ( api.getState().game.state !== before ) return;
 			doRoll( api, before );

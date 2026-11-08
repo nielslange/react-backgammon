@@ -87,3 +87,86 @@ describe( 'board drag and drop', () => {
 		} );
 	} );
 } );
+
+describe( 'board drag robustness', () => {
+	it( 'a cancelled drag clears the ghost and the preview and never drops later', () => {
+		const { store, checker } = setup();
+		const from = checkerCenter( 13, 0, 1 );
+		const to = checkerCenter( 9, 0, 1 );
+		act( () => {
+			fireEvent.pointerDown( checker, { clientX: from.x, clientY: from.y, button: 0, pointerId: 1 } );
+			fireEvent.pointerMove( window, { clientX: to.x, clientY: to.y, pointerId: 1 } );
+			fireEvent.pointerCancel( window, { pointerId: 1 } );
+		} );
+		expect( document.querySelector( '[data-checker="1"]' )?.getAttribute( 'style' ) ).toContain(
+			`translate(${ from.x }px, ${ from.y }px)`
+		);
+		expect( store.getState().ui.preview ).toBeNull();
+		act( () => {
+			fireEvent.pointerUp( window, { clientX: to.x, clientY: to.y, pointerId: 1 } );
+		} );
+		expect( store.getState().game.state.checkers.find( ( c ) => c.id === 1 )?.lane ).toBe( 13 );
+	} );
+
+	it( 'ignores a second pointer while one drag is running', () => {
+		const { store, checker } = setup();
+		const from = checkerCenter( 13, 0, 1 );
+		const to = checkerCenter( 9, 0, 1 );
+		act( () => {
+			fireEvent.pointerDown( checker, { clientX: from.x, clientY: from.y, button: 0, pointerId: 1 } );
+			fireEvent.pointerMove( window, { clientX: to.x, clientY: to.y, pointerId: 1 } );
+			fireEvent.pointerUp( window, { clientX: to.x, clientY: to.y, pointerId: 2 } );
+		} );
+		expect( store.getState().game.state.checkers.find( ( c ) => c.id === 1 )?.lane ).toBe( 13 );
+		act( () => {
+			fireEvent.pointerUp( window, { clientX: to.x, clientY: to.y, pointerId: 1 } );
+		} );
+		expect( store.getState().game.state.checkers.find( ( c ) => c.id === 1 )?.lane ).toBe( 9 );
+	} );
+
+	it( 'treats a few pixels of finger jitter as a tap, measured in screen pixels', () => {
+		// Board drawn at phone size: 358 px wide, so 1 screen px ≈ 2.8 viewBox units.
+		SVGElement.prototype.getBoundingClientRect = () =>
+			( { left: 0, top: 0, width: 358, height: 257.76, right: 358, bottom: 257.76, x: 0, y: 0, toJSON: () => ( {} ) } ) as DOMRect;
+		const { store, checker } = setup();
+		const from = checkerCenter( 13, 0, 1 );
+		const scale = 358 / VIEWBOX.w;
+		act( () => {
+			fireEvent.pointerDown( checker, { clientX: from.x * scale, clientY: from.y * scale, button: 0, pointerId: 1 } );
+			fireEvent.pointerMove( window, { clientX: from.x * scale + 4, clientY: from.y * scale, pointerId: 1 } );
+			fireEvent.pointerUp( window, { clientX: from.x * scale + 4, clientY: from.y * scale, pointerId: 1 } );
+		} );
+		// No drag happened, so no preview was opened by the drag path.
+		expect( store.getState().ui.preview ).toBeNull();
+	} );
+} );
+
+describe( 'board keyboard access', () => {
+	it( 'exposes the board as a labelled group with focusable movable checkers', () => {
+		setup();
+		const container = document.body;
+		expect( container.querySelector( 'svg' ) ).toHaveAttribute( 'role', 'group' );
+		const checker = container.querySelector( '[data-checker="1"]' )!;
+		expect( checker ).toHaveAttribute( 'tabindex', '0' );
+		expect( checker ).toHaveAttribute( 'role', 'button' );
+		expect( checker ).toHaveAttribute( 'aria-label', 'Light checker on point 13' );
+		expect( container.querySelector( '[data-checker="2"]' ) ).not.toHaveAttribute( 'tabindex' );
+	} );
+
+	it( 'moves a checker with Enter on the checker and Enter on a landing point', () => {
+		const { store } = setup();
+		const container = document.body;
+		const checker = container.querySelector< SVGGElement >( '[data-checker="1"]' )!;
+		act( () => {
+			checker.focus();
+			fireEvent.keyDown( checker, { key: 'Enter' } );
+		} );
+		const target = container.querySelector< SVGGElement >( '[data-target="9"]' )!;
+		expect( target ).toHaveAttribute( 'role', 'button' );
+		expect( target ).toHaveAttribute( 'aria-label', 'Move to point 9 with the 4' );
+		act( () => {
+			fireEvent.keyDown( target, { key: ' ' } );
+		} );
+		expect( store.getState().game.state.checkers.find( ( c ) => c.id === 1 )?.lane ).toBe( 9 );
+	} );
+} );

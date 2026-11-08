@@ -22,7 +22,7 @@ const renderBoard = ( props: Partial< Parameters< typeof BoardSvg >[ 0 ] > = {} 
 describe( 'BoardSvg', () => {
 	it( 'renders an accessible board with 24 points and 30 checkers for the start position', () => {
 		const { container } = renderBoard();
-		expect( screen.getByRole( 'img', { name: /backgammon board/i } ) ).toBeInTheDocument();
+		expect( screen.getByRole( 'group', { name: /backgammon board/i } ) ).toBeInTheDocument();
 		expect( container.querySelectorAll( '[data-point]' ) ).toHaveLength( 24 );
 		expect( container.querySelectorAll( '[data-checker]' ) ).toHaveLength( 30 );
 	} );

@@ -10,7 +10,7 @@ const startLocalGame = async ( page: Page ) => {
 	await page.waitForLoadState( 'networkidle' );
 	await page.getByRole( 'button', { name: 'Start game' } ).click();
 	await page.waitForURL( '**/game' );
-	await expect( page.getByRole( 'img', { name: 'Backgammon board' } ) ).toBeVisible();
+	await expect( page.getByRole( 'group', { name: 'Backgammon board' } ) ).toBeVisible();
 	await expect.poll( async () => ( await game( page ) ).phase ).toBe( 'moving' );
 };
 
@@ -37,7 +37,15 @@ test( 'plays one move by click and one by drag, then the opponent gets dice', as
 
 	const afterClick = JSON.stringify( ( await game( page ) ).checkers );
 	const second = await previewSomeChecker( page );
-	const from = ( await second.checker.boundingBox() )!;
+	// Checkers glide for 180 ms after a move; measure once two samples
+	// 150 ms apart agree.
+	let from = ( await second.checker.boundingBox() )!;
+	for ( let i = 0; i < 20; i++ ) {
+		await page.waitForTimeout( 150 );
+		const now = ( await second.checker.boundingBox() )!;
+		if ( now.x === from.x && now.y === from.y ) break;
+		from = now;
+	}
 	const to = ( await second.target.boundingBox() )!;
 	await page.mouse.click( 2, 2 );
 	await page.mouse.move( from.x + from.width / 2, from.y + from.height / 2 );
@@ -61,10 +69,24 @@ test( 'fits the viewport without horizontal scrolling', async ( { page } ) => {
 		} ) );
 		expect( scrollWidth ).toBeLessThanOrEqual( innerWidth );
 	}
-	const board = await page.goto( '/game' ).then( () => page.getByRole( 'img', { name: 'Backgammon board' } ).boundingBox() );
+	const board = await page.goto( '/game' ).then( () => page.getByRole( 'group', { name: 'Backgammon board' } ).boundingBox() );
 	const width = page.viewportSize()!.width;
 	if ( width < 1024 ) {
 		// Phones: the board spans the page minus the 16px gutters.
 		expect( Math.round( board!.width ) ).toBe( width - 32 );
 	}
+} );
+
+test( 'applies a saved dark theme before the app hydrates (no light flash)', async ( { page } ) => {
+	await page.addInitScript( () => {
+		try {
+			localStorage.setItem( 'backgammon-theme', 'dark' );
+		} catch {
+			// storage blocked
+		}
+	} );
+	// Without the app bundles nothing hydrates: only an inline script can act.
+	await page.route( '**/_next/static/chunks/**', ( route ) => route.abort() );
+	await page.goto( '/' );
+	await expect( page.locator( 'html' ) ).toHaveAttribute( 'data-theme', 'dark' );
 } );

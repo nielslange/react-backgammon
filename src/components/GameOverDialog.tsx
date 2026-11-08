@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { newGame } from '../data/gameSlice';
 import { configureSession, isMatchOver, nextGame } from '../data/sessionSlice';
@@ -35,10 +34,7 @@ export const GameOverDialog = () => {
 	const router = useRouter();
 	const game = useSelector( ( root: RootState ) => root.game.state );
 	const session = useSelector( ( root: RootState ) => root.session );
-	const [ dismissed, setDismissed ] = useState< string | null >( null );
-
-	const key = `${ session.gameNumber }:${ JSON.stringify( game.result ) }`;
-	if ( game.phase !== 'over' || ! game.result || dismissed === key ) return null;
+	if ( game.phase !== 'over' || ! game.result ) return null;
 
 	const names = {
 		[ PlayerType.PLAYER_ONE ]: session.players[ PlayerType.PLAYER_ONE ].name,
@@ -53,7 +49,8 @@ export const GameOverDialog = () => {
 	const restart = { variant: game.variant, options: game.options };
 
 	return (
-		<Dialog open title={ title } onClose={ () => setDismissed( key ) }>
+		// A decision is required: Escape does not dismiss this dialog.
+		<Dialog open title={ title } onClose={ () => {} }>
 			<p className="text-sm text-muted">{ describeResult( result, names ) }</p>
 			{ result.winner !== null && (
 				<p className="mt-1 text-sm">

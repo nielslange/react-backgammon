@@ -30,6 +30,10 @@ export type BoardSvgProps = {
 	onCheckerPointerDown?: ( id: number, event: ReactPointerEvent< SVGGElement > ) => void;
 	/** Checker currently being dragged and where it is. */
 	drag?: { id: number; x: number; y: number } | null;
+	/** Checkers that can move now; they get a tab stop and a button role. */
+	movable?: number[];
+	/** Accessible name per highlighted lane, e.g. "Move to point 9 with the 4". */
+	targetLabels?: Record< number, string >;
 	svgRef?: React.Ref< SVGSVGElement >;
 };
 
@@ -113,8 +117,15 @@ export const BoardSvg = ( {
 	onLaneClick,
 	onCheckerPointerDown,
 	drag = null,
+	movable = [],
+	targetLabels = {},
 	svgRef,
 }: BoardSvgProps ) => {
+	const activate = ( event: React.KeyboardEvent, action: () => void ) => {
+		if ( event.key !== 'Enter' && event.key !== ' ' ) return;
+		event.preventDefault();
+		action();
+	};
 	const uid = useId().replace( /:/g, '' );
 	const id = ( name: string ) => `${ uid }-${ name }`;
 	const placed = layout( checkers );
@@ -123,7 +134,7 @@ export const BoardSvg = ( {
 		<svg
 			ref={ svgRef }
 			viewBox={ `0 0 ${ VIEWBOX.w } ${ VIEWBOX.h }` }
-			role="img"
+			role="group"
 			aria-label="Backgammon board"
 			className="block h-auto w-full touch-none select-none"
 		>
@@ -192,7 +203,17 @@ export const BoardSvg = ( {
 			{ highlights.map( ( lane ) => {
 				const r = targetRect( lane );
 				return (
-					<g key={ `t${ lane }` } data-target={ lane } className="cursor-pointer" onClick={ () => onLaneClick( lane ) }>
+					<g
+						key={ `t${ lane }` }
+						data-target={ lane }
+						role="button"
+						tabIndex={ 0 }
+						aria-label={ targetLabels[ lane ] ?? `Move to lane ${ lane }` }
+						className="cursor-pointer"
+						onClick={ () => onLaneClick( lane ) }
+						onKeyDown={ ( e ) => activate( e, () => onLaneClick( lane ) ) }
+					>
+						<title>{ targetLabels[ lane ] ?? `Move to lane ${ lane }` }</title>
 						{ lane >= 1 && lane <= 24 ? (
 							<polygon
 								points={ pointPolygon( lane ) }
@@ -239,6 +260,23 @@ export const BoardSvg = ( {
 						data-player={ checker.player }
 						data-place={ place }
 						data-selected={ isSelected ? 'true' : undefined }
+						{ ...( movable.includes( checker.id )
+							? {
+									role: 'button',
+									tabIndex: 0,
+									'aria-label': `${ COLOUR_NAME[ checker.player ] === 'light' ? 'Light' : 'Dark' } checker ${
+										place === 'bar' ? 'on the bar' : `on point ${ checker.lane }`
+									}`,
+									onKeyDown: ( e: React.KeyboardEvent ) =>
+										activate( e, () => {
+											onCheckerClick( checker.id );
+											// Move keyboard focus to the first landing point.
+											requestAnimationFrame( () =>
+												document.querySelector< SVGGElement >( '[data-target]' )?.focus()
+											);
+										} ),
+							  }
+							: { 'aria-hidden': true } ) }
 						className="checker cursor-pointer"
 						style={ {
 							transform: `translate(${ cx }px, ${ cy }px)`,

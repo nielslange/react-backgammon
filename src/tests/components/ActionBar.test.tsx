@@ -159,6 +159,53 @@ describe( 'ActionBar and the doubling cube', () => {
 		await userEvent.click( screen.getByRole( 'button', { name: 'Undo' } ) );
 		expect( store.getState().game.state.turnSteps ).toEqual( [] );
 		await userEvent.click( screen.getByRole( 'button', { name: 'Resign' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Resign game' } ) );
 		expect( store.getState().game.state.result ).toEqual( { winner: P1, points: 1, kind: 'resign' } );
+	} );
+} );
+
+describe( 'review fixes', () => {
+	it( 'never shows Roll when the dice roll by themselves', async () => {
+		const store = makeStore( {
+			middleware: [ createTurnDriver( { rng: scripted( [ 6, 1, 5, 3 ] ), delays: { roll: 200, aiStep: 0 } } ).middleware ],
+		} );
+		store.dispatch( configureSession( { players, matchTarget: 1 } ) );
+		render(
+			<Provider store={ store }>
+				<ActionBar />
+			</Provider>
+		);
+		act( () => {
+			store.dispatch( newGame( { variant: 'backgammon' } ) );
+			for ( const [ from, die ] of [ [ 13, 6 ], [ 8, 1 ] ] ) {
+				const step = selectLegalSteps( store.getState() ).find( ( s ) => s.from === from && s.die === die )!;
+				store.dispatch( playStep( { step } ) );
+			}
+		} );
+		expect( store.getState().game.state.phase ).toBe( 'awaiting-roll' );
+		expect( screen.queryByRole( 'button', { name: 'Roll' } ) ).not.toBeInTheDocument();
+		await waitFor( () => expect( store.getState().game.state.dice.length ).toBeGreaterThan( 0 ) );
+	} );
+
+	it( 'asks before resigning', async () => {
+		const store = setup();
+		await pause();
+		await userEvent.click( screen.getByRole( 'button', { name: 'Resign' } ) );
+		expect( screen.getByRole( 'dialog', { name: /resign this game/i } ) ).toHaveTextContent( 'Niels gets 1 point' );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Keep playing' } ) );
+		expect( store.getState().game.state.phase ).toBe( 'awaiting-roll' );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Resign' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Resign game' } ) );
+		expect( store.getState().game.state.result?.kind ).toBe( 'resign' );
+	} );
+
+	it( 'keeps the game-over dialog open on Escape', async () => {
+		const store = setup();
+		await pause();
+		await userEvent.click( screen.getByRole( 'button', { name: 'Double' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Drop' } ) );
+		expect( store.getState().game.state.phase ).toBe( 'over' );
+		await userEvent.keyboard( '{Escape}' );
+		expect( screen.getByRole( 'button', { name: 'Next game' } ) ).toBeInTheDocument();
 	} );
 } );

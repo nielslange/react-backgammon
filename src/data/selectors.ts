@@ -66,6 +66,13 @@ export const selectCanDouble = ( root: RootState ): boolean => {
 	);
 };
 
+/**
+ * The driver waits for this human to press Roll (they could double first).
+ * The Roll button shows exactly when this is true.
+ */
+export const selectAwaitsHumanRoll = ( root: RootState ): boolean =>
+	selectSeatToAct( root )?.kind === 'human' && selectCanDouble( root );
+
 const notice = ( message: MessageType, status: NoticeStatusType ): NoticeType => ( {
 	message,
 	status,
