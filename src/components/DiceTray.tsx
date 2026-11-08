@@ -46,7 +46,7 @@ const statusText = ( root: RootState ): string | null => {
  * The dice of the current turn. In beginner mode they only show what is
  * left; in advanced mode they are buttons that choose the die to play.
  */
-export const DiceTray = () => {
+export const DiceTray = ( { className }: { className?: string } ) => {
 	const dispatch = useDispatch< AppDispatch >();
 	const faces = useSelector(
 		facesOf,
@@ -68,7 +68,10 @@ export const DiceTray = () => {
 	return (
 		<div
 			key={ rollKey }
-			className="dice-tray flex min-h-10 flex-wrap items-center gap-2 sm:min-h-12"
+			className={ clsx(
+				'dice-tray flex min-h-10 flex-wrap items-center gap-2 sm:min-h-12',
+				className
+			) }
 			data-mode={ mode }
 		>
 			{ faces.length === 0 && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, type PointerEvent as ReactPointerEvent } from 'react';
+import { useId, useMemo, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Checker, Player } from '../../engine/types';
 import { PlayerType } from '../../types/PlayerType';
 import {
@@ -8,13 +8,8 @@ import {
 	CHECKER_R,
 	FRAME,
 	TRAY_X,
-	VIEWBOX,
-	barCenter,
-	checkerCenter,
-	offSlot,
-	pointPolygon,
-	pointRect,
-	trayRect,
+	makeGeometry,
+	type Geometry,
 	type Rect,
 } from '../../ui/boardGeometry';
 
@@ -27,7 +22,10 @@ export type BoardSvgProps = {
 	onCheckerClick: ( id: number ) => void;
 	onLaneClick: ( lane: number ) => void;
 	/** Start of a drag on a checker (Task 17). */
-	onCheckerPointerDown?: ( id: number, event: ReactPointerEvent< SVGGElement > ) => void;
+	onCheckerPointerDown?: (
+		id: number,
+		event: ReactPointerEvent< SVGGElement >
+	) => void;
 	/** Checker currently being dragged and where it is. */
 	drag?: { id: number; x: number; y: number } | null;
 	/** Checkers that can move now; they get a tab stop and a button role. */
@@ -35,6 +33,11 @@ export type BoardSvgProps = {
 	/** Accessible name per highlighted lane, e.g. "Move to point 9 with the 4". */
 	targetLabels?: Record< number, string >;
 	svgRef?: React.Ref< SVGSVGElement >;
+	/** Board height in viewBox units; taller than 720 on phones in portrait. */
+	height?: number;
+	/** A tap anywhere in a point's column (edge to middle). */
+	onColumnClick?: ( lane: number ) => void;
+	className?: string;
 };
 
 const LANES = Array.from( { length: 24 }, ( _, i ) => i + 1 );
@@ -59,7 +62,7 @@ type Placed = {
 };
 
 /** Where every checker is drawn, in viewBox units. */
-const layout = ( checkers: Checker[] ): Placed[] => {
+const layout = ( checkers: Checker[], g: Geometry ): Placed[] => {
 	const groups = new Map< string, Checker[] >();
 	for ( const c of [ ...checkers ].sort( ( a, b ) => a.id - b.id ) ) {
 		const key = `${ c.player }:${ c.lane }`;
@@ -70,7 +73,7 @@ const layout = ( checkers: Checker[] ): Placed[] => {
 		const { player, lane } = group[ 0 ];
 		group.forEach( ( checker, index ) => {
 			if ( lane >= 1 && lane <= 24 ) {
-				const { x, y } = checkerCenter( lane, index, group.length );
+				const { x, y } = g.checkerCenter( lane, index, group.length );
 				const top = index === group.length - 1;
 				placed.push( {
 					checker,
@@ -80,11 +83,18 @@ const layout = ( checkers: Checker[] ): Placed[] => {
 					count: top && group.length > 5 ? group.length : undefined,
 				} );
 			} else if ( lane === BAR_LANE[ player ] ) {
-				const { x, y } = barCenter( player, index, group.length );
+				const { x, y } = g.barCenter( player, index, group.length );
 				const top = index === group.length - 1;
-				placed.push( { checker, place: 'bar', x, y, barCount: top && group.length > 1 ? group.length : undefined } );
+				placed.push( {
+					checker,
+					place: 'bar',
+					x,
+					y,
+					barCount:
+						top && group.length > 1 ? group.length : undefined,
+				} );
 			} else {
-				const slab = offSlot( player, index );
+				const slab = g.offSlot( player, index );
 				placed.push( {
 					checker,
 					place: 'off',
@@ -106,10 +116,10 @@ const pointLabel = ( lane: number, checkers: Checker[] ) => {
 };
 
 /** Area that accepts a click when the lane is a legal landing point. */
-const targetRect = ( lane: number ): Rect => {
-	if ( lane === 0 ) return trayRect( PlayerType.PLAYER_TWO );
-	if ( lane === 25 ) return trayRect( PlayerType.PLAYER_ONE );
-	return pointRect( lane );
+const targetRect = ( lane: number, g: Geometry ): Rect => {
+	if ( lane === 0 ) return g.trayRect( PlayerType.PLAYER_TWO );
+	if ( lane === 25 ) return g.trayRect( PlayerType.PLAYER_ONE );
+	return g.pointRect( lane );
 };
 
 export const BoardSvg = ( {
@@ -123,7 +133,12 @@ export const BoardSvg = ( {
 	movable = [],
 	targetLabels = {},
 	svgRef,
+	height,
+	onColumnClick,
+	className = 'block h-auto w-full',
 }: BoardSvgProps ) => {
+	const g = useMemo( () => makeGeometry( height ), [ height ] );
+	const { VIEWBOX } = g;
 	const activate = ( event: React.KeyboardEvent, action: () => void ) => {
 		if ( event.key !== 'Enter' && event.key !== ' ' ) return;
 		event.preventDefault();
@@ -131,7 +146,7 @@ export const BoardSvg = ( {
 	};
 	const uid = useId().replace( /:/g, '' );
 	const id = ( name: string ) => `${ uid }-${ name }`;
-	const placed = layout( checkers );
+	const placed = layout( checkers, g );
 
 	return (
 		<svg
@@ -139,10 +154,16 @@ export const BoardSvg = ( {
 			viewBox={ `0 0 ${ VIEWBOX.w } ${ VIEWBOX.h }` }
 			role="group"
 			aria-label="Backgammon board"
-			className="block h-auto w-full touch-none select-none"
+			className={ `${ className } touch-none select-none` }
 		>
 			<defs>
-				<linearGradient id={ id( 'frame' ) } x1="0" y1="0" x2="0" y2="1">
+				<linearGradient
+					id={ id( 'frame' ) }
+					x1="0"
+					y1="0"
+					x2="0"
+					y2="1"
+				>
 					<stop offset="0" stopColor="var(--color-frame)" />
 					<stop offset="1" stopColor="var(--color-frame)" />
 				</linearGradient>
@@ -150,23 +171,49 @@ export const BoardSvg = ( {
 					<stop offset="0" stopColor="var(--color-felt)" />
 					<stop offset="1" stopColor="var(--color-felt-dark)" />
 				</radialGradient>
-				<radialGradient id={ id( 'light' ) } cx="0.38" cy="0.32" r="0.75">
+				<radialGradient
+					id={ id( 'light' ) }
+					cx="0.38"
+					cy="0.32"
+					r="0.75"
+				>
 					<stop offset="0" stopColor="#fffaf0" />
 					<stop offset="0.7" stopColor="var(--color-checker-light)" />
 					<stop offset="1" stopColor="#d8c9a8" />
 				</radialGradient>
-				<radialGradient id={ id( 'dark' ) } cx="0.38" cy="0.32" r="0.75">
+				<radialGradient
+					id={ id( 'dark' ) }
+					cx="0.38"
+					cy="0.32"
+					r="0.75"
+				>
 					<stop offset="0" stopColor="#4a5867" />
 					<stop offset="0.7" stopColor="var(--color-checker-dark)" />
 					<stop offset="1" stopColor="#1c242d" />
 				</radialGradient>
-				<filter id={ id( 'shadow' ) } x="-30%" y="-30%" width="160%" height="160%">
-					<feDropShadow dx="0" dy="2.5" stdDeviation="2.5" floodOpacity="0.35" />
+				<filter
+					id={ id( 'shadow' ) }
+					x="-30%"
+					y="-30%"
+					width="160%"
+					height="160%"
+				>
+					<feDropShadow
+						dx="0"
+						dy="2.5"
+						stdDeviation="2.5"
+						floodOpacity="0.35"
+					/>
 				</filter>
 			</defs>
 
 			{ /* Frame, felt, bar and trays */ }
-			<rect width={ VIEWBOX.w } height={ VIEWBOX.h } rx="18" fill={ `url(#${ id( 'frame' ) })` } />
+			<rect
+				width={ VIEWBOX.w }
+				height={ VIEWBOX.h }
+				rx="18"
+				fill={ `url(#${ id( 'frame' ) })` }
+			/>
 			<rect
 				x={ FRAME }
 				y={ FRAME }
@@ -183,9 +230,17 @@ export const BoardSvg = ( {
 				fill={ `url(#${ id( 'frame' ) })` }
 			/>
 			{ [ PlayerType.PLAYER_TWO, PlayerType.PLAYER_ONE ].map( ( p ) => {
-				const r = trayRect( p );
+				const r = g.trayRect( p );
 				return (
-					<rect key={ p } x={ r.x } y={ r.y } width={ r.w } height={ r.h } rx="6" fill="#00000033" />
+					<rect
+						key={ p }
+						x={ r.x }
+						y={ r.y }
+						width={ r.w }
+						height={ r.h }
+						rx="6"
+						fill="#00000033"
+					/>
 				);
 			} ) }
 
@@ -196,30 +251,59 @@ export const BoardSvg = ( {
 					data-point={ lane }
 					role="img"
 					aria-label={ pointLabel( lane, checkers ) }
-					points={ pointPolygon( lane ) }
-					fill={ lane % 2 === 0 ? 'var(--color-point-light)' : 'var(--color-point-dark)' }
+					points={ g.pointPolygon( lane ) }
+					fill={
+						lane % 2 === 0
+							? 'var(--color-point-light)'
+							: 'var(--color-point-dark)'
+					}
 					opacity="0.92"
 				/>
 			) ) }
 
+			{ /* Tap areas: the whole column of every point, edge to middle */ }
+			{ onColumnClick &&
+				LANES.map( ( lane ) => {
+					const r = g.columnRect( lane );
+					return (
+						<rect
+							key={ `c${ lane }` }
+							data-column={ lane }
+							aria-hidden="true"
+							x={ r.x }
+							y={ r.y }
+							width={ r.w }
+							height={ r.h }
+							fill="transparent"
+							onClick={ () => onColumnClick( lane ) }
+						/>
+					);
+				} ) }
+
 			{ /* Landing-point highlights and click targets */ }
 			{ highlights.map( ( lane ) => {
-				const r = targetRect( lane );
+				const r = targetRect( lane, g );
 				return (
 					<g
 						key={ `t${ lane }` }
 						data-target={ lane }
 						role="button"
 						tabIndex={ 0 }
-						aria-label={ targetLabels[ lane ] ?? `Move to lane ${ lane }` }
+						aria-label={
+							targetLabels[ lane ] ?? `Move to lane ${ lane }`
+						}
 						className="cursor-pointer"
 						onClick={ () => onLaneClick( lane ) }
-						onKeyDown={ ( e ) => activate( e, () => onLaneClick( lane ) ) }
+						onKeyDown={ ( e ) =>
+							activate( e, () => onLaneClick( lane ) )
+						}
 					>
-						<title>{ targetLabels[ lane ] ?? `Move to lane ${ lane }` }</title>
+						<title>
+							{ targetLabels[ lane ] ?? `Move to lane ${ lane }` }
+						</title>
 						{ lane >= 1 && lane <= 24 ? (
 							<polygon
-								points={ pointPolygon( lane ) }
+								points={ g.pointPolygon( lane ) }
 								fill="var(--color-target-outer)"
 								fillOpacity="0.45"
 								stroke="var(--color-target-inner)"
@@ -240,115 +324,152 @@ export const BoardSvg = ( {
 								strokeWidth="5"
 							/>
 						) }
-						<rect x={ r.x } y={ r.y } width={ r.w } height={ r.h } fill="transparent" />
+						<rect
+							x={ r.x }
+							y={ r.y }
+							width={ r.w }
+							height={ r.h }
+							fill="transparent"
+						/>
 					</g>
 				);
 			} ) }
 
 			{ /* Checkers, keyed by id so moves animate */ }
-			{ placed.map( ( { checker, place, x, y, slab, count, barCount } ) => {
-				const dragging = drag?.id === checker.id;
-				const cx = dragging ? drag.x : x;
-				const cy = dragging ? drag.y : y;
-				const isSelected = selected === checker.id;
-				const fill = `url(#${ id( COLOUR_NAME[ checker.player ] ) })`;
-				const edge =
-					checker.player === PlayerType.PLAYER_ONE
-						? 'var(--color-checker-light-rim)'
-						: 'var(--color-checker-dark-rim)';
-				return (
-					<g
-						key={ checker.id }
-						data-checker={ checker.id }
-						data-player={ checker.player }
-						data-place={ place }
-						data-selected={ isSelected ? 'true' : undefined }
-						{ ...( movable.includes( checker.id )
-							? {
-									role: 'button',
-									tabIndex: 0,
-									'aria-label': `${ COLOUR_NAME[ checker.player ] === 'light' ? 'Light' : 'Dark' } checker ${
-										place === 'bar' ? 'on the bar' : `on point ${ checker.lane }`
-									}`,
-									onKeyDown: ( e: React.KeyboardEvent ) =>
-										activate( e, () => {
-											onCheckerClick( checker.id );
-											// Move keyboard focus to the first landing point.
-											requestAnimationFrame( () =>
-												document.querySelector< SVGGElement >( '[data-target]' )?.focus()
-											);
-										} ),
-							  }
-							: { 'aria-hidden': true } ) }
-						className="checker cursor-pointer"
-						style={ {
-							transform: `translate(${ cx }px, ${ cy }px)`,
-							transition: dragging ? 'none' : 'transform 180ms ease-out',
-						} }
-						onClick={ ( e ) => {
-							e.stopPropagation();
-							onCheckerClick( checker.id );
-						} }
-						onPointerDown={ ( e ) => onCheckerPointerDown?.( checker.id, e ) }
-					>
-						{ place === 'off' && slab ? (
-							<rect
-								x={ -slab.w / 2 }
-								y={ -slab.h / 2 }
-								width={ slab.w }
-								height={ slab.h }
-								rx="4"
-								fill={ fill }
-								stroke={ edge }
-								strokeWidth="1.5"
-							/>
-						) : (
-							<g filter={ `url(#${ id( 'shadow' ) })` }>
-								<circle r={ CHECKER_R - 1.5 } fill={ fill } stroke={ edge } strokeWidth="3" />
-								<circle r={ CHECKER_R - 9 } fill="none" stroke={ edge } strokeOpacity="0.35" strokeWidth="1.5" />
-							</g>
-						) }
-						{ isSelected && (
-							<g fill="none">
-								<circle r={ CHECKER_R + 4 } stroke="var(--color-target-inner)" strokeWidth="7" />
-								<circle r={ CHECKER_R + 4 } stroke="var(--color-target-outer)" strokeWidth="3.5" />
-							</g>
-						) }
-						{ barCount !== undefined && (
-							<text
-								data-bar-count={ barCount }
-								textAnchor="middle"
-								dominantBaseline="central"
-								fontSize="20"
-								fontWeight="700"
-								fill={
-									checker.player === PlayerType.PLAYER_ONE
-										? 'var(--color-count-on-light)'
-										: 'var(--color-count-on-dark)'
-								}
-							>
-								{ barCount }
-							</text>
-						) }
-						{ count !== undefined && (
-							<text
-								data-count={ count }
-								textAnchor="middle"
-								dominantBaseline="central"
-								fontSize="22"
-								fontWeight="700"
-								fill={
-									checker.player === PlayerType.PLAYER_ONE
-										? 'var(--color-count-on-light)'
-										: 'var(--color-count-on-dark)'
-								}
-							>
-								{ count }
-							</text>
-						) }
-					</g>
-				);
-			} ) }
+			{ placed.map(
+				( { checker, place, x, y, slab, count, barCount } ) => {
+					const dragging = drag?.id === checker.id;
+					const cx = dragging ? drag.x : x;
+					const cy = dragging ? drag.y : y;
+					const isSelected = selected === checker.id;
+					const fill = `url(#${ id( COLOUR_NAME[ checker.player ] ) })`;
+					const edge =
+						checker.player === PlayerType.PLAYER_ONE
+							? 'var(--color-checker-light-rim)'
+							: 'var(--color-checker-dark-rim)';
+					return (
+						<g
+							key={ checker.id }
+							data-checker={ checker.id }
+							data-player={ checker.player }
+							data-place={ place }
+							data-selected={ isSelected ? 'true' : undefined }
+							{ ...( movable.includes( checker.id )
+								? {
+										role: 'button',
+										tabIndex: 0,
+										'aria-label': `${ COLOUR_NAME[ checker.player ] === 'light' ? 'Light' : 'Dark' } checker ${
+											place === 'bar'
+												? 'on the bar'
+												: `on point ${ checker.lane }`
+										}`,
+										onKeyDown: ( e: React.KeyboardEvent ) =>
+											activate( e, () => {
+												onCheckerClick( checker.id );
+												// Move keyboard focus to the first landing point.
+												requestAnimationFrame( () =>
+													document
+														.querySelector< SVGGElement >(
+															'[data-target]'
+														)
+														?.focus()
+												);
+											} ),
+									}
+								: { 'aria-hidden': true } ) }
+							className="checker cursor-pointer"
+							style={ {
+								transform: `translate(${ cx }px, ${ cy }px)`,
+								transition: dragging
+									? 'none'
+									: 'transform 180ms ease-out',
+							} }
+							onClick={ ( e ) => {
+								e.stopPropagation();
+								onCheckerClick( checker.id );
+							} }
+							onPointerDown={ ( e ) =>
+								onCheckerPointerDown?.( checker.id, e )
+							}
+						>
+							{ place === 'off' && slab ? (
+								<rect
+									x={ -slab.w / 2 }
+									y={ -slab.h / 2 }
+									width={ slab.w }
+									height={ slab.h }
+									rx="4"
+									fill={ fill }
+									stroke={ edge }
+									strokeWidth="1.5"
+								/>
+							) : (
+								<g filter={ `url(#${ id( 'shadow' ) })` }>
+									<circle
+										r={ CHECKER_R - 1.5 }
+										fill={ fill }
+										stroke={ edge }
+										strokeWidth="3"
+									/>
+									<circle
+										r={ CHECKER_R - 9 }
+										fill="none"
+										stroke={ edge }
+										strokeOpacity="0.35"
+										strokeWidth="1.5"
+									/>
+								</g>
+							) }
+							{ isSelected && (
+								<g fill="none">
+									<circle
+										r={ CHECKER_R + 4 }
+										stroke="var(--color-target-inner)"
+										strokeWidth="7"
+									/>
+									<circle
+										r={ CHECKER_R + 4 }
+										stroke="var(--color-target-outer)"
+										strokeWidth="3.5"
+									/>
+								</g>
+							) }
+							{ barCount !== undefined && (
+								<text
+									data-bar-count={ barCount }
+									textAnchor="middle"
+									dominantBaseline="central"
+									fontSize="20"
+									fontWeight="700"
+									fill={
+										checker.player === PlayerType.PLAYER_ONE
+											? 'var(--color-count-on-light)'
+											: 'var(--color-count-on-dark)'
+									}
+								>
+									{ barCount }
+								</text>
+							) }
+							{ count !== undefined && (
+								<text
+									data-count={ count }
+									textAnchor="middle"
+									dominantBaseline="central"
+									fontSize="22"
+									fontWeight="700"
+									fill={
+										checker.player === PlayerType.PLAYER_ONE
+											? 'var(--color-count-on-light)'
+											: 'var(--color-count-on-dark)'
+									}
+								>
+									{ count }
+								</text>
+							) }
+						</g>
+					);
+				}
+			) }
 		</svg>
 	);
 };
