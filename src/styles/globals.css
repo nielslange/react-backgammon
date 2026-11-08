@@ -1,0 +1,113 @@
+@import 'tailwindcss';
+@import './legacy-board.css';
+
+/*
+ * Design tokens. Tailwind generates utilities from the @theme block
+ * (bg-felt, text-ink, rounded-card, shadow-raised, …). Dark mode swaps
+ * the underlying CSS variables, so utilities need no dark: variants.
+ */
+@theme {
+	--color-canvas: var(--bg-canvas);
+	--color-surface: var(--bg-surface);
+	--color-ink: var(--fg-ink);
+	--color-muted: var(--fg-muted);
+	--color-line: var(--border-line);
+
+	--color-felt: var(--board-felt);
+	--color-felt-dark: var(--board-felt-dark);
+	--color-frame: var(--board-frame);
+	--color-point-light: var(--board-point-light);
+	--color-point-dark: var(--board-point-dark);
+
+	--color-checker-light: #f3ead8;
+	--color-checker-light-edge: #c9b896;
+	--color-checker-dark: #2f3a46;
+	--color-checker-dark-edge: #141b22;
+
+	--color-accent: #e0a63a;
+	--color-accent-ink: #3a2705;
+	--color-danger: #c2554f;
+	--color-success: #4f8a5b;
+
+	--font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-display: 'Fraunces', ui-serif, Georgia, serif;
+
+	--radius-card: 14px;
+	--radius-control: 10px;
+
+	--shadow-raised: 0 1px 2px rgb(0 0 0 / 0.08), 0 6px 18px rgb(0 0 0 / 0.08);
+	--shadow-board: 0 2px 4px rgb(0 0 0 / 0.2), 0 18px 40px rgb(0 0 0 / 0.25);
+}
+
+:root {
+	--bg-canvas: #f4efe6;
+	--bg-surface: #fffdf8;
+	--fg-ink: #1f2328;
+	--fg-muted: #5f6670;
+	--border-line: #e2d9c8;
+
+	--board-felt: #2f6b4f;
+	--board-felt-dark: #255640;
+	--board-frame: #5a3b22;
+	--board-point-light: #e8d9b5;
+	--board-point-dark: #9b4a3c;
+
+	color-scheme: light;
+}
+
+@media ( prefers-color-scheme: dark ) {
+	:root:not( [data-theme='light'] ) {
+		--bg-canvas: #14171b;
+		--bg-surface: #1d2126;
+		--fg-ink: #ece7dd;
+		--fg-muted: #a39d92;
+		--border-line: #2e333a;
+
+		--board-felt: #24543e;
+		--board-felt-dark: #1c4331;
+		--board-frame: #3e2817;
+		--board-point-light: #cdbf9c;
+		--board-point-dark: #85402f;
+
+		color-scheme: dark;
+	}
+}
+
+:root[data-theme='dark'] {
+	--bg-canvas: #14171b;
+	--bg-surface: #1d2126;
+	--fg-ink: #ece7dd;
+	--fg-muted: #a39d92;
+	--border-line: #2e333a;
+
+	--board-felt: #24543e;
+	--board-felt-dark: #1c4331;
+	--board-frame: #3e2817;
+	--board-point-light: #cdbf9c;
+	--board-point-dark: #85402f;
+
+	color-scheme: dark;
+}
+
+body {
+	background: var( --color-canvas );
+	color: var( --color-ink );
+	font-family: var( --font-sans );
+	-webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+	outline: 2px solid var( --color-accent );
+	outline-offset: 2px;
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

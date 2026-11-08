@@ -1,8 +1,8 @@
+'use client';
+
 /**
  * External dependencies
  */
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import { useDispatch, useSelector } from 'react-redux';
 
 /**
@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
  */
 import { newGame, resign, undoStep } from '../data/gameSlice';
 import type { AppDispatch, RootState } from '../data/store';
+import { Button } from './Button';
 
 export const GameState = () => {
 	const dispatch = useDispatch< AppDispatch >();
@@ -26,10 +27,10 @@ export const GameState = () => {
 	return (
 		<>
 			<h2 className="h6">GameState.tsx</h2>
-			<ButtonGroup aria-label="Game actions" className="mb-3">
+			<div role="group" aria-label="Game actions" className="mb-3 flex gap-2">
 				<Button
 					aria-label="Restart the game"
-					variant="outline-secondary btn-sm"
+					variant="secondary"
 					onClick={ () =>
 						dispatch( newGame( { variant: 'backgammon' } ) )
 					}
@@ -38,7 +39,7 @@ export const GameState = () => {
 				</Button>
 				<Button
 					aria-label="Resign the game"
-					variant="outline-secondary btn-sm"
+					variant="secondary"
 					onClick={ () =>
 						player !== null && dispatch( resign( { player } ) )
 					}
@@ -48,13 +49,13 @@ export const GameState = () => {
 				</Button>
 				<Button
 					aria-label="Undo last move"
-					variant="outline-secondary btn-sm"
+					variant="secondary"
 					onClick={ () => dispatch( undoStep() ) }
 					disabled={ ! canUndo }
 				>
 					Undo
 				</Button>
-			</ButtonGroup>
+			</div>
 		</>
 	);
 };

@@ -26,3 +26,8 @@ dist-ssr
 
 # Plan execution scratch
 .superpowers
+
+# Next.js
+.next/
+next-env.d.ts
+*.tsbuildinfo

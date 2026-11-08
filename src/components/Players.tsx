@@ -1,8 +1,8 @@
+'use client';
+
 /**
  * External dependencies
  */
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import { useDispatch, useSelector } from 'react-redux';
 
 /**
@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { newGame } from '../data/gameSlice';
 import type { AppDispatch, RootState } from '../data/store';
 import { getFormattedPlayerNameWithEmoji } from '../helpers/playerNameHelper';
+import { Button } from './Button';
 
 export const Players = () => {
 	const dispatch = useDispatch< AppDispatch >();
@@ -36,10 +37,10 @@ export const Players = () => {
 				</tbody>
 			</table>
 
-			<ButtonGroup aria-label="Player actions" className="mb-3">
+			<div role="group" aria-label="Player actions" className="mb-3 flex gap-2">
 				<Button
 					aria-label="Start the game"
-					variant="outline-primary btn-sm"
+					variant="primary"
 					onClick={ () =>
 						dispatch( newGame( { variant: 'backgammon' } ) )
 					}
@@ -47,7 +48,7 @@ export const Players = () => {
 				>
 					Start game
 				</Button>
-			</ButtonGroup>
+			</div>
 		</div>
 	);
 };

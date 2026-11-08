@@ -1,7 +1,8 @@
+'use client';
+
 /**
  * External dependencies
  */
-import Form from 'react-bootstrap/Form';
 import { clsx } from 'clsx';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -19,7 +20,11 @@ import diceFour from '../icons/dice-four-solid.svg';
 import diceFive from '../icons/dice-five-solid.svg';
 import diceSix from '../icons/dice-six-solid.svg';
 
-const DIE_ICONS: Record< number, string > = {
+// Next returns static image objects for SVG imports, Vitest returns URLs.
+const url = ( icon: string | { src: string } ) =>
+	typeof icon === 'string' ? icon : icon.src;
+
+const DIE_ICONS: Record< number, string | { src: string } > = {
 	1: diceOne,
 	2: diceTwo,
 	3: diceThree,
@@ -52,22 +57,26 @@ export const Dice = () => {
 		<div>
 			<h2 className="h6">Dice.tsx</h2>
 
-			<Form.Check
-				type="switch"
-				id="beginner-mode"
-				className="mb-2"
-				label={
-					advanced
-						? 'Advanced mode: select a die, then click a checker'
-						: 'Beginner mode: click a checker, then a highlighted point'
-				}
-				checked={ ! advanced }
-				onChange={ ( event ) =>
-					dispatch(
-						setMode( event.target.checked ? 'beginner' : 'advanced' )
-					)
-				}
-			/>
+			<label
+				htmlFor="beginner-mode"
+				className="mb-2 flex cursor-pointer items-center gap-2 text-sm"
+			>
+				<input
+					type="checkbox"
+					role="switch"
+					id="beginner-mode"
+					className="size-4 accent-accent"
+					checked={ ! advanced }
+					onChange={ ( event ) =>
+						dispatch(
+							setMode( event.target.checked ? 'beginner' : 'advanced' )
+						)
+					}
+				/>
+				{ advanced
+					? 'Advanced mode: select a die, then click a checker'
+					: 'Beginner mode: click a checker, then a highlighted point' }
+			</label>
 
 			<div className="dice-tray" aria-label="Dice" data-mode={ mode }>
 				{ dice.length === 0 && (
@@ -99,7 +108,7 @@ export const Dice = () => {
 							disabled={ ! playable }
 							onClick={ () => dispatch( selectDie( die ) ) }
 						>
-							<img src={ DIE_ICONS[ die ] } alt="" />
+							<img src={ url( DIE_ICONS[ die ] ) } alt="" />
 						</button>
 					) : (
 						<div
@@ -111,7 +120,7 @@ export const Dice = () => {
 							aria-label={ `Die ${ die }` }
 							title={ title }
 						>
-							<img src={ DIE_ICONS[ die ] } alt="" />
+							<img src={ url( DIE_ICONS[ die ] ) } alt="" />
 						</div>
 					);
 				} ) }
