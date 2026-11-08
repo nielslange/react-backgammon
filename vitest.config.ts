@@ -6,10 +6,12 @@ export default defineConfig( {
 	test: {
 		environment: 'jsdom',
 		globals: true,
+		include: [ 'src/**/*.test.{ts,tsx}' ],
+		setupFiles: [ 'src/tests/setup.ts' ],
 		coverage: {
 			provider: 'v8',
-			reporter: 'verbose',
+			reporter: [ 'text' ],
 		},
-		reporter: 'verbose',
+		reporters: [ 'default' ],
 	},
 } );

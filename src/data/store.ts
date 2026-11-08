@@ -1,22 +1,22 @@
 /**
- * External dependencies
+ * The application store: the engine-backed slices plus the turn driver
+ * that rolls real dice. Created per browser tab by `Providers`.
  */
-import { configureStore } from '@reduxjs/toolkit';
+import { createWorkerAi } from '../ai/client';
+import { defaultRng } from '../runtime/rng';
+import { createTurnDriver } from '../runtime/turnDriver';
+import { makeStore } from './createStore';
 
-/**
- * Internal dependencies
- */
-import { reducer } from './reducer';
+export const makeAppStore = () =>
+	makeStore( {
+		middleware: [
+			createTurnDriver( {
+				rng: defaultRng,
+				delays: { roll: 400, aiStep: 350 },
+				ai: createWorkerAi(),
+			} ).middleware,
+		],
+		devTools: process.env.NODE_ENV === 'development',
+	} );
 
-export const store = configureStore( {
-	reducer,
-	devTools: import.meta.env.DEV,
-} );
-
-// Dev-only hook so external tools (tests, bots, the MCP server) can read
-// and drive the game through the same reducer the UI uses.
-if ( import.meta.env.DEV ) {
-	(
-		window as unknown as { __backgammonStore: typeof store }
-	 ).__backgammonStore = store;
-}
+export type { AppDispatch, AppStore, RootState } from './createStore';

@@ -1,0 +1,701 @@
+/**
+ * Dutch Triktrak rules.
+ */
+import { describe, expect, it } from 'vitest';
+import { getEngine } from '../../engine';
+import { createGame, openingRoll, play, restore, roll, undoStep } from '../../engine/game';
+import { rollDice, rollDie, seeded } from '../../runtime/rng';
+import { MessageType } from '../../types/MessageType';
+import { expandRoll, isDouble, isTricTrac } from '../../engine/triktrak/rolls';
+import { DEFAULT_OPTIONS } from '../../engine/types';
+import type { GameState } from '../../engine/types';
+import { P1, P2, pos, stateWith } from './fixtures';
+
+const triktrak = getEngine( 'triktrak' );
+
+/** By default every checker on a bar lane is still waiting for its first entry. */
+const tt = ( partial: Partial< GameState > ): GameState => {
+	const checkers = partial.checkers ?? [];
+	const waiting = {
+		[ P1 ]: checkers.filter( ( c ) => c.player === P1 && c.lane === 0 ).length,
+		[ P2 ]: checkers.filter( ( c ) => c.player === P2 && c.lane === 25 ).length,
+	};
+	return stateWith( { variant: 'triktrak', waiting, ...partial } );
+};
+
+/** Both players fully entered and spread out, nothing blocked near P1. */
+const spread = () =>
+	pos( [
+		{ player: P1, lane: 24, count: 2 },
+		{ player: P1, lane: 20, count: 2 },
+		{ player: P1, lane: 16, count: 2 },
+		{ player: P1, lane: 13, count: 3 },
+		{ player: P1, lane: 11, count: 2 },
+		{ player: P1, lane: 9, count: 2 },
+		{ player: P1, lane: 7, count: 2 },
+		{ player: P2, lane: 1, count: 3 },
+		{ player: P2, lane: 3, count: 3 },
+		{ player: P2, lane: 5, count: 3 },
+		{ player: P2, lane: 6, count: 3 },
+		{ player: P2, lane: 8, count: 3 },
+	] );
+
+describe( 'Triktrak rolls', () => {
+	it( 'recognises doubles and the tric trac', () => {
+		expect( isDouble( [ 4, 4 ] ) ).toBe( true );
+		expect( isDouble( [ 4, 3 ] ) ).toBe( false );
+		expect( isTricTrac( [ 1, 2 ] ) ).toBe( true );
+		expect( isTricTrac( [ 2, 1 ] ) ).toBe( true );
+		expect( isTricTrac( [ 1, 1 ] ) ).toBe( false );
+	} );
+
+	it( 'expands doubles to n, n, 7-n, 7-n', () => {
+		expect( expandRoll( [ 2, 2 ] ) ).toEqual( [ 2, 2, 5, 5 ] );
+		expect( expandRoll( [ 6, 6 ] ) ).toEqual( [ 6, 6, 1, 1 ] );
+	} );
+
+	it( 'expands a tric trac to 1, 1, 2, 2, 5, 5, 6, 6', () => {
+		expect( expandRoll( [ 2, 1 ] ) ).toEqual( [ 1, 1, 2, 2, 5, 5, 6, 6 ] );
+	} );
+
+	it( 'plays other rolls low die first', () => {
+		expect( expandRoll( [ 5, 3 ] ) ).toEqual( [ 3, 5 ] );
+		expect( expandRoll( [ 1, 6 ] ) ).toEqual( [ 1, 6 ] );
+	} );
+
+	it( 'is wired as an engine with ordered dice and no cube', () => {
+		expect( triktrak.id ).toBe( 'triktrak' );
+		expect( triktrak.orderedDice ).toBe( true );
+		expect( triktrak.supportsCube ).toBe( false );
+		expect( triktrak.expandRoll( [ 1, 2 ], DEFAULT_OPTIONS ) ).toHaveLength( 8 );
+	} );
+} );
+
+describe( 'Triktrak ordered play', () => {
+	it( 'only offers steps with the next die', () => {
+		const state = tt( { checkers: spread(), player: P1, dice: [ 5, 3 ] } );
+		const steps = triktrak.legalSteps( state );
+		expect( steps.length ).toBeGreaterThan( 0 );
+		expect( steps.every( ( s ) => s.die === 5 ) ).toBe( true );
+	} );
+
+	it( 'prefers a first step that lets the next die be played', () => {
+		// P1 only on 13 and 10; P2 holds 9 and 4. Dice 3 then 5:
+		// 13→10 then 10→5 works; 10→7 then 7→2 works too; nothing strands.
+		// Make 10→7 strand the 5: 7-5 = 2 is held by P2, and 13-5 = 8 too.
+		const checkers = pos( [
+			{ player: P1, lane: 13, count: 1 },
+			{ player: P1, lane: 10, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 2, count: 2 },
+			{ player: P2, lane: 8, count: 2 },
+			{ player: P2, lane: 0, count: 11 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 3, 5 ] } ) );
+		expect( steps.map( ( s ) => s.from ) ).toEqual( [ 13 ] );
+	} );
+
+	it( 'finds the legal steps of a tric trac instantly from a busy position', () => {
+		const state = tt( { checkers: spread(), player: P1, dice: expandRoll( [ 1, 2 ] ) } );
+		const started = performance.now();
+		const steps = triktrak.legalSteps( state );
+		expect( performance.now() - started ).toBeLessThan( 100 );
+		expect( steps.length ).toBeGreaterThan( 0 );
+		expect( steps.every( ( s ) => s.die === 1 ) ).toBe( true );
+	} );
+
+	it( 'lists every distinct tric trac outcome, each playing all eight dice', () => {
+		const state = tt( { checkers: spread(), player: P1, dice: expandRoll( [ 1, 2 ] ) } );
+		const turns = triktrak.legalTurns( state );
+		const firstSteps = triktrak.legalSteps( state ).map( ( s ) => s.from );
+		expect( turns.length ).toBeGreaterThan( 1000 );
+		expect( turns.every( ( t ) => t.length === 8 ) ).toBe( true );
+		expect( turns.every( ( t ) => firstSteps.includes( t[ 0 ].from ) ) ).toBe( true );
+	}, 10000 );
+} );
+
+describe( 'Triktrak entry and options', () => {
+	it( 'starts with all fifteen checkers of each player off the board', () => {
+		const checkers = triktrak.initialCheckers();
+		expect( checkers.filter( ( c ) => c.player === P1 && c.lane === 0 ) ).toHaveLength( 15 );
+		expect( checkers.filter( ( c ) => c.player === P2 && c.lane === 25 ) ).toHaveLength( 15 );
+		const state = tt( { checkers } );
+		expect( triktrak.pipCount( state, P1 ) ).toBe( 375 );
+		expect( triktrak.pipCount( state, P2 ) ).toBe( 375 );
+	} );
+
+	it( 'enters by die value into the opponent home board', () => {
+		const state = tt( { checkers: triktrak.initialCheckers(), player: P1, dice: [ 5, 3 ], roll: [ 5, 3 ] } );
+		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 0, 20 ] ] );
+		const p2 = tt( { checkers: triktrak.initialCheckers(), player: P2, dice: [ 5, 3 ], roll: [ 5, 3 ] } );
+		expect( triktrak.legalSteps( p2 ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 25, 5 ] ] );
+	} );
+
+	it( 'lets entered checkers move while others still wait to enter', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 10 },
+			{ player: P1, lane: 18, count: 5 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 4, 2 ], roll: [ 4, 2 ] } ) );
+		expect( steps.map( ( s ) => s.from ).sort( ( a, b ) => a - b ) ).toEqual( [ 0, 18 ] );
+	} );
+
+	it( 'respects maxCheckersPerPoint', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 13, count: 2 },
+			{ player: P1, lane: 18, count: 13 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const options = { ...DEFAULT_OPTIONS, maxCheckersPerPoint: 2 };
+		const state = tt( { checkers, player: P1, dice: [ 5 ], roll: [ 5, 5 ], options } );
+		// 18→13 would put a third checker on 13; 13→8 is fine.
+		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 13, 8 ] ] );
+	} );
+
+	it( 'with enterOnlyOnDoubles, enters only on a double or a tric trac', () => {
+		const options = { ...DEFAULT_OPTIONS, enterOnlyOnDoubles: true };
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 14 },
+			{ player: P1, lane: 18, count: 1 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const plain = tt( { checkers, player: P1, dice: [ 5, 3 ], roll: [ 5, 3 ], options } );
+		expect( triktrak.legalSteps( plain ).every( ( s ) => s.from !== 0 ) ).toBe( true );
+		const double = tt( { checkers, player: P1, dice: [ 4, 4, 3, 3 ], roll: [ 4, 4 ], options } );
+		expect( triktrak.legalSteps( double ).some( ( s ) => s.from === 0 ) ).toBe( true );
+		const tric = tt( { checkers, player: P1, dice: expandRoll( [ 1, 2 ] ), roll: [ 1, 2 ], options } );
+		expect( triktrak.legalSteps( tric ).some( ( s ) => s.from === 0 ) ).toBe( true );
+	} );
+
+	it( 'still sends a hit checker to the bar', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 14 },
+			{ player: P1, lane: 15, count: 1 },
+			{ player: P2, lane: 25, count: 14 },
+			{ player: P2, lane: 10, count: 1 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 5, 1 ], roll: [ 5, 1 ] } );
+		const step = triktrak.legalSteps( state ).find( ( s ) => s.from === 15 )!;
+		expect( step.hit ).toBe( true );
+		const after = triktrak.applyStep( state, step );
+		expect( after.checkers.filter( ( c ) => c.player === P2 && c.lane === 25 ) ).toHaveLength( 15 );
+	} );
+} );
+
+/** Play the first legal step until the turn or sequence ends. */
+const playOut = ( state: GameState ): GameState => {
+	let s = state;
+	while ( s.phase === 'moving' && s.player === state.player && s.dice.length ) {
+		const step = triktrak.legalSteps( s )[ 0 ];
+		if ( ! step ) break;
+		s = triktrak.afterStep( triktrak.applyStep( s, step ) );
+	}
+	return s;
+};
+
+const rolled = ( checkers: ReturnType< typeof pos >, roll: [ number, number ], extra: Partial< GameState > = {} ) =>
+	triktrak.onRoll( tt( { checkers, player: P1, phase: 'awaiting-roll', ...extra } ), roll );
+
+/** P1: one checker on `from` (13 by default), the rest borne off; P2 waits on its bar. */
+const lone = ( p2Points: number[], from = 13 ) =>
+	pos( [
+		{ player: P1, lane: from, count: 1 },
+		{ player: P1, lane: 25, count: 14 },
+		...p2Points.map( ( lane ) => ( { player: P2, lane, count: 2 } ) ),
+		{ player: P2, lane: 25, count: 15 - 2 * p2Points.length },
+	] );
+
+describe( 'Triktrak forfeits and re-rolls', () => {
+	it( 'passes the whole turn when the low die cannot be played, even if the high one could', () => {
+		const checkers = lone( [ 11 ] ); // 13-2 = 11 is held; 13-6 = 7 is open
+		const s = rolled( checkers, [ 6, 2 ] );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+		expect( s.checkers ).toEqual( checkers );
+	} );
+
+	it( 'forfeits the high die when it is blocked after the low one', () => {
+		const s = playOut( rolled( lone( [ 5 ] ), [ 6, 2 ] ) ); // 13→11, then 11-6 = 5 is held
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+		expect( s.checkers.find( ( c ) => c.player === P1 && c.lane < 25 )?.lane ).toBe( 11 );
+	} );
+
+	it( 'a blocked step in a double forfeits the rest and earns no re-roll', () => {
+		// 2-2 plays 2, 2, 5, 5: 13→11→9, then 9-5 = 4 is held.
+		const s = playOut( rolled( lone( [ 4 ] ), [ 2, 2 ] ) );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+		expect( s.rerolls ).toBe( 0 );
+	} );
+
+	it( 'a completed double earns another roll for the same player', () => {
+		// From 20 a 2-2 (2, 2, 5, 5 = 14 pips) keeps the checker on the board.
+		const s = playOut( rolled( lone( [], 20 ), [ 2, 2 ] ) );
+		expect( s.player ).toBe( P1 );
+		expect( s.phase ).toBe( 'awaiting-roll' );
+		expect( s.lastEvent ).toBe( 'reroll' );
+		expect( s.rerolls ).toBe( 1 );
+		expect( s.dice ).toEqual( [] );
+	} );
+
+	it( 'a completed tric trac earns another roll', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 24, count: 3 },
+			{ player: P1, lane: 0, count: 12 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const s = playOut( rolled( checkers, [ 1, 2 ] ) );
+		expect( s.player ).toBe( P1 );
+		expect( s.lastEvent ).toBe( 'reroll' );
+	} );
+
+	it( 'rerollLimit stops further bonus rolls and resets the count on hand-off', () => {
+		const options = { ...DEFAULT_OPTIONS, rerollLimit: 1 };
+		const s = playOut( rolled( lone( [], 20 ), [ 2, 2 ], { options, rerolls: 1 } ) );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'hand-off' );
+		expect( s.rerolls ).toBe( 0 );
+	} );
+
+	it( 'without rerollOnlyIfCompleted a blocked double still earns a re-roll', () => {
+		const options = { ...DEFAULT_OPTIONS, rerollOnlyIfCompleted: false };
+		const s = playOut( rolled( lone( [ 4 ] ), [ 2, 2 ], { options } ) );
+		expect( s.player ).toBe( P1 );
+		expect( s.lastEvent ).toBe( 'reroll' );
+	} );
+
+	it( 'a normal roll played in full hands the turn over', () => {
+		const s = playOut( rolled( lone( [] ), [ 5, 3 ] ) );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'hand-off' );
+	} );
+} );
+
+describe( 'Triktrak final turn and draw', () => {
+	/** P1 (first mover) has one checker left on 2; P2 is spread over its home. */
+	const endgame = ( p2: Array< { lane: number; count: number } >, extra: Partial< GameState > = {} ) =>
+		tt( {
+			checkers: pos( [
+				{ player: P1, lane: 2, count: 1 },
+				{ player: P1, lane: 25, count: 14 },
+				...p2.map( ( p ) => ( { player: P2, ...p } ) ),
+				{ player: P2, lane: 0, count: 15 - p2.reduce( ( n, p ) => n + p.count, 0 ) },
+			] ),
+			player: P1,
+			firstMover: P1,
+			roll: [ 2, 5 ],
+			dice: [ 2, 5 ],
+			...extra,
+		} );
+
+	const bearOffLast = ( state: GameState ) =>
+		triktrak.afterStep( triktrak.applyStep( state, triktrak.legalSteps( state )[ 0 ] ) );
+
+	it( 'gives the second player one final roll when the first mover finishes', () => {
+		const s = bearOffLast( endgame( [ { lane: 23, count: 2 } ] ) );
+		expect( s.phase ).toBe( 'awaiting-roll' );
+		expect( s.player ).toBe( P2 );
+		expect( s.result ).toBeNull();
+		expect( s.lastEvent ).toBe( 'final-turn' );
+	} );
+
+	it( 'is a draw when the second player also bears off everything', () => {
+		// 2 takes 23 off, 3 takes 22 off: exact numbers for both.
+		const final = bearOffLast( endgame( [ { lane: 23, count: 1 }, { lane: 22, count: 1 } ] ) );
+		const s = playOut( triktrak.onRoll( final, [ 3, 2 ] ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: null, points: 0, kind: 'draw' } );
+	} );
+
+	it( 'the first mover wins when the final roll does not finish', () => {
+		const final = bearOffLast( endgame( [ { lane: 19, count: 3 } ] ) );
+		const s = playOut( triktrak.onRoll( final, [ 4, 3 ] ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P1, points: 1, kind: 'single' } );
+	} );
+
+	it( 'the final turn earns no bonus roll, even for a completed double', () => {
+		// 1-1 plays 1, 1, 6, 6: four checkers off from 24 and 19, but one remains.
+		const final = bearOffLast( endgame( [ { lane: 24, count: 2 }, { lane: 19, count: 3 } ] ) );
+		const s = playOut( triktrak.onRoll( final, [ 1, 1 ] ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result?.winner ).toBe( P1 );
+	} );
+
+	it( 'an unplayable final roll ends the game for the first mover', () => {
+		// P2's last checker waits on the bar and may only enter on doubles.
+		const options = { ...DEFAULT_OPTIONS, enterOnlyOnDoubles: true };
+		const state = tt( {
+			checkers: pos( [
+				{ player: P1, lane: 2, count: 1 },
+				{ player: P1, lane: 25, count: 14 },
+				{ player: P2, lane: 25, count: 1 },
+				{ player: P2, lane: 0, count: 14 },
+			] ),
+			player: P1,
+			firstMover: P1,
+			roll: [ 2, 5 ],
+			dice: [ 2, 5 ],
+			options,
+		} );
+		const final = bearOffLast( state );
+		expect( final.player ).toBe( P2 );
+		const s = triktrak.onRoll( final, [ 5, 3 ] );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P1, points: 1, kind: 'single' } );
+	} );
+
+	it( 'the second player wins at once when they finish first', () => {
+		const s = bearOffLast(
+			tt( {
+				checkers: pos( [
+					{ player: P2, lane: 23, count: 1 },
+					{ player: P2, lane: 0, count: 14 },
+					{ player: P1, lane: 2, count: 3 },
+					{ player: P1, lane: 25, count: 12 },
+				] ),
+				player: P2,
+				firstMover: P1,
+				roll: [ 2, 5 ],
+				dice: [ 2, 5 ],
+			} )
+		);
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P2, points: 1, kind: 'single' } );
+	} );
+
+	it( 'without finalTurnForSecondPlayer the first mover wins at once', () => {
+		const options = { ...DEFAULT_OPTIONS, finalTurnForSecondPlayer: false };
+		const s = bearOffLast( endgame( [ { lane: 23, count: 2 } ], { options } ) );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: P1, points: 1, kind: 'single' } );
+	} );
+} );
+
+describe( 'Triktrak refusal messages', () => {
+	it( 'explains a blocked next die', () => {
+		// 13-6 = 7 and 13-2 = 11 are both held, so no later die helps either.
+		const checkers = pos( [
+			{ player: P1, lane: 13, count: 1 },
+			{ player: P1, lane: 20, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 7, count: 2 },
+			{ player: P2, lane: 11, count: 2 },
+			{ player: P2, lane: 25, count: 11 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 6, 2 ], roll: [ 6, 2 ] } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.TARGET_OCCUPIED_BY_OPPONENT );
+		expect( triktrak.explainRefusal( state, 2 ) ).toBeNull();
+	} );
+
+	it( 'explains that checkers enter only on doubles when that option is on', () => {
+		const options = { ...DEFAULT_OPTIONS, enterOnlyOnDoubles: true };
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 14 },
+			{ player: P1, lane: 18, count: 1 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 5, 3 ], roll: [ 5, 3 ], options } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.ENTER_ON_DOUBLES );
+	} );
+
+	it( 'explains that the dice are played in order', () => {
+		const later = pos( [
+			{ player: P1, lane: 13, count: 1 },
+			{ player: P1, lane: 20, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 7, count: 1 },
+			{ player: P2, lane: 9, count: 2 },
+			{ player: P2, lane: 25, count: 12 },
+		] );
+		// Next die 4: 13-4 = 9 held; the later 2 would work (13-2 = 11).
+		const s = tt( { checkers: later, player: P1, dice: [ 4, 2 ], roll: [ 4, 2 ] } );
+		expect( triktrak.explainRefusal( s, 1 ) ).toBe( MessageType.PLAY_DICE_IN_ORDER );
+	} );
+} );
+
+describe( 'Triktrak whole games', () => {
+	it( 'a scripted two-player game reaches the end', () => {
+		const rng = seeded( 7 );
+		let g = createGame( 'triktrak' );
+		for ( let guard = 0; g.phase === 'opening' && guard < 50; guard++ ) {
+			g = openingRoll( g, rollDie( rng ), rollDie( rng ) );
+		}
+		let moves = 0;
+		for ( let guard = 0; g.phase !== 'over' && guard < 20000; guard++ ) {
+			if ( g.phase === 'awaiting-roll' ) g = roll( g, rollDice( rng ) );
+			else if ( g.phase === 'moving' ) {
+				g = play( g, triktrak.legalSteps( g )[ 0 ] );
+				moves++;
+			}
+		}
+		expect( g.phase ).toBe( 'over' );
+		expect( g.result ).not.toBeNull();
+		expect( moves ).toBeGreaterThan( 30 );
+	} );
+} );
+
+describe( 'Triktrak hit checkers enter first', () => {
+	it( 'a new game has fifteen checkers per player waiting for their first entry', () => {
+		expect( createGame( 'triktrak' ).waiting ).toEqual( { [ P1 ]: 15, [ P2 ]: 15 } );
+		expect( createGame( 'backgammon' ).waiting ).toEqual( { [ P1 ]: 0, [ P2 ]: 0 } );
+	} );
+
+	it( 'a hit checker must enter before checkers on the board move', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 1 },
+			{ player: P1, lane: 18, count: 14 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		// No first entries pending: the bar checker was hit.
+		const state = tt( { checkers, player: P1, dice: [ 4, 2 ], roll: [ 4, 2 ], waiting: { [ P1 ]: 0, [ P2 ]: 15 } } );
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ) ).toEqual( [ 0 ] );
+		expect( triktrak.explainRefusal( state, 2 ) ).toBe( MessageType.WAITING_CHECKER );
+	} );
+
+	it( 'with a hit checker among first entries, entering frees the board again', () => {
+		// 11 on the bar, 10 of them never entered: one is a hit checker.
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 11 },
+			{ player: P1, lane: 18, count: 4 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		let state = tt( { checkers, player: P1, dice: [ 4, 2 ], roll: [ 4, 2 ], waiting: { [ P1 ]: 10, [ P2 ]: 15 } } );
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ) ).toEqual( [ 0 ] );
+		state = triktrak.afterStep( triktrak.applyStep( state, triktrak.legalSteps( state )[ 0 ] ) );
+		expect( state.waiting[ P1 ] ).toBe( 10 );
+		// 21 is in the first quarter and must wait while ten checkers are still out.
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ).sort( ( a, b ) => a - b ) ).toEqual( [ 0, 18 ] );
+	} );
+
+	it( 'a first entry counts down the waiting checkers, and undo counts it back', () => {
+		const start = tt( { checkers: triktrak.initialCheckers(), player: P1, dice: [ 5, 3 ], roll: [ 5, 3 ] } );
+		const entered = play( start, triktrak.legalSteps( start )[ 0 ] );
+		expect( entered.waiting[ P1 ] ).toBe( 14 );
+		expect( undoStep( entered ).waiting[ P1 ] ).toBe( 15 );
+	} );
+
+	it( 'restores the waiting counts from a snapshot and derives them when missing', () => {
+		const g = { ...createGame( 'triktrak' ), waiting: { [ P1 ]: 12, [ P2 ]: 15 } };
+		expect( restore( JSON.parse( JSON.stringify( g ) ) ).waiting ).toEqual( { [ P1 ]: 12, [ P2 ]: 15 } );
+		const old: Partial< GameState > = { ...g };
+		delete old.waiting;
+		expect( restore( JSON.parse( JSON.stringify( old ) ) ).waiting ).toEqual( { [ P1 ]: 15, [ P2 ]: 15 } );
+	} );
+} );
+
+describe( 'Triktrak home board and bear-off', () => {
+	/** P1 has one checker left on `lane`; P2 still has work to do, so the game goes on. */
+	const lastChecker = ( lane: number ) =>
+		pos( [
+			{ player: P1, lane, count: 1 },
+			{ player: P1, lane: 25, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+	const options = { ...DEFAULT_OPTIONS, finalTurnForSecondPlayer: false };
+	const clears = ( lane: number, roll: [ number, number ] ) => {
+		const s = playOut( rolled( lastChecker( lane ), roll, { options, firstMover: P2 } ) );
+		return s.phase === 'over' && s.result?.winner === P1;
+	};
+
+	it( 'a lone checker three points from the edge leaves only with 3/3, 3/4, 3/5 or 3/6', () => {
+		for ( const roll of [ [ 3, 3 ], [ 3, 4 ], [ 3, 5 ], [ 3, 6 ] ] as const ) {
+			expect( clears( 3, [ ...roll ] ) ).toBe( true );
+		}
+		for ( const roll of [ [ 3, 1 ], [ 3, 2 ], [ 4, 4 ], [ 4, 5 ], [ 5, 6 ], [ 6, 6 ] ] as const ) {
+			expect( clears( 3, [ ...roll ] ) ).toBe( false );
+		}
+	} );
+
+	it( 'a lone checker on field 1 leaves with 1/1, 1/2, 1/3, 1/4, 1/5 and 1/6', () => {
+		for ( let other = 1; other <= 6; other++ ) {
+			expect( clears( 1, [ 1, other ] ) ).toBe( true );
+		}
+		expect( clears( 1, [ 2, 2 ] ) ).toBe( false );
+	} );
+
+	it( 'a lone checker six points from the edge leaves only with 6-6', () => {
+		expect( clears( 6, [ 6, 6 ] ) ).toBe( true );
+		for ( const roll of [ [ 6, 1 ], [ 6, 5 ], [ 5, 5 ], [ 1, 1 ] ] as const ) {
+			expect( clears( 6, [ ...roll ] ) ).toBe( false );
+		}
+	} );
+
+	it( 'with checkers on 3 and 4 a 3/5 bears off the 3, then the turn ends', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 3, count: 1 },
+			{ player: P1, lane: 4, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const s = playOut( rolled( checkers, [ 3, 5 ], { options, firstMover: P2 } ) );
+		expect( s.checkers.filter( ( c ) => c.player === P1 && c.lane !== 25 ).map( ( c ) => c.lane ) ).toEqual( [ 4 ] );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+	} );
+
+	it( 'checkers inside the home board cannot move within it', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 5, count: 2 },
+			{ player: P1, lane: 9, count: 1 },
+			{ player: P1, lane: 25, count: 12 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 3, 4 ], roll: [ 3, 4 ] } ) );
+		// 9→6 enters the home board; 5→2 would move inside it.
+		expect( steps.map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 9, 6 ] ] );
+	} );
+
+	it( 'bears off only with the exact number', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 2, count: 1 },
+			{ player: P1, lane: 25, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		expect( triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 2 ], roll: [ 2, 2 ] } ) ) ).toHaveLength( 1 );
+		expect( triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 4 ], roll: [ 4, 4 ] } ) ) ).toHaveLength( 0 );
+	} );
+} );
+
+describe( 'Triktrak home-board refusal messages', () => {
+	it( 'explains that home-board checkers can only bear off', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 5, count: 2 },
+			{ player: P1, lane: 9, count: 1 },
+			{ player: P1, lane: 25, count: 12 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 3, 4 ], roll: [ 3, 4 ] } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.HOME_BOARD_LOCKED );
+	} );
+
+	it( 'explains that bearing off needs the exact number', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 2, count: 1 },
+			{ player: P1, lane: 25, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 4, 5 ], roll: [ 4, 5 ] } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.BEAR_OFF_EXACT );
+	} );
+} );
+
+describe( 'Triktrak quarter gates', () => {
+	it( 'checkers in the first quarter may not move at all while any checker is out of the game', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 1 },
+			{ player: P1, lane: 22, count: 14 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 2, 6 ], roll: [ 2, 6 ] } );
+		// Only entering is possible: 22→20 and 22→16 must wait.
+		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 0, 23 ] ] );
+		const later = tt( { checkers, player: P1, dice: [ 6 ], roll: [ 6, 6 ] } );
+		expect( triktrak.legalSteps( later ).every( ( s ) => s.from === 0 ) ).toBe( true );
+		expect( triktrak.explainRefusal( later, 2 ) ).toBe( MessageType.ALL_CHECKERS_IN_FIRST );
+	} );
+
+	it( 'once all checkers are in the game they may leave the first quarter', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 22, count: 15 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 6 ], roll: [ 6, 6 ] } ) );
+		expect( steps.map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 22, 16 ] ] );
+	} );
+
+	it( 'nothing may enter the home board while the first quarter still holds a checker', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 20, count: 1 },
+			{ player: P1, lane: 9, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 4 ], roll: [ 4, 4 ] } );
+		// 9→5 would enter the home board; only 20→16 is allowed.
+		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 20, 16 ] ] );
+		expect( triktrak.explainRefusal( state, 2 ) ).toBe( MessageType.FIRST_QUARTER_NOT_EMPTY );
+		const cleared = pos( [
+			{ player: P1, lane: 16, count: 1 },
+			{ player: P1, lane: 9, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		// Dark holds 12, so 16→12 is blocked; 9→5 may now enter the home board.
+		const ok = triktrak.legalSteps( tt( { checkers: cleared, player: P1, dice: [ 4 ], roll: [ 4, 4 ] } ) );
+		expect( ok.map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 9, 5 ] ] );
+	} );
+
+	it( 'nothing may enter the home board while a checker is out of the game', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 1 },
+			{ player: P1, lane: 9, count: 14 },
+			{ player: P2, lane: 23, count: 2 },
+			{ player: P2, lane: 25, count: 13 },
+		] );
+		// The 2 cannot enter (23 is held), and 9→7 stays outside the home board; 9→5 with a 4 may not.
+		const state = tt( { checkers, player: P1, dice: [ 4 ], roll: [ 4, 4 ], waiting: { [ P1 ]: 1, [ P2 ]: 13 } } );
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ) ).toEqual( [ 0 ] );
+	} );
+
+	it( 'applies the same gates to the dark player in the mirrored quarters', () => {
+		const checkers = pos( [
+			{ player: P2, lane: 25, count: 1 },
+			{ player: P2, lane: 3, count: 14 },
+			{ player: P1, lane: 0, count: 15 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P2, dice: [ 6 ], roll: [ 6, 6 ] } ) );
+		// 3→9 would leave the first quarter while a checker is still out.
+		expect( steps.every( ( s ) => s.from === 25 ) ).toBe( true );
+	} );
+} );
+
+describe( 'Triktrak review fixes', () => {
+	it( 'ends a position where neither player can ever move again as a draw', () => {
+		const options = { ...DEFAULT_OPTIONS, maxCheckersPerPoint: 3 };
+		const checkers = pos( [
+			{ player: P1, lane: 4, count: 3 },
+			{ player: P1, lane: 6, count: 3 },
+			{ player: P1, lane: 7, count: 3 },
+			{ player: P1, lane: 8, count: 3 },
+			{ player: P1, lane: 9, count: 3 },
+			{ player: P2, lane: 1, count: 3 },
+			{ player: P2, lane: 2, count: 3 },
+			{ player: P2, lane: 3, count: 3 },
+			{ player: P2, lane: 5, count: 3 },
+			{ player: P2, lane: 11, count: 2 },
+			{ player: P2, lane: 25, count: 1 },
+		] );
+		const state = tt( {
+			checkers,
+			player: P2,
+			phase: 'awaiting-roll',
+			options,
+			waiting: { [ P1 ]: 0, [ P2 ]: 0 },
+		} );
+		const s = triktrak.onRoll( state, [ 4, 2 ] );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: null, points: 0, kind: 'stalemate' } );
+	} );
+
+	it( 'undo of a hit brings back exactly the checker that was hit', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 15, count: 1 },
+			{ player: P1, lane: 18, count: 14 },
+			// The waiting checkers come first in the list, the blot last.
+			{ player: P2, lane: 25, count: 14 },
+			{ player: P2, lane: 10, count: 1 },
+		] );
+		const before = tt( { checkers, player: P1, dice: [ 5, 1 ], roll: [ 5, 1 ], waiting: { [ P1 ]: 0, [ P2 ]: 14 } } );
+		const step = triktrak.legalSteps( before ).find( ( s ) => s.from === 15 )!;
+		const after = undoStep( play( before, step ) );
+		expect( after.checkers ).toEqual( before.checkers );
+	} );
+
+	it( 'a forfeited opening roll leaves no roll behind', () => {
+		const g = openingRoll( createGame( 'triktrak', { enterOnlyOnDoubles: true } ), 5, 3 );
+		expect( g.phase ).toBe( 'awaiting-roll' );
+		expect( g.lastEvent ).toBe( 'forfeit' );
+		expect( g.roll ).toBeNull();
+	} );
+} );

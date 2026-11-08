@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 
 export default tseslint.config(
-	{ ignores: [ 'dist/**', 'node_modules/**' ] },
+	{ ignores: [ 'dist/**', 'node_modules/**', '.next/**', 'next-env.d.ts' ] },
 	js.configs.recommended,
 	...tseslint.configs.recommended,
 	reactHooks.configs.flat[ 'recommended-latest' ],
@@ -18,7 +18,7 @@ export default tseslint.config(
 		rules: {
 			'react-refresh/only-export-components': [
 				'warn',
-				{ allowConstantExport: true },
+				{ allowConstantExport: true, allowExportNames: [ 'metadata' ] },
 			],
 			'@typescript-eslint/no-explicit-any': 'off',
 		},

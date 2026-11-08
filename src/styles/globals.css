@@ -1,0 +1,152 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. Tailwind generates utilities from the @theme block
+ * (bg-felt, text-ink, rounded-card, shadow-raised, …). Dark mode swaps
+ * the underlying CSS variables, so utilities need no dark: variants.
+ */
+@theme {
+	--color-canvas: var(--bg-canvas);
+	--color-surface: var(--bg-surface);
+	--color-ink: var(--fg-ink);
+	--color-muted: var(--fg-muted);
+	--color-line: var(--border-line);
+	/* Outlines that identify a control (inputs, switches, buttons): 3:1. */
+	--color-control: var(--ui-control);
+	/* Focus rings and selected states: 3:1 on page and cards. */
+	--color-focus: var(--ui-focus);
+	--color-die-edge: var(--ui-die-edge);
+
+	--color-felt: var(--board-felt);
+	--color-felt-dark: var(--board-felt-dark);
+	--color-frame: var(--board-frame);
+	--color-point-light: var(--board-point-light);
+	--color-point-dark: var(--board-point-dark);
+
+	/* Checkers: a dark rim on light checkers and a light rim on dark ones
+	   keep 3:1 on the felt and on both point colours. */
+	--color-checker-light: #f3ead8;
+	--color-checker-light-rim: #3b2f22;
+	--color-checker-dark: #2f3a46;
+	--color-checker-dark-rim: #b8c2cc;
+	--color-count-on-light: #3a2f1f;
+	--color-count-on-dark: #f3ead8;
+	/* Landing points: a two-tone outline readable on any background. */
+	--color-target-outer: #ffd166;
+	--color-target-inner: #1b1408;
+
+	--color-accent: #e0a63a;
+	--color-accent-ink: #3a2705;
+	--color-danger: #c2554f;
+	--color-success: #4f8a5b;
+
+	--font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+	--animate-die-roll: die-roll 400ms cubic-bezier(0.2, 0.8, 0.3, 1.2);
+
+	@keyframes die-roll {
+		0% {
+			transform: translateY(-10px) rotate(-120deg) scale(0.7);
+			opacity: 0;
+		}
+		100% {
+			transform: none;
+			opacity: 1;
+		}
+	}
+
+	--radius-card: 14px;
+	--radius-control: 10px;
+
+	--shadow-raised: 0 1px 2px rgb(0 0 0 / 0.08), 0 6px 18px rgb(0 0 0 / 0.08);
+	--shadow-board: 0 2px 4px rgb(0 0 0 / 0.2), 0 18px 40px rgb(0 0 0 / 0.25);
+}
+
+:root {
+	--bg-canvas: #f4efe6;
+	--bg-surface: #fffdf8;
+	--fg-ink: #1f2328;
+	--fg-muted: #5f6670;
+	--border-line: #e2d9c8;
+
+	--ui-control: #7d7262;
+	--ui-focus: #9a5f0a;
+	--ui-die-edge: #7a6845;
+
+	--board-felt: #1f4f3a;
+	--board-felt-dark: #1a4331;
+	--board-frame: #5a3b22;
+	--board-point-light: #ead9b0;
+	--board-point-dark: #d0805f;
+
+	color-scheme: light;
+}
+
+@media ( prefers-color-scheme: dark ) {
+	:root:not( [data-theme='light'] ) {
+		--bg-canvas: #14171b;
+		--bg-surface: #1d2126;
+		--fg-ink: #ece7dd;
+		--fg-muted: #a39d92;
+		--border-line: #2e333a;
+
+		--ui-control: #8a8378;
+		--ui-focus: #e0a63a;
+		--ui-die-edge: #8a8378;
+
+		--board-felt: #1d4a36;
+		--board-felt-dark: #173b2b;
+		--board-frame: #3e2817;
+		--board-point-light: #d9c9a2;
+		--board-point-dark: #d0805f;
+
+		color-scheme: dark;
+	}
+}
+
+:root[data-theme='dark'] {
+	--bg-canvas: #14171b;
+	--bg-surface: #1d2126;
+	--fg-ink: #ece7dd;
+	--fg-muted: #a39d92;
+	--border-line: #2e333a;
+
+	--ui-control: #8a8378;
+	--ui-focus: #e0a63a;
+	--ui-die-edge: #8a8378;
+
+	--board-felt: #1d4a36;
+	--board-felt-dark: #173b2b;
+	--board-frame: #3e2817;
+	--board-point-light: #d9c9a2;
+	--board-point-dark: #d0805f;
+
+	color-scheme: dark;
+}
+
+/* Base rules live in the base layer so utilities (outline-none, …) can override them. */
+@layer base {
+	body {
+		background: var( --color-canvas );
+		color: var( --color-ink );
+		font-family: var( --font-sans );
+		-webkit-font-smoothing: antialiased;
+	}
+
+	:focus-visible {
+		outline: 2px solid var( --color-focus );
+		outline-offset: 2px;
+	}
+
+	@media ( prefers-reduced-motion: reduce ) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+}

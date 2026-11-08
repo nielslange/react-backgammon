@@ -23,3 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 /coverage
+
+# Plan execution scratch
+.superpowers
+
+# Next.js
+.next/
+next-env.d.ts
+*.tsbuildinfo
+test-results/
+playwright-report/
+
+# Vercel CLI
+.vercel
