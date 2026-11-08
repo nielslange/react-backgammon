@@ -29,6 +29,7 @@ export enum MessageType {
 	POINT_FULL = 'That point already holds the most checkers allowed.',
 	BONUS_ROLL = 'All dice played: a bonus roll.',
 	COMPUTER_TURN = 'The computer is moving. Your turn comes next.',
+	COMPUTER_THINKING = 'The computer is thinking…',
 	HOME_BOARD_LOCKED = 'Checkers in your home board cannot move there any more; they can only bear off.',
 	BEAR_OFF_EXACT = 'Bearing off needs the exact number on the die.',
 	ALL_CHECKERS_IN_FIRST = 'All your checkers must be on the board before checkers in your first quarter move or one enters your home board.',

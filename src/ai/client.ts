@@ -21,12 +21,28 @@ type RequestBody = WorkerRequest extends infer R ? ( R extends unknown ? Omit< R
 export const createWorkerAi = (): AiPort => {
 	if ( typeof Worker === 'undefined' ) return localAi;
 	let worker: Worker | null = null;
+	// Once the worker fails, every question is answered in-process.
+	let broken = false;
 	let nextId = 1;
 	const pending = new Map< number, { resolve: ( v: unknown ) => void; reject: ( e: Error ) => void } >();
 
-	const ask = < T >( request: RequestBody ): Promise< T > => {
+	const fail = () => {
+		broken = true;
+		worker?.terminate();
+		worker = null;
+		for ( const entry of pending.values() ) entry.reject( new Error( 'The computer player stopped.' ) );
+		pending.clear();
+	};
+
+	const ask = < T >( request: RequestBody, local: () => Promise< T > ): Promise< T > => {
+		if ( broken ) return local();
 		if ( ! worker ) {
-			worker = new Worker( new URL( './worker.ts', import.meta.url ), { type: 'module' } );
+			try {
+				worker = new Worker( new URL( './worker.ts', import.meta.url ), { type: 'module' } );
+			} catch {
+				broken = true;
+				return local();
+			}
 			worker.onmessage = ( { data }: MessageEvent< WorkerResponse > ) => {
 				const entry = pending.get( data.id );
 				if ( ! entry ) return;
@@ -34,17 +50,23 @@ export const createWorkerAi = (): AiPort => {
 				if ( data.error ) entry.reject( new Error( data.error ) );
 				else entry.resolve( data.result );
 			};
+			worker.onerror = fail;
+			worker.onmessageerror = fail;
 		}
 		const id = nextId++;
-		return new Promise< T >( ( resolve, reject ) => {
+		const answer = new Promise< T >( ( resolve, reject ) => {
 			pending.set( id, { resolve: resolve as ( v: unknown ) => void, reject } );
 			worker!.postMessage( { ...request, id } );
 		} );
+		return answer.catch( local );
 	};
 
 	return {
-		requestTurn: ( state, level, seed ) => ask( { kind: 'turn', state, level, seed } ),
-		decideCube: ( state, player, level ) => ask( { kind: 'cube', state, player, level } ),
-		answerDouble: ( state, player, level ) => ask( { kind: 'answer', state, player, level } ),
+		requestTurn: ( state, level, seed ) =>
+			ask( { kind: 'turn', state, level, seed }, () => localAi.requestTurn( state, level, seed ) ),
+		decideCube: ( state, player, level ) =>
+			ask( { kind: 'cube', state, player, level }, () => localAi.decideCube( state, player, level ) ),
+		answerDouble: ( state, player, level ) =>
+			ask( { kind: 'answer', state, player, level }, () => localAi.answerDouble( state, player, level ) ),
 	};
 };

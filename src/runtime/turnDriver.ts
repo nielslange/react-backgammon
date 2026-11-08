@@ -18,7 +18,9 @@ import {
 	playStep,
 	roll,
 } from '../data/gameSlice';
+import { localAi } from '../ai/local';
 import type { AiPort } from '../ai/port';
+import { getEngine } from '../engine';
 import { opponent } from '../engine/constants';
 import { requestRoll } from '../data/intents';
 import { selectAwaitsHumanRoll, selectCanDouble, selectSeatToAct } from '../data/selectors';
@@ -34,6 +36,8 @@ export type DriverOptions = {
 	delays: { roll: number; aiStep: number };
 	/** The computer player; without it, AI seats are not driven. */
 	ai?: AiPort;
+	/** After this many ms without an answer, the in-process player answers. */
+	aiTimeout?: number;
 };
 
 export type TurnDriver = ListenerMiddlewareInstance< RootState, AppDispatch >;
@@ -44,8 +48,23 @@ const hasRemoteSeat = ( root: RootState ): boolean =>
 
 export const startTurnDriver = (
 	listener: TurnDriver,
-	{ rng, delays, ai }: DriverOptions
+	{ rng, delays, ai, aiTimeout = 15000 }: DriverOptions
 ): void => {
+	/**
+	 * Asks the computer; if it fails or does not answer in time (say the
+	 * worker chunk failed to load), the in-process player answers instead.
+	 */
+	const consult = < T >( call: ( port: AiPort ) => Promise< T > ): Promise< T > => {
+		if ( ! ai || ai === localAi ) return call( localAi );
+		let timer: ReturnType< typeof setTimeout > | undefined;
+		const timeout = new Promise< never >( ( _resolve, reject ) => {
+			timer = setTimeout( () => reject( new Error( 'The computer did not answer.' ) ), aiTimeout );
+		} );
+		return Promise.race( [ call( ai ), timeout ] )
+			.catch( () => call( localAi ) )
+			.finally( () => clearTimeout( timer ) );
+	};
+
 	// Seeds for the computer come from a counter, so the dice stay untouched.
 	let aiCalls = 0;
 	// Opening roll: both players roll one die; a tie re-runs this listener
@@ -97,7 +116,7 @@ export const startTurnDriver = (
 			if ( selectAwaitsHumanRoll( root ) ) return;
 			// The computer may double before it rolls.
 			if ( seat.kind === 'ai' && ai && before.player && selectCanDouble( root ) ) {
-				const choice = await api.pause( ai.decideCube( before, before.player, seat.level ) );
+				const choice = await api.pause( consult( ( port ) => port.decideCube( before, before.player!, seat.level ) ) );
 				if ( api.getState().game.state !== before ) return;
 				if ( choice === 'double' ) {
 					api.dispatch( offerDouble( { player: before.player } ) );
@@ -140,13 +159,31 @@ export const startTurnDriver = (
 			const start = api.getState();
 			const seat = selectSeatToAct( start );
 			if ( seat?.kind !== 'ai' ) return;
-			const turn = await api.pause( ai.requestTurn( start.game.state, seat.level, ++aiCalls ) );
+			const mover = start.game.state.player;
+			api.dispatch( setHint( { message: MessageType.COMPUTER_THINKING, status: NoticeStatusType.INFO } ) );
+			const seed = ++aiCalls;
+			const turn = await api.pause(
+				consult( ( port ) => port.requestTurn( start.game.state, seat.level, seed ) )
+			);
+			const stillMoving = () => {
+				const game = api.getState().game.state;
+				return game.phase === 'moving' && game.player === mover;
+			};
 			for ( const step of turn ) {
 				await api.delay( delays.aiStep );
-				const game = api.getState().game.state;
-				if ( game.phase !== 'moving' || game.player !== start.game.state.player ) return;
+				if ( ! stillMoving() ) return;
 				api.dispatch( playStep( { step } ) );
-				if ( api.getState().game.lastError ) return;
+				if ( api.getState().game.lastError ) break;
+			}
+			// Robust by construction: if the answer fell short or a step was
+			// refused, finish the turn with legal steps so the game never stalls.
+			for ( let guard = 0; guard < 16 && stillMoving(); guard++ ) {
+				const game = api.getState().game.state;
+				const [ step ] = getEngine( game.variant ).legalSteps( game );
+				if ( ! step ) return;
+				await api.delay( delays.aiStep );
+				if ( ! stillMoving() ) return;
+				api.dispatch( playStep( { step } ) );
 			}
 		},
 	} );
@@ -162,7 +199,7 @@ export const startTurnDriver = (
 			const taker = opponent( game.player );
 			const seat = root.session.players[ taker ];
 			if ( seat.kind !== 'ai' ) return;
-			const answer = await api.pause( ai.answerDouble( game, taker, seat.level ) );
+			const answer = await api.pause( consult( ( port ) => port.answerDouble( game, taker, seat.level ) ) );
 			if ( ! api.getState().game.state.cube.offered ) return;
 			api.dispatch( answer === 'take' ? acceptDouble() : dropDouble() );
 		},
