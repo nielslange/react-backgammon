@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import './legacy-board.css';
 
 /*
  * Design tokens. Tailwind generates utilities from the @theme block
@@ -29,8 +28,21 @@
 	--color-danger: #c2554f;
 	--color-success: #4f8a5b;
 
-	--font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-	--font-display: 'Fraunces', ui-serif, Georgia, serif;
+	--font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+	--animate-die-roll: die-roll 400ms cubic-bezier(0.2, 0.8, 0.3, 1.2);
+
+	@keyframes die-roll {
+		0% {
+			transform: translateY(-10px) rotate(-120deg) scale(0.7);
+			opacity: 0;
+		}
+		100% {
+			transform: none;
+			opacity: 1;
+		}
+	}
 
 	--radius-card: 14px;
 	--radius-control: 10px;

@@ -30,8 +30,8 @@ const zero = (): Scores => ( {
 
 const initialState: SessionState = {
 	players: {
-		[ PlayerType.PLAYER_ONE ]: { kind: 'human', name: 'Blue' },
-		[ PlayerType.PLAYER_TWO ]: { kind: 'human', name: 'Red' },
+		[ PlayerType.PLAYER_ONE ]: { kind: 'human', name: 'Light' },
+		[ PlayerType.PLAYER_TWO ]: { kind: 'human', name: 'Dark' },
 	},
 	matchTarget: 1,
 	scores: zero(),

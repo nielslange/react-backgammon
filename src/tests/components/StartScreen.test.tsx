@@ -26,10 +26,10 @@ describe( 'StartScreen', () => {
 		const store = renderStart();
 		await userEvent.click( screen.getByRole( 'radio', { name: /backgammon/i } ) );
 		await userEvent.click( screen.getByRole( 'radio', { name: 'Local' } ) );
-		const blue = screen.getByLabelText( 'Blue player' );
+		const blue = screen.getByLabelText( 'Light player' );
 		await userEvent.clear( blue );
 		await userEvent.type( blue, 'Niels' );
-		const red = screen.getByLabelText( 'Red player' );
+		const red = screen.getByLabelText( 'Dark player' );
 		await userEvent.clear( red );
 		await userEvent.type( red, 'Guest' );
 		await userEvent.click( screen.getByRole( 'radio', { name: '5 points' } ) );
@@ -54,9 +54,9 @@ describe( 'StartScreen', () => {
 
 	it( 'falls back to default names when a field is left empty', async () => {
 		const store = renderStart();
-		await userEvent.clear( screen.getByLabelText( 'Blue player' ) );
+		await userEvent.clear( screen.getByLabelText( 'Light player' ) );
 		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
-		expect( store.getState().session.players[ P1 ].name ).toBe( 'Blue' );
+		expect( store.getState().session.players[ P1 ].name ).toBe( 'Light' );
 	} );
 
 	it( 'shows Triktrak, the AI and online play as not yet available', () => {

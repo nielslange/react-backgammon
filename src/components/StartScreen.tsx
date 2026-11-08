@@ -81,8 +81,8 @@ export const StartScreen = () => {
 	const router = useRouter();
 	const [ variant, setVariant ] = useState< VariantId >( 'backgammon' );
 	const [ opponent, setOpponent ] = useState< Opponent >( 'local' );
-	const [ blue, setBlue ] = useState( 'Blue' );
-	const [ red, setRed ] = useState( 'Red' );
+	const [ blue, setBlue ] = useState( 'Light' );
+	const [ red, setRed ] = useState( 'Dark' );
 	const [ length, setLength ] = useState< Length >( '1' );
 	const [ cube, setCube ] = useState( true );
 	const variantLabel = useId();
@@ -91,8 +91,8 @@ export const StartScreen = () => {
 		dispatch(
 			configureSession( {
 				players: {
-					[ PlayerType.PLAYER_ONE ]: { kind: 'human', name: blue.trim() || 'Blue' },
-					[ PlayerType.PLAYER_TWO ]: { kind: 'human', name: red.trim() || 'Red' },
+					[ PlayerType.PLAYER_ONE ]: { kind: 'human', name: blue.trim() || 'Light' },
+					[ PlayerType.PLAYER_TWO ]: { kind: 'human', name: red.trim() || 'Dark' },
 				},
 				matchTarget: Number( length ),
 			} )
@@ -164,13 +164,13 @@ export const StartScreen = () => {
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<NameField
-					label="Blue player"
+					label="Light player"
 					value={ blue }
 					onChange={ setBlue }
 					swatch="bg-checker-light border-checker-light-edge"
 				/>
 				<NameField
-					label="Red player"
+					label="Dark player"
 					value={ red }
 					onChange={ setRed }
 					swatch="bg-checker-dark border-checker-dark-edge"

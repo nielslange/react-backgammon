@@ -26,7 +26,6 @@ export const GameState = () => {
 
 	return (
 		<>
-			<h2 className="h6">GameState.tsx</h2>
 			<div role="group" aria-label="Game actions" className="mb-3 flex gap-2">
 				<Button
 					aria-label="Restart the game"

@@ -23,8 +23,6 @@ export const Notice = () => {
 
 	return (
 		<>
-			<h2 className="h6">Notice.tsx</h2>
-
 			<div
 				role="status"
 				aria-live="polite"
