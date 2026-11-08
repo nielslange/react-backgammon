@@ -39,7 +39,7 @@ export const Die = ( { value, used, blocked, selected, next, decorative, classNa
 			aria-label={ decorative ? undefined : label }
 			aria-disabled={ ! decorative && ( used || blocked ) ? true : undefined }
 			className={ clsx(
-				'size-12 shrink-0',
+				'size-10 shrink-0 sm:size-12',
 				className
 			) }
 		>

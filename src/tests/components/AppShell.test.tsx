@@ -1,9 +1,12 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { AppShell } from '../../components/AppShell';
 import { makeStore } from '../../data/createStore';
+
+let pathname = '/';
+vi.mock( 'next/navigation', () => ( { usePathname: () => pathname } ) );
 
 const renderShell = () => {
 	const store = makeStore();
@@ -25,6 +28,18 @@ describe( 'AppShell', () => {
 		} catch {
 			// storage unavailable in this environment
 		}
+	} );
+
+	it( 'offers a new game in the header during a game, not on the start screen', () => {
+		pathname = '/game';
+		renderShell();
+		expect( screen.getByRole( 'link', { name: 'New game' } ) ).toHaveAttribute( 'href', '/' );
+	} );
+
+	it( 'has no new-game link on the start screen', () => {
+		pathname = '/';
+		renderShell();
+		expect( screen.queryByRole( 'link', { name: 'New game' } ) ).not.toBeInTheDocument();
 	} );
 
 	it( 'renders a header with a home link and the page content', () => {

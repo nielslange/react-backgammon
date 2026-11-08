@@ -209,3 +209,11 @@ describe( 'review fixes', () => {
 		expect( screen.getByRole( 'button', { name: 'Next game' } ) ).toBeInTheDocument();
 	} );
 } );
+
+describe( 'ActionBar without navigation', () => {
+	it( 'leaves New game to the header and shows extra controls in its row', () => {
+		setup();
+		expect( screen.queryByRole( 'button', { name: 'New game' } ) ).toBeNull();
+		expect( screen.getByRole( 'button', { name: 'Resign' } ) ).toBeInTheDocument();
+	} );
+} );

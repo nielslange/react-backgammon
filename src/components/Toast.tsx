@@ -19,7 +19,7 @@ const INFO_TIMEOUT = 3000;
  * The current notice. Info notices fade after three seconds; errors and
  * results stay until the next notice replaces them.
  */
-export const Toast = () => {
+export const Toast = ( { className }: { className?: string } ) => {
 	const notice = useSelector( selectNotice );
 	const [ hidden, setHidden ] = useState< NoticeType | null >( null );
 
@@ -32,11 +32,15 @@ export const Toast = () => {
 	const visible = hidden !== notice;
 
 	return (
-		<div role="status" aria-live="polite" className="min-h-12">
+		<div
+			role="status"
+			aria-live="polite"
+			className={ clsx( 'min-h-10', className ) }
+		>
 			{ visible && (
 				<div
 					className={ clsx(
-						'rounded-control border px-4 py-3 text-sm transition-opacity',
+						'rounded-control border px-3 py-2 text-sm transition-opacity',
 						STATUS_CLASSES[ notice.status ]
 					) }
 				>

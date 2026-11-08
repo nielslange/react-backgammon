@@ -25,7 +25,10 @@ const facesOf = ( root: RootState ): Face[] => {
 		return { value, used: false };
 	} );
 	// Played dice first, so the dice still to play sit together on the right.
-	return [ ...faces.filter( ( f ) => f.used ), ...faces.filter( ( f ) => ! f.used ) ];
+	return [
+		...faces.filter( ( f ) => f.used ),
+		...faces.filter( ( f ) => ! f.used ),
+	];
 };
 
 const statusText = ( root: RootState ): string | null => {
@@ -45,60 +48,92 @@ const statusText = ( root: RootState ): string | null => {
  */
 export const DiceTray = () => {
 	const dispatch = useDispatch< AppDispatch >();
-	const faces = useSelector( facesOf, ( a, b ) => JSON.stringify( a ) === JSON.stringify( b ) );
+	const faces = useSelector(
+		facesOf,
+		( a, b ) => JSON.stringify( a ) === JSON.stringify( b )
+	);
 	const status = useSelector( statusText );
 	const roll = useSelector( ( root: RootState ) => root.game.state.roll );
 	const mode = useSelector( ( root: RootState ) => root.ui.mode );
 	const playable = useSelector( selectPlayableDice );
 	const chosen = useSelector( effectiveDie );
-	const ordered = useSelector( ( root: RootState ) => getEngine( root.game.state.variant ).orderedDice );
+	const ordered = useSelector(
+		( root: RootState ) => getEngine( root.game.state.variant ).orderedDice
+	);
 	const nextIndex = faces.findIndex( ( f ) => ! f.used );
 	const advanced = mode === 'advanced';
 	// Remounting the dice on every new roll replays the roll animation.
 	const rollKey = roll ? roll.join( '-' ) + faces.length : 'none';
 
 	return (
-		<div className="flex flex-col gap-3">
-			<div key={ rollKey } className="dice-tray flex min-h-14 flex-wrap items-center gap-2" data-mode={ mode }>
-				{ faces.length === 0 && <span className="text-sm text-muted">{ status }</span> }
-				{ faces.map( ( face, index ) => {
-					const isNext = ordered && index === nextIndex;
-					const blocked = ! face.used && ( ordered ? isNext : true ) && ! playable.includes( face.value );
-					const die = (
-						<Die
-							value={ face.value }
-							used={ face.used }
-							blocked={ blocked }
-							selected={ advanced && ! face.used && ! ordered && chosen === face.value }
-							next={ isNext }
-							decorative={ advanced && ! face.used && ! ordered }
-							className="animate-die-roll"
-						/>
-					);
-					// Ordered dice leave nothing to choose: show them, never as buttons.
-					if ( ! advanced || face.used || ordered ) {
-						return <span key={ index }>{ die }</span>;
-					}
-					return (
-						<button
-							key={ index }
-							type="button"
-							aria-label={ `Play the ${ face.value }` }
-							aria-pressed={ chosen === face.value }
-							disabled={ blocked }
-							onClick={ () => dispatch( selectDie( face.value ) ) }
-							className={ clsx( 'rounded-[12px] disabled:cursor-not-allowed' ) }
-						>
-							{ die }
-						</button>
-					);
-				} ) }
-			</div>
-			<Switch
-				label="Advanced mode: pick a die, then a checker"
-				checked={ advanced }
-				onChange={ ( on ) => dispatch( setMode( on ? 'advanced' : 'beginner' ) ) }
-			/>
+		<div
+			key={ rollKey }
+			className="dice-tray flex min-h-10 flex-wrap items-center gap-2 sm:min-h-12"
+			data-mode={ mode }
+		>
+			{ faces.length === 0 && (
+				<span className="text-sm text-muted">{ status }</span>
+			) }
+			{ faces.map( ( face, index ) => {
+				const isNext = ordered && index === nextIndex;
+				const blocked =
+					! face.used &&
+					( ordered ? isNext : true ) &&
+					! playable.includes( face.value );
+				const die = (
+					<Die
+						value={ face.value }
+						used={ face.used }
+						blocked={ blocked }
+						selected={
+							advanced &&
+							! face.used &&
+							! ordered &&
+							chosen === face.value
+						}
+						next={ isNext }
+						decorative={ advanced && ! face.used && ! ordered }
+						className="animate-die-roll"
+					/>
+				);
+				// Ordered dice leave nothing to choose: show them, never as buttons.
+				if ( ! advanced || face.used || ordered ) {
+					return <span key={ index }>{ die }</span>;
+				}
+				return (
+					<button
+						key={ index }
+						type="button"
+						aria-label={ `Play the ${ face.value }` }
+						aria-pressed={ chosen === face.value }
+						disabled={ blocked }
+						onClick={ () => dispatch( selectDie( face.value ) ) }
+						className={ clsx(
+							'rounded-[12px] disabled:cursor-not-allowed'
+						) }
+					>
+						{ die }
+					</button>
+				);
+			} ) }
 		</div>
+	);
+};
+
+/** Beginner (checker, then point) or advanced (die, then checker) input. */
+export const ModeSwitch = () => {
+	const dispatch = useDispatch< AppDispatch >();
+	const advanced = useSelector(
+		( root: RootState ) => root.ui.mode === 'advanced'
+	);
+	return (
+		<Switch
+			label="Advanced"
+			description="Pick a die, then a checker."
+			checked={ advanced }
+			onChange={ ( on ) =>
+				dispatch( setMode( on ? 'advanced' : 'beginner' ) )
+			}
+		/>
 	);
 };
