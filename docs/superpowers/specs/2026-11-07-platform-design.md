@@ -23,7 +23,7 @@ Agreed with the owner on 2026-11-07:
 - Stack agreed on 2026-11-08: **Next.js 16** (App Router, Server Actions) on **Vercel**, **Supabase** (Postgres, anonymous Auth, Realtime, RLS), **Tailwind 4**. SiteGround is not used for this game.
 - Server-side game logic for online play (dice, move validation) runs in **Server Actions** on Vercel, not in Supabase Edge Functions. The engine is imported there as plain TypeScript.
 - AI target is a **two-ply heuristic engine** with three levels. The evaluator is an interface so a neural network can be added later.
-- Build order: engine → UI shell (including the Next.js migration) → AI → online → Triktrak.
+- Build order: engine → UI shell (including the Next.js migration) → Triktrak → AI → online (Triktrak moved ahead of the AI and online play on 2026-11-08). The AI and online play each cover both variants when they arrive.
 
 ## 3. Architecture
 
@@ -365,9 +365,9 @@ The debug headings, the "Toggle current player" button, the dead Roll button, th
 |---|---|---|
 | 1 Engine | `src/engine` with Backgammon, new state shape, turn driver, bot uses engine | none, behaviour identical |
 | 2 UI | Next.js 16 and Tailwind 4 migration, start screen, SVG board, cards, dice, cube and match UI, responsive | new look, local two-player |
-| 3 AI | levels easy/medium/hard, worker, cube policy | play solo |
-| 4 Online | Supabase schema, Server Actions, transport, lobby, reconnect, Vercel and Supabase deployment | rooms and links |
-| 5 Triktrak | second engine, variant picker wired, AI features for Triktrak | second game |
+| 3 Triktrak | second engine, variant picker wired, per-variant refusal messages | second game, two players on one device |
+| 4 AI | levels easy/medium/hard for both variants, worker, cube policy (backgammon) | play solo |
+| 5 Online | Supabase schema, Server Actions, transport, lobby, reconnect, Vercel and Supabase deployment, both variants | rooms and links |
 | 6 Follow-ups | neural evaluator, vertical phone board, move history and replay | optional |
 
 ## 12. Risks

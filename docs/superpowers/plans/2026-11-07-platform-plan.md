@@ -421,7 +421,7 @@ git commit -am "Replace reducer with engine-backed slices"
   1. predicate: `game.state.phase === 'opening'` and neither seat is `remote` → dispatch `openingRoll({ p1: rollDie(rng), p2: rollDie(rng) })`; repeats while the phase stays `opening` (tie).
   2. predicate: phase changed to `awaiting-roll` and the seat to act is `human` or `ai` → after `delays.roll` ms dispatch `roll({ roll: rollDice(rng) })`.
   3. predicate: phase changed to `over` → dispatch `gameEnded({ winner: result.winner, points: result.points })`.
-  AI listeners are added in Phase 3.
+  AI listeners are added in Phase 4.
 
 - [ ] **Step 1: Write failing tests with `vi.useFakeTimers()` and `seeded(1)`**
 
@@ -531,7 +531,7 @@ Files: `package.json` (add `next@16.2.11`, `eslint-config-next@16.2.11`, `tailwi
 Files: `src/components/primitives/*`, `AppShell.tsx`, `src/app/game/page.tsx`, `src/app/room/[code]/page.tsx`. Interfaces: pages are server components that render a `'use client'` screen component; navigation uses `useRouter().push('/game')` from `next/navigation`. Test: each primitive renders with the right `aria` attributes and activates by keyboard; `AppShell` renders the start screen at `/`. Commit `Add UI primitives and app shell`.
 
 ### Task 14: Start screen
-Files: `StartScreen.tsx`. Interfaces: dispatches `configureSession({ players, matchTarget })` then `newGame({ variant, options: { cube } })` and navigates to `/game`; seat kinds `human` and `ai` (AI disabled with "coming soon" until Phase 3) and `online` (disabled until Phase 4). Test: choosing Backgammon, local, names "Niels"/"Guest", match 5 produces that session and a game in phase `opening`. Commit `Add start screen`.
+Files: `StartScreen.tsx`. Interfaces: dispatches `configureSession({ players, matchTarget })` then `newGame({ variant, options: { cube } })` and navigates to `/game`; seat kinds `human` and `ai` (AI disabled with "coming soon" until Phase 4) and `online` (disabled until Phase 5). Test: choosing Backgammon, local, names "Niels"/"Guest", match 5 produces that session and a game in phase `opening`. Commit `Add start screen`.
 
 ### Task 15: Board geometry
 Files: `boardGeometry.ts`. Interfaces: `VIEWBOX = { w: 1000, h: 720 }`; `pointPolygon(lane: 1..24): string`; `checkerCenter(lane: number, player: Player, index: number, total: number): { x: number; y: number }` with stack compression beyond 5; `barCenter(player, index)`, `offSlot(player, index)`; `laneAt(x, y): number | null` for drop targets. Tests: lanes 1–12 bottom, 13–24 top, 6 and 7 adjacent to the bar, `laneAt(checkerCenter(l))` round-trips for all lanes. Commit `Add board geometry`.
@@ -556,17 +556,52 @@ Remove `src/components/Board.tsx`, `Lane.tsx`, `Checker.tsx`, `Dice.tsx`, `Playe
 
 ---
 
-## Phase 3: AI
+## Phase 3: Dutch Triktrak
 
-Outcome: Easy, Medium and Hard opponents selectable on the start screen, computed in a Web Worker; Hard also decides the cube. The Red bot in `tools/` is removed.
+Outcome: Triktrak selectable on the start screen and playable by two players on one device. The computer opponent (Phase 4) and online rooms (Phase 5) support both variants when they arrive.
 
 ### File structure (Phase 3)
+
+| File | Responsibility |
+|---|---|
+| `src/engine/triktrak/index.ts` | the `triktrak` RulesEngine |
+| `src/engine/triktrak/rolls.ts` | `expandRoll`, `isTricTrac`, `isDouble` |
+| `src/engine/triktrak/entry.ts` | entering from off, `maxCheckersPerPoint`, `enterOnlyOnDoubles` |
+| `src/engine/RulesEngine.ts`, `src/engine/backgammon/index.ts` | `explainRefusal` added to the interface |
+| `src/tests/engine/triktrak.test.ts` | rule tests |
+
+### Task 22: Rolls and ordered turns
+`expandRoll([n, n]) → [n, n, 7−n, 7−n]`; `[1, 2]` or `[2, 1] → [1, 1, 2, 2, 5, 5, 6, 6]`; others `[high, low]`; `orderedDice: true` so Task 3's `legalTurns(…, ordered = true)` is reused. Tests: all three cases; `legalSteps` only offers `dice[0]`. Commit `Add Triktrak rolls`.
+
+### Task 23: Entry from off and options
+`initialCheckers()`: 15 per player on `BAR[player]`. Entry uses `targetLane` from the bar lane. `maxCheckersPerPoint` rejects a landing that would exceed it; `enterOnlyOnDoubles` blocks entry unless the roll is a double. Tests: start position pips = 15 × 25 per player; with `maxCheckersPerPoint: 2` a third checker cannot land; with `enterOnlyOnDoubles` a 5-3 cannot enter. Commit `Add Triktrak entry rules`.
+
+### Task 24: Forfeits and re-rolls
+`onRoll`: if `dice[0]` of a normal roll is unplayable → whole turn forfeited (`lastEvent: 'forfeit'`). `afterStep`: a blocked next die of a double or tric trac forfeits the remaining dice; when the sequence came from a double or tric trac and `rerolls < rerollLimit` (null = unlimited) and (`!rerollOnlyIfCompleted` or all dice were played) → same player, `phase: 'awaiting-roll'`, `rerolls + 1`, `lastEvent: 'reroll'`; else hand off with `rerolls: 0`. Tests: high die blocked → turn passes, low die not played; double with third step blocked → two steps played, no re-roll under `rerollOnlyIfCompleted`; completed double → re-roll; `rerollLimit: 1` stops the second re-roll. Commit `Add Triktrak forfeits and re-rolls`.
+
+### Task 25: Final turn and draw
+When the first mover bears off the last checker and `finalTurnForSecondPlayer` is true, the game continues with the second player for exactly one roll (`phase: 'awaiting-roll'`, `lastEvent: 'hand-off'`); if they also bear off everything the result is `{ winner: null, points: 0, kind: 'draw' }`, else the first mover wins 1 point. A win by the second mover ends the game at once. `supportsCube: false`, no gammons. Tests for all four outcomes. Commit `Add Triktrak final turn and draw`.
+
+### Task 26: Wire into the app
+`getEngine('triktrak')`; StartScreen variant card enabled with the options from spec 4.4 as advanced settings, and Computer/Online stay disabled for both variants until their phases; `selectNotice` shows `ROLL_AGAIN`, `TURN_FORFEITED`, `GAME_DRAWN`; `DiceTray` shows up to eight dice for a tric trac and marks the next die in ordered play; `BoardSvg` renders unentered checkers in the bar trays with a label "15 to enter". Add `explainRefusal(state, checkerId): MessageType | null` to `RulesEngine` (backgammon moves today's `rejectionFor` from `src/ui/moveInput.ts` into its engine), so refusals are explained per variant (Phase 1 review, deferred minor). Tests: a scripted two-player Triktrak game reaches `over`; refusal messages for a blocked highest die and a non-entered checker; property test from Task 6 parameterised over both engines; contrast test still green. Commit `Add Triktrak to the app`.
+
+### Task 27: Phase gate
+README rules section for Triktrak; e2e: start a Triktrak game and play the opening roll; `pnpm lint && pnpm test && pnpm e2e && pnpm build`; PR `Add Dutch Triktrak`.
+
+---
+
+## Phase 4: AI
+
+Outcome: Easy, Medium and Hard opponents selectable on the start screen, computed in a Web Worker; Hard also decides the cube. The Red bot in `tools/` is removed. Both variants are supported.
+
+### File structure (Phase 4)
 
 | File | Responsibility |
 |---|---|
 | `src/ai/types.ts` | `Evaluator`, `Level = 'easy' \| 'medium' \| 'hard'`, `LevelConfig` |
 | `src/ai/shots.ts` | `hitProbability(distance: number, blockedLanes: Set<number>): number` |
 | `src/ai/features/backgammon.ts` | `evaluateBackgammon: Evaluator` |
+| `src/ai/features/triktrak.ts` | `evaluateTriktrak: Evaluator` |
 | `src/ai/search.ts` | `onePly`, `twoPly` |
 | `src/ai/levels.ts` | `LEVELS: Record<Level, LevelConfig>` |
 | `src/ai/bot.ts` | `chooseTurn(state, level, rng): Turn`, `decideCube(state, player): 'double' \| 'roll'`, `answerDouble(state, player): 'take' \| 'drop'` |
@@ -574,31 +609,31 @@ Outcome: Easy, Medium and Hard opponents selectable on the start screen, compute
 | `src/ai/client.ts` | `requestTurn(state, level, seed): Promise<Turn>` wrapper around the worker |
 | `src/tests/ai/*.test.ts` | tests |
 
-### Task 22: Shot table
+### Task 28: Shot table
 `hitProbability(d, blocked)` = number of the 36 rolls that hit a blot at distance `d` given blocked intermediate lanes, / 36. Tests: distance 6 unblocked = 17/36; distance 12 unblocked = 3/36; distance 7 with lane 1 and 6 blocked... (table from standard backgammon references). Commit `Add shot probability table`.
 
-### Task 23: Backgammon evaluator
+### Task 29: Backgammon evaluator
 `evaluateBackgammon(state, perspective)` = weighted sum: pip lead, −(blot × shot probability × 8), +points made (home 4, outer 3, other 1), +longest prime², +anchors in opponent home, −checkers on bar × 10, +checkers off × 2. Weights are constants in the file. Tests: hitting a blot scores higher than not; making the 5-point beats a blot on it; a closed board beats an open one. Commit `Add backgammon evaluator`.
 
-### Task 24: Search
+### Task 30: Search
 `onePly(state, evaluator): Array<{ turn: Turn; score: number }>` sorted descending over `legalTurns` deduplicated by resulting checker layout. `twoPly(state, evaluator, { topN: 8 })`: for the top N one-ply turns, average over the 21 rolls (weights 1/36 or 2/36) of the opponent's best one-ply score, negated. Before searching, make `legalTurns` cheap on doubles (Phase 1 review: a 15-blot 1-1 position yields 35,370 orderings): enumerate identical dice in non-increasing `from` order or dedupe by resulting position per depth, and let `applyStep`/`afterStep` reuse one `legalSteps` result. Tests: both return members of `legalTurns`; two-ply on a double from the start position finishes under 1.5 s in Node; a "safe vs. hit" test position where two-ply prefers safety when the return shot is high. Commit `Add one- and two-ply search`.
 
-### Task 25: Levels, bot, determinism
+### Task 31: Levels, bot, determinism
 `LEVELS`: easy `{ ply: 0 }`, medium `{ ply: 1, topK: 3, noise: 0.2 }`, hard `{ ply: 2, topN: 8 }`. `chooseTurn` uses `rng` for easy and for the medium noise. `decideCube`: hard only, maps the two-ply score through a logistic to a win probability; double ≥ 0.68, take ≥ 0.25. Tests: 500 random states per level return legal turns; same seed → same turn; easy differs from hard on a known position. Commit `Add AI levels and bot`.
 
-### Task 26: Worker and driver integration
+### Task 32: Worker and driver integration
 `worker.ts` receives `{ id, state, level, seed }` and posts `{ id, turn }`; `client.ts` wraps it in a promise; `turnDriver.ts` gains the AI listener (phase `moving` and seat `ai` → `requestTurn`, then `playStep` per step every `delays.aiStep` ms; `awaiting-roll` and seat `ai` with cube allowed → `decideCube` first; cube offered to an AI seat → `answerDouble`). Next.js bundles `new Worker(new URL('../ai/worker.ts', import.meta.url), { type: 'module' })` from a `'use client'` module; `client.ts` creates the worker lazily on first request so it never runs during server rendering. Tests: driver test with a fake `requestTurn`; StartScreen enables AI with a difficulty select. Verify by playing against each level in the browser. Commit `Play against the AI in a worker`.
 
-### Task 27: Remove the Red bot and phase gate
-Delete `tools/backgammon-mcp`, the `backgammon` entry in `.mcp.json`, and the dev `window.__backgammonStore` hook if nothing else uses it (keep if the e2e test uses it). Update `AGENTS.md`, `README.md`. PR `Add AI opponents`.
+### Task 33: Triktrak evaluator, remove the Red bot, phase gate
+`evaluateTriktrak` = pip lead + 3 per made point in the opponent's path − 2 per remaining unentered checker; `bot.ts` picks the evaluator by `state.variant`; the cube policy is skipped when `supportsCube` is false. Tests: a Triktrak game vs. Easy reaches `over` in a scripted run; `chooseTurn` returns a member of `legalTurns` for random Triktrak states including an eight-die tric trac. Then delete `tools/backgammon-mcp`, the `backgammon` entry in `.mcp.json`, and the dev `window.__backgammonStore` hook if nothing else uses it (keep it while the e2e test uses it). Update `AGENTS.md`, `README.md`. PR `Add AI opponents`.
 
 ---
 
-## Phase 4: Online play
+## Phase 5: Online play
 
 Outcome: create a room, share `/room/CODE`, play with server-rolled dice and server-validated moves through Server Actions, reconnect, rematch. Vercel and Supabase deployment.
 
-### File structure (Phase 4)
+### File structure (Phase 5)
 
 | File | Responsibility |
 |---|---|
@@ -613,72 +648,39 @@ Outcome: create a room, share `/room/CODE`, play with server-rolled dice and ser
 | `.github/workflows/ci.yml` | lint, type-check, test, build on PRs |
 | `.env.example` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
 
-### Task 28: Supabase project, schema and RLS
+### Task 34: Supabase project, schema and RLS
 `supabase init`, migration with the three tables, `enable row level security`, policies: `select` on rooms/games/moves where `auth.uid() in (host, guest)`; no client write policies; `alter publication supabase_realtime add table moves`; Postgres function `apply_move(p_game_id uuid, p_seq int, p_actor uuid, p_kind text, p_payload jsonb, p_snapshot jsonb)` that inserts the move and updates `games.snapshot` and `games.version` in one transaction and raises `stale_version` when `games.version <> p_seq - 1`. Enable anonymous sign-in in `config.toml`. Test: with `supabase start`, an anonymous user can read their room and cannot insert into `moves`; `apply_move` with a stale seq raises (`supabase/tests/rls.sql`, run via `supabase test db`). Commit `Add Supabase schema and policies`.
 
-### Task 29: Supabase clients and anonymous sign-in
+### Task 35: Supabase clients and anonymous sign-in
 `src/lib/supabase/server.ts` and `browser.ts` using `@supabase/ssr`; `useRoom.ts` calls `supabase.auth.signInAnonymously()` when no session exists, so the Server Actions see `auth.uid()` through the `@supabase/ssr` cookies. Test: a hook test that `useRoom` signs in once when no session exists and not when one does. Commit `Add Supabase clients`.
 
-### Task 30: createRoom and joinRoom
+### Task 36: createRoom and joinRoom
 Interfaces in `src/server/rooms.ts`: `createRoom(db, userId, { variant, options, matchTarget }): Promise<{ code }>`; `joinRoom(db, userId, { code, name }): Promise<{ roomId, gameId, seat }>`; join performs the opening roll with `crypto.getRandomValues` until no tie, inserts move `opening`, stores the snapshot, sets status `playing`. `src/server/codes.ts`: `generateCode(): string` over alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, length 6. Vitest with a mocked service client: code format; second join rejected with code `ROOM_FULL`; host joining own room rejected with `OWN_ROOM`. The Server Actions in `src/app/actions/rooms.ts` wrap these. Commit `Add room creation and joining`.
 
-### Task 31: submitMove
+### Task 37: submitMove
 Interface in `src/server/moves.ts`: `submitMove(db, userId, { gameId, kind, payload, version }): Promise<{ version }>`; rejects with `STALE_VERSION` on a stale version, with the `EngineError.code` on illegal moves, with `NOT_YOUR_TURN` when the user is not the actor. Kinds: `roll` (server generates the roll, ignores client payload), `step`, `undo`, `resign`, `double`, `accept`, `drop`. Runs `src/engine/game.ts` directly, then calls `apply_move` via `db.rpc`. Vitest: illegal step → `ILLEGAL_STEP`; roll by the wrong player → `NOT_YOUR_TURN`; stale version → `STALE_VERSION`; a full scripted game reaches `phase: 'over'`. The Server Action in `src/app/actions/moves.ts` wraps it. Commit `Validate moves on the server`.
 
-### Task 32: Transport and sync on the client
+### Task 38: Transport and sync on the client
 `transport.ts`: `interface Transport { createRoom(opts): Promise<{ code }>; joinRoom(code, name): Promise<JoinResult>; submit(gameId, move): Promise<{ version }>; subscribe(gameId, onMove: (m: MoveRow) => void): () => void; presence(roomId, me): { onChange(cb): () => void } }`. `supabaseTransport.ts` calls the Server Actions for writes and uses the browser client for Realtime `postgres_changes` on `moves` and a presence channel. `sync.ts`: `applyIncoming(move)` applies by `seq`; on a gap, fetches `games.snapshot` and dispatches `loadSnapshot`. `netSlice.ts` as spec 5.1. Tests: a fake transport delivering moves out of order yields the same final state as in order; a gap triggers one snapshot reload. Commit `Add network transport and sync`.
 
-### Task 33: Driver integration and lobby UI
+### Task 39: Driver integration and lobby UI
 `turnDriver.ts`: for a local seat in an online game, `awaiting-roll` → `transport.submit(roll)` instead of local dice; `playStep` by the local human → optimistic apply then `submit(step)`, rollback via `loadSnapshot` on `{ ok: false }`. `RoomLobby.tsx` shows the code and copy-link; `JoinRoom.tsx` is rendered by `src/app/room/[code]/page.tsx`; StartScreen enables **Online**. Presence dot in `PlayerCard`. Tests: component tests for lobby and join; driver test with fake transport. Manual verify with two browsers against `supabase start`. Commit `Play online through rooms`.
 
-### Task 34: Reconnect and rematch
+### Task 40: Reconnect and rematch
 On load of `/room/[code]` with an existing anonymous session, fetch the room, the current game and moves after the stored version, resume. `rematch(db, userId, { roomId })` in `src/server/rooms.ts` creates the next game with carried scores and Crawford; Server Action `rematch`. Tests: reload mid-game restores the identical `GameState`; rematch increments `number` and keeps scores. Commit `Add reconnect and rematch`.
 
-### Task 35: Deployment
+### Task 41: Deployment
 Connect the GitHub repository to a Vercel project: production from `trunk`, preview per PR; set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` in Vercel. Create the Supabase project and run `npx supabase db push`. `ci.yml`: lint, `tsc --noEmit`, test, build on PRs. README section "Deploy". Verify: a push to `trunk` deploys and a room can be created on the live URL. Commit `Add CI and deployment notes`.
 
-### Task 36: Phase gate
-e2e: two Playwright contexts play one full turn each through a room against `next dev` and `supabase start`. PR `Add online play`.
-
----
-
-## Phase 5: Dutch Triktrak
-
-Outcome: Triktrak selectable on the start screen, playable locally, against the AI and online.
-
-### File structure (Phase 5)
-
-| File | Responsibility |
-|---|---|
-| `src/engine/triktrak/index.ts` | the `triktrak` RulesEngine |
-| `src/engine/triktrak/rolls.ts` | `expandRoll`, `isTricTrac`, `isDouble` |
-| `src/engine/triktrak/entry.ts` | entering from off, `maxCheckersPerPoint`, `enterOnlyOnDoubles` |
-| `src/ai/features/triktrak.ts` | `evaluateTriktrak` |
-| `src/tests/engine/triktrak.test.ts` | rule tests |
-
-### Task 37: Rolls and ordered turns
-`expandRoll([n, n]) → [n, n, 7−n, 7−n]`; `[1, 2]` or `[2, 1] → [1, 1, 2, 2, 5, 5, 6, 6]`; others `[high, low]`; `orderedDice: true` so Task 3's `legalTurns(…, ordered = true)` is reused. Tests: all three cases; `legalSteps` only offers `dice[0]`. Commit `Add Triktrak rolls`.
-
-### Task 38: Entry from off and options
-`initialCheckers()`: 15 per player on `BAR[player]`. Entry uses `targetLane` from the bar lane. `maxCheckersPerPoint` rejects a landing that would exceed it; `enterOnlyOnDoubles` blocks entry unless the roll is a double. Tests: start position pips = 15 × 25 per player; with `maxCheckersPerPoint: 2` a third checker cannot land; with `enterOnlyOnDoubles` a 5-3 cannot enter. Commit `Add Triktrak entry rules`.
-
-### Task 39: Forfeits and re-rolls
-`onRoll`: if `dice[0]` of a normal roll is unplayable → whole turn forfeited (`lastEvent: 'forfeit'`). `afterStep`: a blocked next die of a double or tric trac forfeits the remaining dice; when the sequence came from a double or tric trac and `rerolls < rerollLimit` (null = unlimited) and (`!rerollOnlyIfCompleted` or all dice were played) → same player, `phase: 'awaiting-roll'`, `rerolls + 1`, `lastEvent: 'reroll'`; else hand off with `rerolls: 0`. Tests: high die blocked → turn passes, low die not played; double with third step blocked → two steps played, no re-roll under `rerollOnlyIfCompleted`; completed double → re-roll; `rerollLimit: 1` stops the second re-roll. Commit `Add Triktrak forfeits and re-rolls`.
-
-### Task 40: Final turn and draw
-When the first mover bears off the last checker and `finalTurnForSecondPlayer` is true, the game continues with the second player for exactly one roll (`phase: 'awaiting-roll'`, `lastEvent: 'hand-off'`); if they also bear off everything the result is `{ winner: null, points: 0, kind: 'draw' }`, else the first mover wins 1 point. A win by the second mover ends the game at once. `supportsCube: false`, no gammons. Tests for all four outcomes. Commit `Add Triktrak final turn and draw`.
-
-### Task 41: Wire into the app and the AI
-`getEngine('triktrak')`; StartScreen variant card enabled with the options from spec 4.4 as advanced settings; `selectNotice` shows `ROLL_AGAIN`, `TURN_FORFEITED`, `GAME_DRAWN`; `BoardSvg` renders unentered checkers in the bar trays with a label "15 to enter"; `evaluateTriktrak` = pip lead + 3 per made point in the opponent's path − 2 per remaining unentered checker; `bot.ts` picks the evaluator by `state.variant`. Tests: a Triktrak game vs. Easy reaches `over` in a scripted run; property test from Task 6 parameterised over both engines. Commit `Add Triktrak to the app and the AI`.
-
 ### Task 42: Phase gate
-`submit-move` tests for a Triktrak roll and re-roll; README rules section for Triktrak; PR `Add Dutch Triktrak`.
+`submitMove` tests for a Triktrak roll and re-roll (same player rolls again, server-side); e2e: two Playwright contexts play one full turn each through a room against `next dev` and `supabase start`, once per variant. PR `Add online play`.
 
 ---
 
 ## Self-review notes
 
-- Spec coverage: 4.1–4.6 → Tasks 1–6, 37–40; 5 → Tasks 7–8, 19; 6 → Tasks 22–26; 7 → Tasks 28–34; 8 → Tasks 12–20, 41; 9 → Task 35; 10 → spread across tasks, e2e in 20 and 36; 11 → the phase order of this document.
+- Spec coverage: 4.1–4.6 → Tasks 1–6, 22–25; 5 → Tasks 7–8, 19; 6 → Tasks 28–32; 7 → Tasks 34–40; 8 → Tasks 12–20, 26; 9 → Task 41; 10 → spread across tasks, e2e in 20, 27 and 42; 11 → the phase order of this document.
 - Names used across tasks: `legalTurns(checkers, player, dice, ordered)`, `legalSteps(...)`, `moveOne`, `targetLane`, `createGame`, `openingRoll`, `roll`, `play`, `undoStep`, `resign`, `loadSnapshot`, `selectLegalSteps`, `requestTurn`, `Transport`, `createRoom`, `joinRoom`, `submitMove`, `rematch`. Later phases must not rename these without updating this file.
-- Stack change on 2026-11-08: Next.js 16 on Vercel with Server Actions replaced Vite plus Supabase Edge Functions; Tailwind 4 replaced SCSS; SiteGround was dropped. Tasks 12, 13, 26 and 28 to 36 were rewritten accordingly.
+- Phase order change on 2026-11-08: Triktrak moved from Phase 5 to Phase 3, AI to Phase 4, online play to Phase 5; tasks renumbered (Triktrak 22–27, AI 28–33, online 34–42). Triktrak AI and online coverage moved into the AI and online phases.
+- Stack change on 2026-11-08: Next.js 16 on Vercel with Server Actions replaced Vite plus Supabase Edge Functions; Tailwind 4 replaced SCSS; SiteGround was dropped. Tasks 12, 13, 32 and 34 to 42 (current numbering) were rewritten accordingly.
 - Deliberately open for the implementer: exact evaluator weights beyond the listed ones, animation easing, the SQL body of `apply_move` beyond its signature and failure condition.
