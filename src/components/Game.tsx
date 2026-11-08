@@ -78,7 +78,10 @@ const PhoneGame = ( { idle }: { idle: boolean } ) => {
 					style={ overlay( diceSide ) }
 				>
 					{ ! idle && (
-						<DiceTray className="pointer-events-auto justify-center" />
+						<DiceTray
+							onBoard
+							className="pointer-events-auto justify-center"
+						/>
 					) }
 				</div>
 				<div
