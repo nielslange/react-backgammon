@@ -19,8 +19,9 @@ export type GameSliceState = {
 	lastError: EngineErrorCode | null;
 };
 
+// No game until `newGame`: the turn driver must not roll for nobody.
 const initialState: GameSliceState = {
-	state: game.createGame( 'backgammon' ),
+	state: { ...game.createGame( 'backgammon' ), phase: 'idle' },
 	lastError: null,
 };
 
