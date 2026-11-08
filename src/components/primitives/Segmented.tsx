@@ -81,7 +81,7 @@ export const Segmented = < T extends string >( {
 							onClick={ () => onChange( option.value ) }
 							onKeyDown={ ( e ) => onKeyDown( e, index ) }
 							className={ clsx(
-								'min-h-9 flex-1 rounded-[8px] px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+								'min-h-9 flex-1 whitespace-nowrap rounded-[8px] px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
 								checked
 									? 'bg-surface text-ink shadow-raised'
 									: 'text-muted hover:text-ink'

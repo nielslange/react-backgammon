@@ -1,41 +1,25 @@
 'use client';
 
-/**
- * Internal dependencies
- */
-import { Lane } from './Lane';
-import { PlayerType } from '../types';
+import { useDispatch, useSelector, useStore } from 'react-redux';
+import type { AppDispatch, RootState } from '../data/store';
+import { onCheckerClick, onTargetClick } from '../ui/moveInput';
+import { BoardSvg } from './board/BoardSvg';
 
+/** The board connected to the store: clicks go through moveInput. */
 export const Board = () => {
+	const dispatch = useDispatch< AppDispatch >();
+	const store = useStore< RootState >();
+	const checkers = useSelector( ( root: RootState ) => root.game.state.checkers );
+	const preview = useSelector( ( root: RootState ) => root.ui.preview );
+	const highlights = preview ? [ ...new Set( preview.options.map( ( o ) => o.to ) ) ] : [];
+
 	return (
-		<div>
-			<h2 className="h6">Board.tsx</h2>
-
-			<div className="board">
-				<div className="board-top">
-					<Lane from={ 13 } to={ 18 } />
-					<Lane
-						from={ 25 }
-						to={ 25 }
-						bar={ PlayerType.PLAYER_TWO }
-						player={ PlayerType.PLAYER_TWO }
-					/>
-					<Lane from={ 19 } to={ 24 } />
-					<Lane from={ 0 } to={ 0 } off={ PlayerType.PLAYER_TWO } />
-				</div>
-
-				<div className="board-bottom">
-					<Lane from={ 12 } to={ 7 } />
-					<Lane
-						from={ 0 }
-						to={ 0 }
-						bar={ PlayerType.PLAYER_ONE }
-						player={ PlayerType.PLAYER_ONE }
-					/>
-					<Lane from={ 6 } to={ 1 } />
-					<Lane from={ 25 } to={ 25 } off={ PlayerType.PLAYER_ONE } />
-				</div>
-			</div>
-		</div>
+		<BoardSvg
+			checkers={ checkers }
+			highlights={ highlights }
+			selected={ preview?.checkerId ?? null }
+			onCheckerClick={ ( id ) => onCheckerClick( dispatch, store.getState(), id ) }
+			onLaneClick={ ( lane ) => onTargetClick( dispatch, store.getState(), lane ) }
+		/>
 	);
 };
