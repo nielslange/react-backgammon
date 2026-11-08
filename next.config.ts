@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
 	devIndicators: {
 		position: 'bottom-right',
 	},
+	// Phones on the local network may open the dev server, for example
+	// DEV_LAN_HOSTS=192.168.1.215 pnpm dev (comma-separated hosts).
+	allowedDevOrigins: process.env.DEV_LAN_HOSTS?.split( ',' ).filter( Boolean ) ?? [],
 };
 
 export default nextConfig;
