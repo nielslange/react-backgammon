@@ -9,8 +9,9 @@ import { Checker } from './Checker';
 /**
  * Internal dependencies
  */
-import { confirmPreview } from '../helpers/moveSelectionHelper';
-import type { LaneType, StateType } from '../types';
+import type { AppDispatch, RootState } from '../data/store';
+import { onTargetClick } from '../ui/moveInput';
+import type { LaneType } from '../types';
 
 export const Lane = ( {
 	from,
@@ -19,13 +20,13 @@ export const Lane = ( {
 	bar,
 	off,
 }: LaneType ): React.JSX.Element => {
-	const dispatch = useDispatch();
-	const store = useStore< StateType >();
-	const checkers = useSelector( ( state: StateType ) => state.checkers );
+	const dispatch = useDispatch< AppDispatch >();
+	const store = useStore< RootState >();
+	const checkers = useSelector( ( root: RootState ) => root.game.state.checkers );
 	const currentPlayer = useSelector(
-		( state: StateType ) => state.currentPlayer
+		( root: RootState ) => root.game.state.player
 	);
-	const preview = useSelector( ( state: StateType ) => state.preview );
+	const preview = useSelector( ( root: RootState ) => root.ui.preview );
 	const lanes = [];
 
 	// A previewed landing point. Lanes 0/25 double as bar and off tray,
@@ -38,7 +39,7 @@ export const Lane = ( {
 
 	const renderChecker = ( lane: number, keySuffix: string = '' ) => {
 		const laneOwner = bar ? player : off ? off : undefined;
-		const filteredCheckers = checkers.filter( ( item: any ) => {
+		const filteredCheckers = checkers.filter( ( item ) => {
 			if ( item.lane !== lane ) return false;
 			// Bar (lanes 0/25) and off (lanes 0/25) overlap — filter by owner
 			// so a P1 checker on the bar (lane 0) isn't rendered in the P2 off
@@ -58,24 +59,21 @@ export const Lane = ( {
 		// sit on the top half (flex-start), where the innermost is the last.
 		const isBottomLane = lane >= 1 && lane <= 12;
 		const overflowIndex = isBottomLane ? 0 : maxVisible - 1;
-		const checkerElements = visibleCheckers.map(
-			( item: any, index: number ) => (
-				<Checker
-					className="checker"
-					currentPlayer={ currentPlayer }
-					id={ item.id }
-					key={ item.id }
-					player={ item.player }
-					count={
-						isStackedLane &&
-						filteredCheckers.length > maxVisible &&
-						index === overflowIndex
-							? filteredCheckers.length
-							: undefined
-					}
-				/>
-			)
-		);
+		const checkerElements = visibleCheckers.map( ( item, index ) => (
+			<Checker
+				className="checker"
+				id={ item.id }
+				key={ item.id }
+				player={ item.player }
+				count={
+					isStackedLane &&
+					filteredCheckers.length > maxVisible &&
+					index === overflowIndex
+						? filteredCheckers.length
+						: undefined
+				}
+			/>
+		) );
 		const key = keySuffix ? `${ player }-${ lane }` : lane.toString();
 		const isTarget = isTargetLane( lane );
 		return (
@@ -92,12 +90,7 @@ export const Lane = ( {
 				key={ key }
 				onClick={
 					isTarget
-						? () =>
-								confirmPreview(
-									dispatch,
-									store.getState(),
-									lane
-								)
+						? () => onTargetClick( dispatch, store.getState(), lane )
 						: undefined
 				}
 			>
@@ -106,8 +99,7 @@ export const Lane = ( {
 		);
 	};
 
-	// Render checker that are moving from one lane to another (if-state)
-	// or render checker that are staying in the same lane (else-state)
+	// Render a range of points (if-state) or a single bar/off tray (else).
 	if ( from !== to ) {
 		const range =
 			from < to

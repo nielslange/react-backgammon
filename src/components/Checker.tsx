@@ -7,35 +7,33 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 /**
  * Internal dependencies
  */
-import {
-	handleCheckerSelection,
-	handleDirectMove,
-} from '../helpers/moveSelectionHelper';
-import { StateType } from '../types';
+import type { AppDispatch, RootState } from '../data/store';
+import type { Player } from '../engine/types';
+import { onCheckerClick } from '../ui/moveInput';
 
-export const Checker = ( props: any ) => {
-	const { className, id, player, count } = props;
-	const dispatch = useDispatch();
-	const store = useStore< StateType >();
+type Props = {
+	className?: string;
+	id: number;
+	player: Player;
+	count?: number;
+};
+
+export const Checker = ( { className, id, player, count }: Props ) => {
+	const dispatch = useDispatch< AppDispatch >();
+	const store = useStore< RootState >();
 	const isSelected = useSelector(
-		( state: StateType ) => state.preview?.checkerId === id
+		( root: RootState ) => root.ui.preview?.checkerId === id
 	);
 
 	const handleCheckerClick = ( event: React.MouseEvent ) => {
 		// The lane underneath confirms a preview on click; a checker click
 		// must not double as a lane click.
 		event.stopPropagation();
-		const state = store.getState();
-		if ( state.mode === 'advanced' ) {
-			handleDirectMove( dispatch, state, { id, player } );
-		} else {
-			handleCheckerSelection( dispatch, state, { id, player } );
-		}
+		onCheckerClick( dispatch, store.getState(), id );
 	};
 
 	return (
 		<div
-			key={ id }
 			className={ clsx( className, isSelected && 'checker--selected' ) }
 			title={ `Checker ${ id }` }
 			data-checker={ id }

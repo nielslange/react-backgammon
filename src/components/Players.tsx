@@ -3,42 +3,22 @@
  */
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import { useSelector, useDispatch, useStore } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 /**
  * Internal dependencies
  */
-import { toggleCurrentPlayer, rollDice } from '../data/actions';
-import { checkAndHandleNoValidMoves } from '../helpers/noValidMovesHelper';
+import { newGame } from '../data/gameSlice';
+import type { AppDispatch, RootState } from '../data/store';
 import { getFormattedPlayerNameWithEmoji } from '../helpers/playerNameHelper';
-import { startGame } from '../helpers/startGameHelper';
-import { StateType } from '../types';
 
 export const Players = () => {
-	const dispatch = useDispatch();
-	const store = useStore< StateType >();
+	const dispatch = useDispatch< AppDispatch >();
 	const currentPlayer = useSelector(
-		( state: StateType ) => state.currentPlayer
+		( root: RootState ) => root.game.state.player
 	);
-	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
-
-	const handleToggleCurrentPlayer = () => {
-		if ( currentPlayer === null ) {
-			// Opening roll decides who moves first (higher die, ties re-roll).
-			startGame( { dispatch, getState: () => store.getState() } );
-			return;
-		}
-		dispatch( toggleCurrentPlayer( currentPlayer ) );
-		dispatch( rollDice() );
-		const state = store.getState();
-		if ( state.currentPlayer === null ) return;
-		checkAndHandleNoValidMoves( {
-			dispatch,
-			checkers: state.checkers,
-			dice: state.dice,
-			currentPlayer: state.currentPlayer,
-		} );
-	};
+	const phase = useSelector( ( root: RootState ) => root.game.state.phase );
+	const canStart = phase === 'idle' || phase === 'over';
 
 	return (
 		<div>
@@ -58,14 +38,14 @@ export const Players = () => {
 
 			<ButtonGroup aria-label="Player actions" className="mb-3">
 				<Button
-					aria-label="Toggle the current player"
+					aria-label="Start the game"
 					variant="outline-primary btn-sm"
-					onClick={ handleToggleCurrentPlayer }
-					disabled={ gameOver }
+					onClick={ () =>
+						dispatch( newGame( { variant: 'backgammon' } ) )
+					}
+					disabled={ ! canStart }
 				>
-					{ currentPlayer === null
-						? 'Start Game'
-						: 'Toggle current player' }
+					Start game
 				</Button>
 			</ButtonGroup>
 		</div>

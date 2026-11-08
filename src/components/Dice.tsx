@@ -1,8 +1,6 @@
 /**
  * External dependencies
  */
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Form from 'react-bootstrap/Form';
 import { clsx } from 'clsx';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,12 +8,10 @@ import { useDispatch, useSelector } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { rollDice, selectDie, setMode } from '../data/actions';
-import {
-	getEffectiveDie,
-	getPlayableDice,
-} from '../helpers/moveSelectionHelper';
-import { StateType } from '../types';
+import { selectPlayableDice } from '../data/selectors';
+import type { AppDispatch, RootState } from '../data/store';
+import { selectDie, setMode } from '../data/uiSlice';
+import { effectiveDie } from '../ui/moveInput';
 import diceOne from '../icons/dice-one-solid.svg';
 import diceTwo from '../icons/dice-two-solid.svg';
 import diceThree from '../icons/dice-three-solid.svg';
@@ -36,26 +32,21 @@ const DIE_ICONS: Record< number, string > = {
  * Shows the dice still to be played this turn; dice that cannot be played
  * are dimmed. In beginner mode they are indicators only (click a checker,
  * then a highlighted point). In advanced mode click a die to select it,
- * then a checker click moves immediately.
+ * then a checker click moves immediately. Dice are rolled by the game
+ * itself; there is no roll button.
  */
 export const Dice = () => {
-	const dispatch = useDispatch();
-	const dice = useSelector( ( state: StateType ) => state.dice );
-	const mode = useSelector( ( state: StateType ) => state.mode );
-	const selectedDie = useSelector(
-		( state: StateType ) => state.selectedDie
+	const dispatch = useDispatch< AppDispatch >();
+	const dice = useSelector( ( root: RootState ) => root.game.state.dice );
+	const gameOver = useSelector(
+		( root: RootState ) => root.game.state.phase === 'over'
 	);
-	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
-	const checkers = useSelector( ( state: StateType ) => state.checkers );
-	const currentPlayer = useSelector(
-		( state: StateType ) => state.currentPlayer
-	);
+	const mode = useSelector( ( root: RootState ) => root.ui.mode );
+	const playableDice = useSelector( selectPlayableDice );
+	const selected = useSelector( effectiveDie );
 
 	const advanced = mode === 'advanced';
-	const playableDice = getPlayableDice( { dice, checkers, currentPlayer } );
-	const effectiveDie = advanced
-		? getEffectiveDie( { dice, selectedDie, playableDice } )
-		: null;
+	const current = advanced ? selected : null;
 
 	return (
 		<div>
@@ -73,9 +64,7 @@ export const Dice = () => {
 				checked={ ! advanced }
 				onChange={ ( event ) =>
 					dispatch(
-						setMode(
-							event.target.checked ? 'beginner' : 'advanced'
-						)
+						setMode( event.target.checked ? 'beginner' : 'advanced' )
 					)
 				}
 			/>
@@ -89,7 +78,7 @@ export const Dice = () => {
 					const className = clsx(
 						'die',
 						! playable && 'die--unplayable',
-						effectiveDie === die && 'die--selected'
+						current === die && 'die--selected'
 					);
 					const title = playable
 						? advanced
@@ -105,7 +94,7 @@ export const Dice = () => {
 							data-die={ die }
 							data-playable={ playable }
 							aria-label={ `Die ${ die }` }
-							aria-pressed={ effectiveDie === die }
+							aria-pressed={ current === die }
 							title={ title }
 							disabled={ ! playable }
 							onClick={ () => dispatch( selectDie( die ) ) }
@@ -127,22 +116,6 @@ export const Dice = () => {
 					);
 				} ) }
 			</div>
-
-			<ButtonGroup aria-label="Dice actions" className="mb-3">
-				<Button
-					aria-label="Roll the dice"
-					variant="outline-primary btn-sm"
-					onClick={ () => dispatch( rollDice() ) }
-					disabled={ gameOver || dice.length > 0 }
-					title={
-						dice.length > 0
-							? 'You have already rolled this turn'
-							: undefined
-					}
-				>
-					Roll
-				</Button>
-			</ButtonGroup>
 		</div>
 	);
 };

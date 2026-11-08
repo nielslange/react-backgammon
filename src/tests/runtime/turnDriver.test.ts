@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeStore } from '../../data/createStore';
 import { loadSnapshot, newGame, playStep } from '../../data/gameSlice';
-import { selectLegalSteps } from '../../data/select';
+import { selectLegalSteps } from '../../data/selectors';
 import { configureSession } from '../../data/sessionSlice';
 import { setMode } from '../../data/uiSlice';
 import { rollDie, scripted, seeded } from '../../runtime/rng';

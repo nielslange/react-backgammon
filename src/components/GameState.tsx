@@ -3,20 +3,25 @@
  */
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import { useDispatch, useSelector } from 'react-redux';
 
 /**
  * Internal dependencies
  */
-import { useDispatch, useSelector } from 'react-redux';
-import { restartGame, surrenderGame, undoMove } from '../data/actions';
-import { StateType } from '../types';
+import { newGame, resign, undoStep } from '../data/gameSlice';
+import type { AppDispatch, RootState } from '../data/store';
 
 export const GameState = () => {
-	const dispatch = useDispatch();
-	const gameOver = useSelector( ( state: StateType ) => state.gameOver );
-	const moveHistory = useSelector(
-		( state: StateType ) => state.moveHistory
+	const dispatch = useDispatch< AppDispatch >();
+	const phase = useSelector( ( root: RootState ) => root.game.state.phase );
+	const player = useSelector( ( root: RootState ) => root.game.state.player );
+	const canUndo = useSelector(
+		( root: RootState ) =>
+			root.game.state.phase === 'moving' &&
+			root.game.state.turnSteps.length > 0
 	);
+	const inPlay =
+		player !== null && ( phase === 'moving' || phase === 'awaiting-roll' );
 
 	return (
 		<>
@@ -25,23 +30,27 @@ export const GameState = () => {
 				<Button
 					aria-label="Restart the game"
 					variant="outline-secondary btn-sm"
-					onClick={ () => dispatch( restartGame() ) }
+					onClick={ () =>
+						dispatch( newGame( { variant: 'backgammon' } ) )
+					}
 				>
 					Restart
 				</Button>
 				<Button
-					aria-label="Surrender the game"
+					aria-label="Resign the game"
 					variant="outline-secondary btn-sm"
-					onClick={ () => dispatch( surrenderGame() ) }
-					disabled={ gameOver }
+					onClick={ () =>
+						player !== null && dispatch( resign( { player } ) )
+					}
+					disabled={ ! inPlay }
 				>
-					Surrender
+					Resign
 				</Button>
 				<Button
 					aria-label="Undo last move"
 					variant="outline-secondary btn-sm"
-					onClick={ () => dispatch( undoMove() ) }
-					disabled={ gameOver || moveHistory.length === 0 }
+					onClick={ () => dispatch( undoStep() ) }
+					disabled={ ! canUndo }
 				>
 					Undo
 				</Button>

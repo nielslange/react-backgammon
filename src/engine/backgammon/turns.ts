@@ -92,8 +92,10 @@ const enumerate = (
 	return turns.length ? turns : [ [] ];
 };
 
+// The die is part of the key: the same lanes reached with swapped dice are
+// different choices for the player (which die stays available differs).
 const turnKey = ( turn: Turn ): string =>
-	turn.map( ( s ) => `${ s.from }>${ s.to }` ).join( ',' );
+	turn.map( ( s ) => `${ s.from }>${ s.to }/${ s.die }` ).join( ',' );
 
 /**
  * Every complete turn from this position: maximal dice usage, larger die

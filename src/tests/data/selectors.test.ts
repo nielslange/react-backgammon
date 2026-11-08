@@ -1,363 +1,106 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { makeStore } from '../../data/createStore';
 import {
-	hasWaitingChecker,
-	hasCheckersOutsideHomeBoard,
-	wouldClearOffChecker,
-	isCheckerOnTheBoard,
+	newGame,
+	openingRoll,
+	playStep,
+	resign,
+	undoStep,
+} from '../../data/gameSlice';
+import {
+	selectLegalSteps,
+	selectNotice,
+	selectPipCounts,
+	selectSeatToAct,
 } from '../../data/selectors';
-import { PlayerType } from '../../types';
+import { configureSession } from '../../data/sessionSlice';
+import { setHint, setPreview } from '../../data/uiSlice';
+import { MessageType, NoticeStatusType } from '../../types';
+import { P1, P2 } from '../engine/fixtures';
 
-describe( 'hasWaitingChecker', () => {
-	it( 'should return true when Player 1 has a checker on lane 0', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 0 },
-			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 5 },
-		];
+const started = () => {
+	const store = makeStore();
+	store.dispatch(
+		configureSession( {
+			players: {
+				[ P1 ]: { kind: 'human', name: 'Blue' },
+				[ P2 ]: { kind: 'ai', name: 'Red', level: 'easy' },
+			},
+			matchTarget: 1,
+		} )
+	);
+	store.dispatch( newGame( { variant: 'backgammon' } ) );
+	store.dispatch( openingRoll( { p1: 6, p2: 1 } ) );
+	return store;
+};
 
-		const result = hasWaitingChecker( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_ONE,
+describe( 'select', () => {
+	it( 'selectLegalSteps is empty outside the moving phase and memoised inside it', () => {
+		const store = makeStore();
+		store.dispatch( newGame( { variant: 'backgammon' } ) );
+		expect( selectLegalSteps( store.getState() ) ).toEqual( [] );
+		store.dispatch( openingRoll( { p1: 6, p2: 1 } ) );
+		const steps = selectLegalSteps( store.getState() );
+		expect( steps.length ).toBeGreaterThan( 0 );
+		expect( selectLegalSteps( store.getState() ) ).toBe( steps );
+	} );
+
+	it( 'selectPipCounts reads both players', () => {
+		expect( selectPipCounts( started().getState() ) ).toEqual( {
+			[ P1 ]: 167,
+			[ P2 ]: 167,
 		} );
-		expect( result ).toBe( true );
 	} );
 
-	it( 'should return false when Player 1 has no checker on lane 0', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 5 },
-			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 10 },
-		];
+	it( 'selectSeatToAct follows the player to act', () => {
+		const store = started();
+		expect( selectSeatToAct( store.getState() )?.name ).toBe( 'Blue' );
+		expect( selectSeatToAct( makeStore().getState() ) ).toBeNull();
+	} );
 
-		const result = hasWaitingChecker( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_ONE,
+	it( 'selectNotice maps lastError to a MessageType', () => {
+		const store = started();
+		store.dispatch( undoStep() );
+		expect( selectNotice( store.getState() ) ).toEqual( {
+			message: MessageType.NO_MOVES_TO_UNDO,
+			status: NoticeStatusType.ERROR,
 		} );
-		expect( result ).toBe( false );
+		store.dispatch(
+			playStep( { step: { checkerId: 1, from: 24, to: 10, die: 14, hit: false } } )
+		);
+		expect( selectNotice( store.getState() ).message ).toBe(
+			MessageType.NO_MOVE_FOR_CHECKER
+		);
 	} );
 
-	it( 'should return true when Player 2 has a checker on lane 25', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 25 },
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 5 },
-		];
+	it( 'selectNotice shows the UI hint over the last event', () => {
+		const store = started();
+		store.dispatch(
+			setHint( { message: MessageType.PREVIEW_MOVE, status: NoticeStatusType.INFO } )
+		);
+		expect( selectNotice( store.getState() ).message ).toBe( MessageType.PREVIEW_MOVE );
+	} );
 
-		const result = hasWaitingChecker( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_TWO,
+	it( 'a game action clears the hint and the preview', () => {
+		const store = started();
+		store.dispatch( setPreview( { checkerId: 1, options: [] } ) );
+		store.dispatch(
+			setHint( { message: MessageType.PREVIEW_MOVE, status: NoticeStatusType.INFO } )
+		);
+		const step = selectLegalSteps( store.getState() )[ 0 ];
+		store.dispatch( playStep( { step } ) );
+		expect( store.getState().ui.preview ).toBeNull();
+		expect( store.getState().ui.hint ).toBeNull();
+	} );
+
+	it( 'selectNotice announces the winner and the welcome', () => {
+		const fresh = makeStore();
+		expect( selectNotice( fresh.getState() ).message ).toBe( MessageType.WELCOME );
+		const store = started();
+		store.dispatch( resign( { player: P1 } ) );
+		expect( selectNotice( store.getState() ) ).toEqual( {
+			message: MessageType.PLAYER_TWO_WINS,
+			status: NoticeStatusType.SUCCESS,
 		} );
-		expect( result ).toBe( true );
-	} );
-
-	it( 'should return false when Player 2 has no checker on lane 25', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 5 },
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 10 },
-		];
-
-		const result = hasWaitingChecker( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_TWO,
-		} );
-		expect( result ).toBe( false );
-	} );
-} );
-
-describe( 'hasCheckersOutsideHomeBoard', () => {
-	it( 'should return true when Player 1 has checkers outside home board', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 7 }, // Outside home board (home board is 1-6)
-			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 3 },
-		];
-
-		const result = hasCheckersOutsideHomeBoard( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_ONE,
-		} );
-
-		expect( result ).toBe( true );
-	} );
-
-	it( 'should return false when Player 1 has all checkers in home board', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 1 }, // Home board is 1-6
-			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 6 },
-		];
-
-		const result = hasCheckersOutsideHomeBoard( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_ONE,
-		} );
-
-		expect( result ).toBe( false );
-	} );
-
-	it( 'should return true when Player 2 has checkers outside home board', () => {
-		const checkers = [
-			{ id: 3, player: PlayerType.PLAYER_TWO, lane: 18 }, // Outside home board (home board is 19-24)
-			{ id: 4, player: PlayerType.PLAYER_TWO, lane: 20 },
-		];
-
-		const result = hasCheckersOutsideHomeBoard( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_TWO,
-		} );
-
-		expect( result ).toBe( true );
-	} );
-
-	it( 'should return false when Player 2 has all checkers in home board', () => {
-		const checkers = [
-			{ id: 3, player: PlayerType.PLAYER_TWO, lane: 19 }, // Home board is 19-24
-			{ id: 4, player: PlayerType.PLAYER_TWO, lane: 24 },
-		];
-
-		const result = hasCheckersOutsideHomeBoard( {
-			checkers,
-			currentPlayer: PlayerType.PLAYER_TWO,
-		} );
-
-		expect( result ).toBe( false );
-	} );
-} );
-
-describe( 'wouldClearOffChecker', () => {
-	it( 'should return true when Player 1 move would bear off from home board', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 5 },
-			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 6 },
-		];
-
-		const result = wouldClearOffChecker( {
-			die: 5,
-			lane: 5,
-			currentPlayer: PlayerType.PLAYER_ONE,
-			checkers,
-		} );
-
-		expect( result ).toBe( true );
-
-		const result2 = wouldClearOffChecker( {
-			die: 6,
-			lane: 6,
-			currentPlayer: PlayerType.PLAYER_ONE,
-			checkers,
-		} );
-
-		expect( result2 ).toBe( true );
-	} );
-
-	it( 'should return false when Player 1 tries to bear off from outside home board', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 15 },
-		];
-
-		const result = wouldClearOffChecker( {
-			die: 10,
-			lane: 15,
-			currentPlayer: PlayerType.PLAYER_ONE,
-			checkers,
-		} );
-
-		expect( result ).toBe( false );
-	} );
-
-	it( 'should return true when Player 2 move would bear off from home board', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 20 },
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 21 },
-		];
-
-		const result = wouldClearOffChecker( {
-			die: 5,
-			lane: 20,
-			currentPlayer: PlayerType.PLAYER_TWO,
-			checkers,
-		} );
-
-		expect( result ).toBe( true );
-
-		const result2 = wouldClearOffChecker( {
-			die: 4,
-			lane: 21,
-			currentPlayer: PlayerType.PLAYER_TWO,
-			checkers,
-		} );
-
-		expect( result2 ).toBe( true );
-	} );
-
-	it( 'should return false when Player 2 tries to bear off from outside home board', () => {
-		const result = wouldClearOffChecker( {
-			die: 10,
-			lane: 10,
-			currentPlayer: PlayerType.PLAYER_TWO,
-		} );
-
-		expect( result ).toBe( false );
-	} );
-
-	it( 'should allow exact bearing off for Player 1', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 6 },
-			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 4 },
-		];
-
-		// Exact match: lane 6 with die 6 (6 - 6 = 0)
-		expect(
-			wouldClearOffChecker( {
-				die: 6,
-				lane: 6,
-				currentPlayer: PlayerType.PLAYER_ONE,
-				checkers,
-			} )
-		).toBe( true );
-
-		// Exact match: lane 4 with die 4 (4 - 4 = 0)
-		expect(
-			wouldClearOffChecker( {
-				die: 4,
-				lane: 4,
-				currentPlayer: PlayerType.PLAYER_ONE,
-				checkers,
-			} )
-		).toBe( true );
-	} );
-
-	it( 'should prevent bearing off with higher die when checkers exist on higher points (Player 1)', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 6 }, // Higher point (closer to 6)
-			{ id: 2, player: PlayerType.PLAYER_ONE, lane: 2 }, // Lower point (closer to 1)
-		];
-
-		// Cannot bear off from lane 2 with die 3 (overshoot: 2 - 3 = -1) when checker exists on lane 6
-		expect(
-			wouldClearOffChecker( {
-				die: 3,
-				lane: 2,
-				currentPlayer: PlayerType.PLAYER_ONE,
-				checkers,
-			} )
-		).toBe( false );
-
-		// Can bear off from lane 6 with die 6 (exact match: 6 - 6 = 0)
-		expect(
-			wouldClearOffChecker( {
-				die: 6,
-				lane: 6,
-				currentPlayer: PlayerType.PLAYER_ONE,
-				checkers,
-			} )
-		).toBe( true );
-	} );
-
-	it( 'should allow bearing off with higher die when no checkers on higher points (Player 1)', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_ONE, lane: 3 }, // Only checker, no higher points
-		];
-
-		// Can bear off from lane 3 with die 4 (overshoot: 3 - 4 = -1) when no checkers on higher points
-		expect(
-			wouldClearOffChecker( {
-				die: 4,
-				lane: 3,
-				currentPlayer: PlayerType.PLAYER_ONE,
-				checkers,
-			} )
-		).toBe( true );
-
-		// Can also bear off with die 6 (higher overshoot: 3 - 6 = -3)
-		expect(
-			wouldClearOffChecker( {
-				die: 6,
-				lane: 3,
-				currentPlayer: PlayerType.PLAYER_ONE,
-				checkers,
-			} )
-		).toBe( true );
-	} );
-
-	it( 'should prevent bearing off with higher die when checkers exist on higher points (Player 2)', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 19 }, // Higher point (P2's 6-point)
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 21 }, // Lower point (P2's 4-point)
-		];
-
-		// Cannot bear off from lane 21 with die 6 (overshoot: 21 + 6 = 27) when checker exists on lane 19
-		expect(
-			wouldClearOffChecker( {
-				die: 6,
-				lane: 21,
-				currentPlayer: PlayerType.PLAYER_TWO,
-				checkers,
-			} )
-		).toBe( false );
-
-		// Can bear off from lane 19 with die 6 (exact match: 19 + 6 = 25)
-		expect(
-			wouldClearOffChecker( {
-				die: 6,
-				lane: 19,
-				currentPlayer: PlayerType.PLAYER_TWO,
-				checkers,
-			} )
-		).toBe( true );
-	} );
-
-	it( 'should allow bearing off with higher die when remaining checkers are on lower points (Player 2)', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 21 }, // Highest occupied point
-			{ id: 2, player: PlayerType.PLAYER_TWO, lane: 24 }, // Lower point (P2's 1-point)
-		];
-
-		// Lane 24 is closer to bearing off than lane 21, so it does not block the overshoot
-		expect(
-			wouldClearOffChecker( {
-				die: 6,
-				lane: 21,
-				currentPlayer: PlayerType.PLAYER_TWO,
-				checkers,
-			} )
-		).toBe( true );
-	} );
-
-	it( 'should allow bearing off with higher die when no checkers on higher points (Player 2)', () => {
-		const checkers = [
-			{ id: 1, player: PlayerType.PLAYER_TWO, lane: 20 }, // Only checker, no higher points
-		];
-
-		// Can bear off from lane 20 with die 6 (overshoot: 20 + 6 = 26) when no checkers on higher points
-		expect(
-			wouldClearOffChecker( {
-				die: 6,
-				lane: 20,
-				currentPlayer: PlayerType.PLAYER_TWO,
-				checkers,
-			} )
-		).toBe( true );
-
-		// Can also bear off with die 5 (exact: 20 + 5 = 25)
-		expect(
-			wouldClearOffChecker( {
-				die: 5,
-				lane: 20,
-				currentPlayer: PlayerType.PLAYER_TWO,
-				checkers,
-			} )
-		).toBe( true );
-	} );
-} );
-
-describe( 'isCheckerOnTheBoard', () => {
-	it( 'should return true for lanes 1-24', () => {
-		for ( let lane = 1; lane <= 24; lane++ ) {
-			expect( isCheckerOnTheBoard( { lane } ) ).toBe( true );
-		}
-	} );
-
-	it( 'should return false for lane 0 (bar for Player 1)', () => {
-		expect( isCheckerOnTheBoard( { lane: 0 } ) ).toBe( false );
-	} );
-
-	it( 'should return false for lane 25 (bar for Player 2)', () => {
-		expect( isCheckerOnTheBoard( { lane: 25 } ) ).toBe( false );
 	} );
 } );

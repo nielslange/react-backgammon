@@ -6,13 +6,17 @@ import { useSelector } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { PlayerType, StateType } from '../types';
+import { selectPipCounts } from '../data/selectors';
+import type { RootState } from '../data/store';
+import { PlayerType } from '../types';
 
 export const PipCount = () => {
-	const pipCount = useSelector( ( state: StateType ) => state.pipCount );
+	const pipCount = useSelector( selectPipCounts );
 	const currentPlayer = useSelector(
-		( state: StateType ) => state.currentPlayer
+		( root: RootState ) => root.game.state.player
 	);
+	const difference =
+		pipCount[ PlayerType.PLAYER_ONE ] - pipCount[ PlayerType.PLAYER_TWO ];
 
 	return (
 		<div>
@@ -43,15 +47,7 @@ export const PipCount = () => {
 						<td>Difference</td>
 						<td>:</td>
 						<td>
-							{ pipCount[ PlayerType.PLAYER_ONE ] -
-								pipCount[ PlayerType.PLAYER_TWO ] >
-							0
-								? `+${
-										pipCount[ PlayerType.PLAYER_ONE ] -
-										pipCount[ PlayerType.PLAYER_TWO ]
-								  }`
-								: pipCount[ PlayerType.PLAYER_ONE ] -
-								  pipCount[ PlayerType.PLAYER_TWO ] }
+							{ difference > 0 ? `+${ difference }` : difference }
 						</td>
 						<td></td>
 					</tr>

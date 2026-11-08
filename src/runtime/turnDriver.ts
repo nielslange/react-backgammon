@@ -14,7 +14,7 @@ import {
 	openingRoll,
 	roll,
 } from '../data/gameSlice';
-import { selectSeatToAct } from '../data/select';
+import { selectSeatToAct } from '../data/selectors';
 import { gameEnded } from '../data/sessionSlice';
 import { PlayerType } from '../types/PlayerType';
 import { rollDice, rollDie, type Rng } from './rng';

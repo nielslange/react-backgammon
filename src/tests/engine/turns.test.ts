@@ -174,6 +174,20 @@ describe( 'legalSteps', () => {
 			true
 		);
 	} );
+	it( 'keeps both dice when either bears off the same checker', () => {
+		// P1 on 4 and 2, everything else off: 4→off with the 6 or the 5,
+		// then 2→off with the other die. Both choices are legal.
+		const checkers = pos( [
+			{ player: P1, lane: 4, count: 1 },
+			{ player: P1, lane: 2, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const steps = legalSteps( checkers, P1, [ 5, 6 ], false );
+		expect( steps.filter( ( s ) => s.from === 4 ).map( ( s ) => s.die ).sort() ).toEqual( [
+			5, 6,
+		] );
+	} );
 	it( 'doubles offer every die as the same value', () => {
 		const steps = legalSteps( start, P1, [ 3, 3, 3, 3 ], false );
 		expect( steps.every( ( s ) => s.die === 3 ) ).toBe( true );
