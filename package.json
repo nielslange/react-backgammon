@@ -11,7 +11,8 @@
 		"lint": "eslint . --report-unused-disable-directives --max-warnings 0",
 		"format": "prettier --write .",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"e2e": "playwright test"
 	},
 	"dependencies": {
 		"@reduxjs/toolkit": "2.13.0",
@@ -23,6 +24,7 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
+		"@playwright/test": "1.63.0",
 		"@tailwindcss/postcss": "^4.3.5",
 		"@testing-library/jest-dom": "^7.0.1",
 		"@testing-library/react": "^16.3.3",
