@@ -9,6 +9,7 @@ export type ServerErrorCode =
 	| 'OWN_ROOM'
 	| 'NOT_A_PLAYER'
 	| 'CODE_TAKEN'
+	| 'GAME_NOT_FOUND'
 	| 'STALE_VERSION'
 	| 'GAME_NOT_OVER'
 	| 'MATCH_OVER'

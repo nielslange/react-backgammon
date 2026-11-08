@@ -30,7 +30,8 @@ export type GameRow = {
 	crawford_played: boolean;
 };
 
-export type MoveKind = 'opening' | 'roll' | 'step' | 'undo' | 'resign' | 'double' | 'accept' | 'drop';
+export type { MoveKind } from '../net/protocol';
+import type { MoveKind } from '../net/protocol';
 
 export type MoveRow = {
 	game_id: string;
