@@ -56,7 +56,7 @@ export const backgammon: RulesEngine = {
 		if ( ! legal ) {
 			throw new EngineError( 'ILLEGAL_STEP' );
 		}
-		const { checkers, hit } = moveOne(
+		const { checkers, hit, moverId } = moveOne(
 			state.checkers,
 			state.player,
 			step.checkerId,
@@ -65,7 +65,7 @@ export const backgammon: RulesEngine = {
 		);
 		const dice = [ ...state.dice ];
 		dice.splice( dice.indexOf( step.die ), 1 );
-		const played: Step = { ...legal, checkerId: step.checkerId, hit };
+		const played: Step = { ...legal, checkerId: moverId, hit };
 		return {
 			...state,
 			checkers,

@@ -76,8 +76,9 @@ describe( 'moveOne', () => {
 	} );
 	it( 'moves another checker from the point when the id is not there', () => {
 		const checkers = pos( [ { player: P1, lane: 8, count: 2 } ] );
-		const { checkers: next, hit } = moveOne( checkers, P1, 99, 8, 5 );
+		const { checkers: next, hit, moverId } = moveOne( checkers, P1, 99, 8, 5 );
 		expect( hit ).toBe( false );
+		expect( moverId ).toBe( 1 );
 		expect( next.filter( ( c ) => c.lane === 5 ) ).toHaveLength( 1 );
 		expect( next.filter( ( c ) => c.lane === 8 ) ).toHaveLength( 1 );
 	} );

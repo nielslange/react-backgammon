@@ -58,7 +58,7 @@ export const moveOne = (
 	checkerId: number | null,
 	from: number,
 	to: number
-): { checkers: Checker[]; hit: boolean } => {
+): { checkers: Checker[]; hit: boolean; moverId: number } => {
 	const next = checkers.map( ( c ) => ( { ...c } ) );
 	let mover = next.find(
 		( c ) =>
@@ -82,5 +82,5 @@ export const moveOne = (
 		}
 	}
 	mover.lane = to;
-	return { checkers: next, hit };
+	return { checkers: next, hit, moverId: mover.id };
 };
