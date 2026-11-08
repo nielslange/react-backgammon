@@ -180,3 +180,20 @@ describe( 'PlayerCard', () => {
 		expect( screen.getByLabelText( 'Doubling cube at 4' ) ).toBeInTheDocument();
 	} );
 } );
+
+describe( 'ModeSwitch', () => {
+	it( 'has a short name and keeps the explanation as its description', async () => {
+		const { ModeSwitch } = await import( '../../components/DiceTray' );
+		const store = moving( [ 5, 3 ], [ 5, 3 ] );
+		withProvider( store, <ModeSwitch /> );
+		const sw = screen.getByRole( 'switch', { name: 'Advanced' } );
+		expect( sw ).toHaveAccessibleDescription( 'Pick a die, then a checker.' );
+		await userEvent.click( screen.getByText( 'Advanced' ) );
+		expect( store.getState().ui.mode ).toBe( 'advanced' );
+	} );
+
+	it( 'is no longer part of the dice tray', () => {
+		withProvider( moving( [ 5, 3 ], [ 5, 3 ] ), <DiceTray /> );
+		expect( screen.queryByRole( 'switch' ) ).not.toBeInTheDocument();
+	} );
+} );
