@@ -15,13 +15,14 @@ type Props = {
 /** An on/off switch: a button with role="switch" and a visible label. */
 export const Switch = ( { label, checked, onChange, disabled, id, className }: Props ) => {
 	const autoId = useId();
-	const labelId = `${ id ?? autoId }-label`;
+	const buttonId = id ?? `${ autoId }-switch`;
+	const labelId = `${ buttonId }-label`;
 	return (
 		<span className={ clsx( 'inline-flex items-center gap-2', className ) }>
 			<button
 				type="button"
 				role="switch"
-				id={ id }
+				id={ buttonId }
 				aria-checked={ checked }
 				aria-labelledby={ labelId }
 				disabled={ disabled }
@@ -39,9 +40,14 @@ export const Switch = ( { label, checked, onChange, disabled, id, className }: P
 					) }
 				/>
 			</button>
-			<span id={ labelId } className={ clsx( 'text-sm', disabled && 'text-muted' ) }>
+			{ /* A <label> for the button: clicking the text toggles the switch. */ }
+			<label
+				id={ labelId }
+				htmlFor={ buttonId }
+				className={ clsx( 'text-sm', disabled ? 'cursor-not-allowed text-muted' : 'cursor-pointer' ) }
+			>
 				{ label }
-			</span>
+			</label>
 		</span>
 	);
 };

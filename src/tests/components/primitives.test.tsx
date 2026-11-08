@@ -41,6 +41,19 @@ describe( 'Switch', () => {
 		await userEvent.click( sw );
 		expect( sw ).toHaveAttribute( 'aria-checked', 'false' );
 	} );
+
+	it( 'toggles when the label text is clicked', async () => {
+		render( <Harness /> );
+		await userEvent.click( screen.getByText( 'Advanced mode' ) );
+		expect( screen.getByRole( 'switch', { name: 'Advanced mode' } ) ).toHaveAttribute( 'aria-checked', 'true' );
+	} );
+
+	it( 'does not toggle from the label while disabled', async () => {
+		const onChange = vi.fn();
+		render( <Switch label="Doubling cube" checked={ false } onChange={ onChange } disabled /> );
+		await userEvent.click( screen.getByText( 'Doubling cube' ) );
+		expect( onChange ).not.toHaveBeenCalled();
+	} );
 } );
 
 describe( 'Segmented', () => {
