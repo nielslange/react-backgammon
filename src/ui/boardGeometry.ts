@@ -114,7 +114,11 @@ export const makeGeometry = ( height = STANDARD_H ) => {
 		total: number
 	): Point => {
 		const room = MID_Y - TOP_Y - 20;
-		const step = stackStep( total, room );
+		// A stack too tall to fit is spaced as if it held all fifteen, so a
+		// checker leaving it (a Triktrak entry) moves no other checker.
+		const fits =
+			Math.floor( ( room - 2 * CHECKER_R ) / ( 2 * CHECKER_R ) ) + 1;
+		const step = stackStep( total > fits ? 15 : total, room );
 		const offset = 20 + CHECKER_R + index * step;
 		return {
 			x: ( BAR_X.from + BAR_X.to ) / 2,
