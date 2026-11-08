@@ -1,6 +1,16 @@
 # 🎲 React Backgammon
 
-React implementation of Backgammon.
+Backgammon in the browser, built with Next.js 16, React 19, Redux Toolkit and Tailwind 4. Dutch Triktrak, a computer opponent and online rooms are on the way (see `docs/superpowers/plans/`).
+
+## Run it locally
+
+```sh
+nvm use                 # Node 22.14.0
+pnpm install
+pnpm dev                # http://localhost:5173
+```
+
+`pnpm test` runs the unit and component tests, `pnpm e2e` the browser smoke tests, `pnpm build` a production build.
 
 ## Basic rules
 
@@ -36,7 +46,8 @@ React implementation of Backgammon.
 - **Engine** (`src/engine`): every rule, as pure TypeScript. `RulesEngine` is the per-variant interface (`backgammon` today); `game.ts` is the shared state machine (opening roll, roll, play, undo, resign, doubling cube, snapshot). A `GameState` is plain JSON and is the format for saving and for online play.
 - **Store** (`src/data`): Redux Toolkit slices. `game` holds the engine state and the last error code, `session` the seats, match target and score, `ui` the input mode, die selection and move preview. Reducers call the engine and never decide rules themselves.
 - **Turn driver** (`src/runtime/turnDriver.ts`): listener middleware that performs the opening roll, rolls for the player to act after a short pause, and reports a finished game to the session. Dice come from an injectable RNG.
-- **Input** (`src/ui/moveInput.ts`): turns clicks into `playStep` dispatches using the engine's legal steps, in beginner mode (checker, then highlighted point) or advanced mode (die, then checker).
+- **Input** (`src/ui/moveInput.ts`, `src/components/board/useBoardInteraction.ts`): turns clicks and drags into `playStep` dispatches using the engine's legal steps, in beginner mode (checker, then highlighted point) or advanced mode (die, then checker).
+- **UI** (`src/app`, `src/components`): start screen, SVG board, dice tray, player cards, action bar with Roll and Double, cube and game-over dialogs. Design tokens and light/dark themes live in `src/styles/globals.css`.
 
 ### Game actions
 
