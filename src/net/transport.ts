@@ -1,0 +1,44 @@
+/**
+ * How the app talks to the online backend. The rest of the app only sees
+ * this interface, so the backend (Supabase today) can be swapped without
+ * touching the board, the driver or the store.
+ */
+import type { GameState } from '../engine/types';
+import type { Scores } from '../data/sessionSlice';
+import type { ClientMoveKind } from '../server/moves';
+import type { CreateRoomInput, JoinResult } from '../server/rooms';
+import type { LoggedMove } from './protocol';
+
+export type ClientMove = {
+	kind: ClientMoveKind;
+	payload: unknown;
+	version: number;
+};
+
+export type LoadedGame = {
+	snapshot: GameState;
+	version: number;
+	number: number;
+	scores: Scores;
+	roomId: string;
+};
+
+export type Presence = {
+	/** Called with the user ids currently in the room. */
+	onChange( callback: ( online: string[] ) => void ): () => void;
+	leave(): void;
+};
+
+export interface Transport {
+	createRoom( input: CreateRoomInput ): Promise< { code: string } >;
+	joinRoom( code: string, name: string ): Promise< JoinResult >;
+	submit( gameId: string, move: ClientMove ): Promise< { version: number } >;
+	loadGame( gameId: string ): Promise< LoadedGame >;
+	movesAfter( gameId: string, seq: number ): Promise< LoggedMove[] >;
+	/** Resolves once live delivery has started; call the result to stop. */
+	subscribe(
+		gameId: string,
+		onMove: ( move: LoggedMove ) => void
+	): Promise< () => void >;
+	presence( roomId: string, me: string ): Presence;
+}

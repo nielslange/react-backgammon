@@ -3,12 +3,18 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { ensureSession, useSession } from '../../net/session';
 
 const fakeClient = ( session: { user: { id: string } } | null ) => {
-	const signInAnonymously = vi.fn( async () => ( { data: { user: { id: 'new-user' } }, error: null } ) );
+	const signInAnonymously = vi.fn( async () => ( {
+		data: { user: { id: 'new-user' } },
+		error: null,
+	} ) );
 	return {
 		signInAnonymously,
 		client: {
 			auth: {
-				getSession: vi.fn( async () => ( { data: { session }, error: null } ) ),
+				getSession: vi.fn( async () => ( {
+					data: { session },
+					error: null,
+				} ) ),
 				signInAnonymously,
 			},
 		},
@@ -18,12 +24,16 @@ const fakeClient = ( session: { user: { id: string } } | null ) => {
 describe( 'anonymous sessions', () => {
 	it( 'signs in anonymously when there is no session', async () => {
 		const { client, signInAnonymously } = fakeClient( null );
-		await expect( ensureSession( client as never ) ).resolves.toBe( 'new-user' );
+		await expect( ensureSession( client as never ) ).resolves.toBe(
+			'new-user'
+		);
 		expect( signInAnonymously ).toHaveBeenCalledTimes( 1 );
 	} );
 
 	it( 'keeps an existing session', async () => {
-		const { client, signInAnonymously } = fakeClient( { user: { id: 'me' } } );
+		const { client, signInAnonymously } = fakeClient( {
+			user: { id: 'me' },
+		} );
 		await expect( ensureSession( client as never ) ).resolves.toBe( 'me' );
 		expect( signInAnonymously ).not.toHaveBeenCalled();
 	} );
