@@ -90,3 +90,21 @@ test( 'applies a saved dark theme before the app hydrates (no light flash)', asy
 	await page.goto( '/' );
 	await expect( page.locator( 'html' ) ).toHaveAttribute( 'data-theme', 'dark' );
 } );
+
+test( 'starts a Triktrak game and plays the opening roll', async ( { page } ) => {
+	await page.goto( '/' );
+	await page.waitForLoadState( 'networkidle' );
+	await page.getByRole( 'radio', { name: /triktrak/i } ).click();
+	await page.getByRole( 'button', { name: 'Start game' } ).click();
+	await page.waitForURL( '**/game' );
+	await expect.poll( async () => ( await game( page ) ).phase ).toBe( 'moving' );
+	const { player } = await game( page );
+	// Every checker starts on the bar, so the first move is an entry.
+	const before = JSON.stringify( ( await game( page ) ).checkers );
+	const first = await previewSomeChecker( page );
+	await first.target.click( { force: true } );
+	await expect.poll( async () => JSON.stringify( ( await game( page ) ).checkers ) ).not.toBe( before );
+	const after = await page.evaluate( () => ( window as any ).__backgammonStore.getState().game.state );
+	expect( after.variant ).toBe( 'triktrak' );
+	expect( after.waiting[ player! ] ).toBe( 14 );
+} );

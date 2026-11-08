@@ -37,6 +37,20 @@ pnpm dev                # http://localhost:5173
 - **Match play**: Games accumulate to a target score (default 1; configurable to e.g. 5, 7, 11). The Crawford rule suppresses doubling in the game directly after either player first reaches `target − 1`; doubling resumes thereafter.
 - **No legal moves**: If no playable dice sequence exists, the turn is forfeited.
 
+## Dutch Triktrak
+
+Pick **Triktrak** on the start screen. It is played on the same board with these rules:
+
+- **Start:** all fifteen checkers of each player start off the board and enter by die value into the opponent's home board, like a checker coming off the bar.
+- **Entering:** checkers that have never entered do not have to come in before others move. A checker that was hit must enter before any checker on the board moves.
+- **Dice order:** the dice are played in a fixed order. A normal roll plays the higher die first. A double n-n plays n, n, 7−n, 7−n. The roll 1-2, the "tric trac", plays 1, 1, 2, 2, 5, 5, 6, 6.
+- **Blocked dice:** if the higher die of a normal roll cannot be played, the whole turn passes. A blocked die in a fixed sequence forfeits the rest of it.
+- **Bonus rolls:** a double or a tric trac played in full earns another roll.
+- **End of the game:** when the player who started bears off the last checker, the other player gets one final roll. If they also finish, the game is a draw. There is no doubling cube and no gammon; a win is worth one point.
+- **Options** on the start screen: bonus rolls per turn, a limit of checkers per point, bonus roll only when all dice were played, enter only on doubles (a tric trac counts as a double), and the final turn for the second player.
+
+Bearing off currently follows the backgammon rule; the Triktrak bear-off rule is being clarified.
+
 ## Initial position
 
 ![initial-position](https://user-images.githubusercontent.com/3323310/131032082-7167a1de-bf4d-4b20-a94e-88b677642aa5.png)
