@@ -103,7 +103,7 @@ export const StartScreen = () => {
 					[ PlayerType.PLAYER_ONE ]: { kind: 'human', name: blue.trim() || 'Light' },
 					[ PlayerType.PLAYER_TWO ]:
 						opponent === 'ai'
-							? { kind: 'ai', name: `Computer (${ difficulty })`, level: difficulty }
+							? { kind: 'ai', name: `Computer (${ difficulty[ 0 ].toUpperCase() }${ difficulty.slice( 1 ) })`, level: difficulty }
 							: { kind: 'human', name: red.trim() || 'Dark' },
 				},
 				matchTarget: Number( length ),
@@ -215,6 +215,9 @@ export const StartScreen = () => {
 					/>
 				) }
 			</div>
+			{ opponent === 'ai' && (
+				<p className="-mt-2 text-sm text-muted">You play Light; the computer plays Dark.</p>
+			) }
 
 			<div className="flex flex-wrap items-end gap-6">
 				<Segmented< Length >

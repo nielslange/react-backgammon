@@ -90,9 +90,10 @@ describe( 'StartScreen', () => {
 		const store = renderStart();
 		await userEvent.click( screen.getByRole( 'radio', { name: /computer/i } ) );
 		expect( screen.queryByLabelText( 'Dark player' ) ).not.toBeInTheDocument();
+		expect( screen.getByText( 'You play Light; the computer plays Dark.' ) ).toBeInTheDocument();
 		await userEvent.click( screen.getByRole( 'radio', { name: 'Hard' } ) );
 		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
-		expect( store.getState().session.players[ P2 ] ).toEqual( { kind: 'ai', name: 'Computer (hard)', level: 'hard' } );
+		expect( store.getState().session.players[ P2 ] ).toEqual( { kind: 'ai', name: 'Computer (Hard)', level: 'hard' } );
 		expect( store.getState().session.players[ P1 ].kind ).toBe( 'human' );
 	} );
 

@@ -56,10 +56,10 @@ export const PlayerCard = ( { player, className }: { player: Player; className?:
 		>
 			<Swatch player={ player } />
 			<div className="min-w-0 flex-1">
-				<div className="flex items-center gap-2">
-					<span className="truncate font-semibold">{ seat.name }</span>
+				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+					<span className="max-w-full truncate font-semibold">{ seat.name }</span>
 					{ toMove && (
-						<span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-ink">
+						<span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-ink">
 							To move
 						</span>
 					) }
