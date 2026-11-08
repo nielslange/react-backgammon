@@ -9,13 +9,19 @@ import {
 } from '@reduxjs/toolkit';
 import type { AppDispatch, RootState } from '../data/createStore';
 import {
+	acceptDouble,
+	dropDouble,
 	loadSnapshot,
 	newGame,
+	offerDouble,
 	openingRoll,
+	playStep,
 	roll,
 } from '../data/gameSlice';
+import type { AiPort } from '../ai/port';
+import { opponent } from '../engine/constants';
 import { requestRoll } from '../data/intents';
-import { selectAwaitsHumanRoll, selectSeatToAct } from '../data/selectors';
+import { selectAwaitsHumanRoll, selectCanDouble, selectSeatToAct } from '../data/selectors';
 import { gameEnded } from '../data/sessionSlice';
 import { setHint } from '../data/uiSlice';
 import { MessageType } from '../types/MessageType';
@@ -26,6 +32,8 @@ import { rollDice, rollDie, type Rng } from './rng';
 export type DriverOptions = {
 	rng: Rng;
 	delays: { roll: number; aiStep: number };
+	/** The computer player; without it, AI seats are not driven. */
+	ai?: AiPort;
 };
 
 export type TurnDriver = ListenerMiddlewareInstance< RootState, AppDispatch >;
@@ -36,8 +44,10 @@ const hasRemoteSeat = ( root: RootState ): boolean =>
 
 export const startTurnDriver = (
 	listener: TurnDriver,
-	{ rng, delays }: DriverOptions
+	{ rng, delays, ai }: DriverOptions
 ): void => {
+	// Seeds for the computer come from a counter, so the dice stay untouched.
+	let aiCalls = 0;
 	// Opening roll: both players roll one die; a tie re-runs this listener
 	// because openingRoll is itself one of the matched actions.
 	listener.startListening( {
@@ -85,6 +95,15 @@ export const startTurnDriver = (
 			const seat = selectSeatToAct( root );
 			if ( ! seat || seat.kind === 'remote' || before.cube.offered ) return;
 			if ( selectAwaitsHumanRoll( root ) ) return;
+			// The computer may double before it rolls.
+			if ( seat.kind === 'ai' && ai && before.player && selectCanDouble( root ) ) {
+				const choice = await api.pause( ai.decideCube( before, before.player, seat.level ) );
+				if ( api.getState().game.state !== before ) return;
+				if ( choice === 'double' ) {
+					api.dispatch( offerDouble( { player: before.player } ) );
+					return;
+				}
+			}
 			await api.delay( delays.roll );
 			if ( api.getState().game.state !== before ) return;
 			doRoll( api, before );
@@ -101,6 +120,51 @@ export const startTurnDriver = (
 			if ( game.phase !== 'awaiting-roll' || game.cube.offered ) return;
 			if ( ! seat || seat.kind === 'remote' ) return;
 			doRoll( api, game );
+		},
+	} );
+
+	// The computer plays its turn: one search, then the steps one by one.
+	listener.startListening( {
+		predicate: ( _action, current, previous ) => {
+			const game = current.game.state;
+			return (
+				game.phase === 'moving' &&
+				game.turnSteps.length === 0 &&
+				game !== previous.game.state &&
+				selectSeatToAct( current )?.kind === 'ai'
+			);
+		},
+		effect: async ( _action, api ) => {
+			if ( ! ai ) return;
+			api.cancelActiveListeners();
+			const start = api.getState();
+			const seat = selectSeatToAct( start );
+			if ( seat?.kind !== 'ai' ) return;
+			const turn = await api.pause( ai.requestTurn( start.game.state, seat.level, ++aiCalls ) );
+			for ( const step of turn ) {
+				await api.delay( delays.aiStep );
+				const game = api.getState().game.state;
+				if ( game.phase !== 'moving' || game.player !== start.game.state.player ) return;
+				api.dispatch( playStep( { step } ) );
+				if ( api.getState().game.lastError ) return;
+			}
+		},
+	} );
+
+	// The computer answers a double offered to it.
+	listener.startListening( {
+		predicate: ( _action, current, previous ) =>
+			current.game.state.cube.offered && ! previous.game.state.cube.offered,
+		effect: async ( _action, api ) => {
+			const root = api.getState();
+			const game = root.game.state;
+			if ( ! ai || game.player === null ) return;
+			const taker = opponent( game.player );
+			const seat = root.session.players[ taker ];
+			if ( seat.kind !== 'ai' ) return;
+			const answer = await api.pause( ai.answerDouble( game, taker, seat.level ) );
+			if ( ! api.getState().game.state.cube.offered ) return;
+			api.dispatch( answer === 'take' ? acceptDouble() : dropDouble() );
 		},
 	} );
 

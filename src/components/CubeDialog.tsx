@@ -13,6 +13,8 @@ export const CubeDialog = () => {
 	const game = useSelector( ( root: RootState ) => root.game.state );
 	const players = useSelector( ( root: RootState ) => root.session.players );
 	if ( ! game.cube.offered || game.player === null ) return null;
+	// The computer answers for itself.
+	if ( players[ opponent( game.player ) ].kind !== 'human' ) return null;
 
 	const doubler = players[ game.player ].name;
 	const taker = players[ opponent( game.player ) ].name;

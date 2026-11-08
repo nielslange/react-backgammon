@@ -25,9 +25,13 @@ export const ActionBar = () => {
 	const [ confirmResign, setConfirmResign ] = useState( false );
 	const cubeInGame = game.options.cube && getEngine( game.variant ).supportsCube;
 
-	const inPlay = game.player !== null && ( game.phase === 'moving' || game.phase === 'awaiting-roll' );
-	const canUndo = game.phase === 'moving' && game.turnSteps.length > 0;
-	const winner = game.player ? players[ opponent( game.player ) ].name : '';
+	const humans = ( Object.keys( players ) as Array< keyof typeof players > ).filter( ( p ) => players[ p ].kind === 'human' );
+	const humanToAct = game.player !== null && players[ game.player ].kind === 'human';
+	// With one human at the table, Resign always means that human.
+	const resigner = humans.length === 1 ? humans[ 0 ] : game.player;
+	const inPlay = resigner !== null && ( game.phase === 'moving' || game.phase === 'awaiting-roll' );
+	const canUndo = humanToAct && game.phase === 'moving' && game.turnSteps.length > 0;
+	const winner = resigner ? players[ opponent( resigner ) ].name : '';
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -75,7 +79,7 @@ export const ActionBar = () => {
 						className="flex-1"
 						onClick={ () => {
 							setConfirmResign( false );
-							if ( game.player ) dispatch( resign( { player: game.player } ) );
+							if ( resigner ) dispatch( resign( { player: resigner } ) );
 						} }
 					>
 						Resign game

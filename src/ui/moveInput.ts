@@ -26,6 +26,7 @@ export const optionsForChecker = ( root: RootState, checkerId: number ): Step[] 
 	if ( ! checker || game.phase !== 'moving' || checker.player !== game.player ) {
 		return [];
 	}
+	if ( game.player !== null && root.session.players[ game.player ].kind !== 'human' ) return [];
 	return selectLegalSteps( root )
 		.filter( ( s ) => s.from === checker.lane )
 		.sort( ( a, b ) => b.die - a.die );
@@ -47,6 +48,9 @@ const rejectionFor = ( root: RootState, checkerId: number ): MessageType => {
 	const game = root.game.state;
 	const checker = checkerById( root, checkerId );
 	if ( game.phase === 'over' ) return MessageType.GAME_OVER;
+	if ( game.player !== null && root.session.players[ game.player ].kind === 'ai' ) {
+		return MessageType.COMPUTER_TURN;
+	}
 	if ( game.phase !== 'moving' || game.player === null ) {
 		return MessageType.ROLL_DICE_FIRST;
 	}

@@ -15,6 +15,7 @@ import { Switch } from './primitives/Switch';
 
 type Opponent = 'local' | 'ai' | 'online';
 type Length = '1' | '3' | '5' | '7';
+type Difficulty = 'easy' | 'medium' | 'hard';
 type Rerolls = 'unlimited' | '1' | '2';
 type PerPoint = 'none' | '5' | '3';
 
@@ -83,6 +84,7 @@ export const StartScreen = () => {
 	const router = useRouter();
 	const [ variant, setVariant ] = useState< VariantId >( 'backgammon' );
 	const [ opponent, setOpponent ] = useState< Opponent >( 'local' );
+	const [ difficulty, setDifficulty ] = useState< Difficulty >( 'medium' );
 	const [ blue, setBlue ] = useState( 'Light' );
 	const [ red, setRed ] = useState( 'Dark' );
 	const [ length, setLength ] = useState< Length >( '1' );
@@ -99,7 +101,10 @@ export const StartScreen = () => {
 			configureSession( {
 				players: {
 					[ PlayerType.PLAYER_ONE ]: { kind: 'human', name: blue.trim() || 'Light' },
-					[ PlayerType.PLAYER_TWO ]: { kind: 'human', name: red.trim() || 'Dark' },
+					[ PlayerType.PLAYER_TWO ]:
+						opponent === 'ai'
+							? { kind: 'ai', name: `Computer (${ difficulty })`, level: difficulty }
+							: { kind: 'human', name: red.trim() || 'Dark' },
 				},
 				matchTarget: Number( length ),
 			} )
@@ -178,7 +183,7 @@ export const StartScreen = () => {
 				onChange={ setOpponent }
 				options={ [
 					{ value: 'local', label: 'Local' },
-					{ value: 'ai', label: 'Computer (soon)', disabled: true, hint: 'Coming soon' },
+					{ value: 'ai', label: 'Computer' },
 					{ value: 'online', label: 'Online (soon)', disabled: true, hint: 'Coming soon' },
 				] }
 			/>
@@ -190,12 +195,25 @@ export const StartScreen = () => {
 					onChange={ setBlue }
 					swatch="bg-checker-light border-checker-light-rim"
 				/>
-				<NameField
-					label="Dark player"
-					value={ red }
-					onChange={ setRed }
-					swatch="bg-checker-dark border-checker-dark-rim"
-				/>
+				{ opponent === 'ai' ? (
+					<Segmented< Difficulty >
+						label="Difficulty"
+						value={ difficulty }
+						onChange={ setDifficulty }
+						options={ [
+							{ value: 'easy', label: 'Easy' },
+							{ value: 'medium', label: 'Medium' },
+							{ value: 'hard', label: 'Hard' },
+						] }
+					/>
+				) : (
+					<NameField
+						label="Dark player"
+						value={ red }
+						onChange={ setRed }
+						swatch="bg-checker-dark border-checker-dark-rim"
+					/>
+				) }
 			</div>
 
 			<div className="flex flex-wrap items-end gap-6">

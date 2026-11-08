@@ -86,9 +86,18 @@ describe( 'StartScreen', () => {
 		} );
 	} );
 
-	it( 'shows the computer and online play as not yet available', () => {
+	it( 'starts a game against the computer at the chosen level', async () => {
+		const store = renderStart();
+		await userEvent.click( screen.getByRole( 'radio', { name: /computer/i } ) );
+		expect( screen.queryByLabelText( 'Dark player' ) ).not.toBeInTheDocument();
+		await userEvent.click( screen.getByRole( 'radio', { name: 'Hard' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
+		expect( store.getState().session.players[ P2 ] ).toEqual( { kind: 'ai', name: 'Computer (hard)', level: 'hard' } );
+		expect( store.getState().session.players[ P1 ].kind ).toBe( 'human' );
+	} );
+
+	it( 'shows online play as not yet available', () => {
 		renderStart();
-		expect( screen.getByRole( 'radio', { name: /computer/i } ) ).toBeDisabled();
 		expect( screen.getByRole( 'radio', { name: /online/i } ) ).toBeDisabled();
 	} );
 } );
