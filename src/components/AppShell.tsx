@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../data/store';
@@ -21,8 +22,17 @@ const THEME_LABEL: Record< Theme, string > = {
 const STORAGE_KEY = 'backgammon-theme';
 
 const ThemeIcon = ( { theme }: { theme: Theme } ) => (
-	<svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-		{ theme === 'dark' && <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" /> }
+	<svg
+		aria-hidden="true"
+		viewBox="0 0 24 24"
+		className="size-5"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="1.8"
+	>
+		{ theme === 'dark' && (
+			<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+		) }
 		{ theme === 'light' && (
 			<>
 				<circle cx="12" cy="12" r="4" />
@@ -42,12 +52,14 @@ const ThemeIcon = ( { theme }: { theme: Theme } ) => (
 export const AppShell = ( { children }: { children: ReactNode } ) => {
 	const dispatch = useDispatch< AppDispatch >();
 	const theme = useSelector( ( root: RootState ) => root.ui.theme );
+	const pathname = usePathname();
 
 	// Restore the remembered theme once.
 	useEffect( () => {
 		try {
 			const saved = localStorage.getItem( STORAGE_KEY ) as Theme | null;
-			if ( saved === 'light' || saved === 'dark' ) dispatch( setTheme( saved ) );
+			if ( saved === 'light' || saved === 'dark' )
+				dispatch( setTheme( saved ) );
 		} catch {
 			// storage blocked: keep the system theme
 		}
@@ -67,20 +79,37 @@ export const AppShell = ( { children }: { children: ReactNode } ) => {
 	return (
 		<div className="min-h-dvh">
 			<header className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3">
-				<Link href="/" className="font-display text-xl font-semibold tracking-tight">
+				<Link
+					href="/"
+					className="font-display text-xl font-semibold tracking-tight"
+				>
 					Backgammon
 				</Link>
-				<button
-					type="button"
-					aria-label={ THEME_LABEL[ theme ] }
-					title={ THEME_LABEL[ theme ] }
-					onClick={ () => dispatch( setTheme( NEXT_THEME[ theme ] ) ) }
-					className="inline-flex size-9 items-center justify-center rounded-control text-muted hover:bg-surface hover:text-ink"
-				>
-					<ThemeIcon theme={ theme } />
-				</button>
+				<div className="flex items-center gap-1">
+					{ pathname !== '/' && (
+						<Link
+							href="/"
+							className="inline-flex min-h-11 items-center rounded-control px-3 text-sm font-medium hover:bg-surface sm:min-h-9"
+						>
+							New game
+						</Link>
+					) }
+					<button
+						type="button"
+						aria-label={ THEME_LABEL[ theme ] }
+						title={ THEME_LABEL[ theme ] }
+						onClick={ () =>
+							dispatch( setTheme( NEXT_THEME[ theme ] ) )
+						}
+						className="inline-flex size-11 items-center justify-center rounded-control text-muted hover:bg-surface hover:text-ink sm:size-9"
+					>
+						<ThemeIcon theme={ theme } />
+					</button>
+				</div>
 			</header>
-			<main className="mx-auto max-w-[1200px] px-4 pb-10">{ children }</main>
+			<main className="mx-auto max-w-[1200px] px-4 pb-10">
+				{ children }
+			</main>
 		</div>
 	);
 };
