@@ -46,7 +46,14 @@ const statusText = ( root: RootState ): string | null => {
  * The dice of the current turn. In beginner mode they only show what is
  * left; in advanced mode they are buttons that choose the die to play.
  */
-export const DiceTray = ( { className }: { className?: string } ) => {
+export const DiceTray = ( {
+	className,
+	onBoard = false,
+}: {
+	className?: string;
+	/** The dice lie on the felt (phones): give the status text a surface. */
+	onBoard?: boolean;
+} ) => {
 	const dispatch = useDispatch< AppDispatch >();
 	const faces = useSelector(
 		facesOf,
@@ -75,7 +82,15 @@ export const DiceTray = ( { className }: { className?: string } ) => {
 			data-mode={ mode }
 		>
 			{ faces.length === 0 && (
-				<span className="text-sm text-muted">{ status }</span>
+				<span
+					className={
+						onBoard
+							? 'rounded-control bg-surface px-3 py-2 text-sm text-ink shadow-raised'
+							: 'text-sm text-muted'
+					}
+				>
+					{ status }
+				</span>
 			) }
 			{ faces.map( ( face, index ) => {
 				const isNext = ordered && index === nextIndex;
