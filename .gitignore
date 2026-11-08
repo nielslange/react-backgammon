@@ -33,3 +33,6 @@ next-env.d.ts
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+# Vercel CLI
+.vercel

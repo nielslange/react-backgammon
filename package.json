@@ -2,6 +2,9 @@
 	"name": "react-backgammon",
 	"private": true,
 	"version": "0.0.0",
+	"engines": {
+		"node": "22.x"
+	},
 	"type": "module",
 	"scripts": {
 		"dev": "next dev -p 5173",
