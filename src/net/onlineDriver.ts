@@ -4,9 +4,21 @@
  * Dice always come from the server: this tab asks for them when its
  * player is to roll (by hand when they could double first).
  */
-import { createListenerMiddleware, isAnyOf, type Action } from '@reduxjs/toolkit';
+import {
+	createListenerMiddleware,
+	isAnyOf,
+	type Action,
+} from '@reduxjs/toolkit';
 import type { AppDispatch, RootState } from '../data/createStore';
-import { acceptDouble, dropDouble, offerDouble, playStep, resign, undoStep } from '../data/gameSlice';
+import {
+	acceptDouble,
+	dropDouble,
+	offerDouble,
+	playStep,
+	resign,
+	undoStep,
+	loadSnapshot,
+} from '../data/gameSlice';
 import { requestRoll } from '../data/intents';
 import { syncedVersion } from '../data/netSlice';
 import { selectAwaitsHumanRoll } from '../data/selectors';
@@ -18,10 +30,20 @@ import type { OnlineGame, OnlineHolder } from './onlineGame';
 
 type Api = { dispatch: AppDispatch; getState: () => RootState };
 
-const ownMoves = isAnyOf( playStep, undoStep, offerDouble, acceptDouble, dropDouble, resign );
+const ownMoves = isAnyOf(
+	playStep,
+	undoStep,
+	offerDouble,
+	acceptDouble,
+	dropDouble,
+	resign
+);
 
-const kindOf = ( action: Action ): { kind: ClientMoveKind; payload: unknown } => {
-	if ( playStep.match( action ) ) return { kind: 'step', payload: { step: action.payload.step } };
+const kindOf = (
+	action: Action
+): { kind: ClientMoveKind; payload: unknown } => {
+	if ( playStep.match( action ) )
+		return { kind: 'step', payload: { step: action.payload.step } };
 	if ( undoStep.match( action ) ) return { kind: 'undo', payload: {} };
 	if ( offerDouble.match( action ) ) return { kind: 'double', payload: {} };
 	if ( acceptDouble.match( action ) ) return { kind: 'accept', payload: {} };
@@ -29,25 +51,68 @@ const kindOf = ( action: Action ): { kind: ClientMoveKind; payload: unknown } =>
 	return { kind: 'resign', payload: {} };
 };
 
-export const createOnlineDriver = ( holder: OnlineHolder, { rollDelay = 300 }: { rollDelay?: number } = {} ) => {
+export const createOnlineDriver = (
+	holder: OnlineHolder,
+	{
+		rollDelay = 300,
+		rollRetryMs = 3000,
+	}: { rollDelay?: number; rollRetryMs?: number } = {}
+) => {
 	const listener = createListenerMiddleware< RootState, AppDispatch >();
 
-	const send = ( api: Api, game: OnlineGame, kind: ClientMoveKind, payload: unknown, optimistic: boolean ) => {
+	const send = (
+		api: Api,
+		game: OnlineGame,
+		kind: ClientMoveKind,
+		payload: unknown,
+		optimistic: boolean
+	) => {
 		if ( optimistic ) game.pending++;
+		const generation = game.generation;
 		game.queue = game.queue.then( async () => {
 			if ( holder.current !== game ) return;
+			// An earlier move was refused: this one was meant for a position
+			// that never existed on the server.
+			if ( generation !== game.generation ) return;
 			const version = Math.max( game.acked, game.sync.current().version );
 			try {
-				const result = await game.transport.submit( game.gameId, { kind, payload, version } );
+				const result = await game.transport.submit( game.gameId, {
+					kind,
+					payload,
+					version,
+				} );
 				game.acked = Math.max( game.acked, result.version );
-				if ( optimistic ) game.pending = Math.max( 0, game.pending - 1 );
-				if ( game.pending === 0 ) api.dispatch( syncedVersion( game.acked ) );
+				if ( optimistic )
+					game.pending = Math.max( 0, game.pending - 1 );
+				if ( game.pending === 0 ) {
+					// Anything that arrived while own moves were on their way
+					// (an opponent's resign, another device) shows now.
+					const latest = game.sync.current();
+					if ( latest.version > game.acked )
+						api.dispatch(
+							loadSnapshot( { snapshot: latest.snapshot } )
+						);
+					api.dispatch(
+						syncedVersion( Math.max( latest.version, game.acked ) )
+					);
+				}
 			} catch {
-				// Refused (stale, illegal or offline): the server's state wins.
+				// Refused (stale, illegal) or offline: the server's state wins.
+				game.generation++;
 				game.pending = 0;
 				game.rollRequested = null;
 				await game.sync.resync();
-				api.dispatch( setHint( { message: MessageType.ONLINE_REFUSED, status: NoticeStatusType.ERROR } ) );
+				if ( optimistic ) {
+					api.dispatch(
+						setHint( {
+							message: MessageType.ONLINE_REFUSED,
+							status: NoticeStatusType.ERROR,
+						} )
+					);
+				} else if ( kind === 'roll' ) {
+					// Ask again shortly, if this player is still to roll.
+					setTimeout( () => askForDice( api ), rollRetryMs );
+				}
 			}
 		} );
 	};
@@ -57,7 +122,12 @@ export const createOnlineDriver = ( holder: OnlineHolder, { rollDelay = 300 }: {
 		const root = api.getState();
 		const state = root.game.state;
 		if ( ! game || ! root.net ) return;
-		if ( state.phase !== 'awaiting-roll' || state.player !== root.net.seat || state.cube.offered ) return;
+		if (
+			state.phase !== 'awaiting-roll' ||
+			state.player !== root.net.seat ||
+			state.cube.offered
+		)
+			return;
 		const version = Math.max( game.acked, game.sync.current().version );
 		if ( game.rollRequested === version ) return;
 		game.rollRequested = version;
@@ -78,7 +148,10 @@ export const createOnlineDriver = ( holder: OnlineHolder, { rollDelay = 300 }: {
 	} );
 
 	// The player pressed Roll.
-	listener.startListening( { actionCreator: requestRoll, effect: ( _action, api ) => askForDice( api ) } );
+	listener.startListening( {
+		actionCreator: requestRoll,
+		effect: ( _action, api ) => askForDice( api ),
+	} );
 
 	// This tab's player is to roll and has no cube decision: roll for them.
 	listener.startListening( {

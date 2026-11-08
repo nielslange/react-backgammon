@@ -118,21 +118,27 @@ const openGame = async (
 	rng: Rng
 ): Promise< GameRow > => {
 	const existing = await db.latestGame( room.id );
-	if ( existing && existing.number >= number ) return existing;
+	// A game that exists without its opening roll (a crash in between) gets
+	// the roll now instead of staying stuck in the opening.
+	const unrolled =
+		existing && existing.number === number && existing.version === 0;
+	if ( existing && existing.number >= number && ! unrolled ) return existing;
 	let game: GameRow;
-	try {
-		game = await db.insertGame( {
-			room_id: room.id,
-			number,
-			snapshot: createGame( room.variant, room.options ),
-			scores: carried.scores,
-			crawford_played: carried.crawfordPlayed,
-		} );
-	} catch ( error ) {
-		const raced = await db.latestGame( room.id );
-		if ( raced && raced.number >= number ) return raced;
-		throw error;
-	}
+	if ( unrolled ) game = existing;
+	else
+		try {
+			game = await db.insertGame( {
+				room_id: room.id,
+				number,
+				snapshot: createGame( room.variant, room.options ),
+				scores: carried.scores,
+				crawford_played: carried.crawfordPlayed,
+			} );
+		} catch ( error ) {
+			const raced = await db.latestGame( room.id );
+			if ( raced && raced.number >= number ) return raced;
+			throw error;
+		}
 	let state = game.snapshot;
 	const rolls: Array< [ number, number ] > = [];
 	while ( state.phase === 'opening' && rolls.length < 100 ) {

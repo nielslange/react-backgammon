@@ -15,6 +15,10 @@ vi.mock( '../../net/appRoom', () => ( {
 	signIn: async () => 'user-1',
 } ) );
 
+// Online play needs the backend's keys; tests run as a configured build.
+vi.stubEnv( 'NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:54321' );
+vi.stubEnv( 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon' );
+
 const renderStart = () => {
 	const store = makeStore();
 	render(

@@ -25,6 +25,8 @@ export type OnlineGame = {
 	queue: Promise< void >;
 	/** The version at which this tab last asked for dice. */
 	rollRequested: number | null;
+	/** Bumped when a move is refused: queued moves of an older generation are dropped. */
+	generation: number;
 	stop(): void;
 };
 
@@ -59,28 +61,42 @@ export const connectGame = async (
 	store: AppStore,
 	holder: OnlineHolder,
 	transport: Transport,
-	options: ConnectOptions
+	options: ConnectOptions,
+	{ pollMs = 8000 }: { pollMs?: number } = {}
 ): Promise< () => void > => {
 	holder.current?.stop();
-	const seat = options.role === 'host' ? PlayerType.PLAYER_ONE : PlayerType.PLAYER_TWO;
+	const seat =
+		options.role === 'host' ? PlayerType.PLAYER_ONE : PlayerType.PLAYER_TWO;
 	const loaded = await transport.loadGame( options.gameId );
 	const seatOf = ( player: Player, name: string ) =>
-		player === seat ? { kind: 'human' as const, name } : { kind: 'remote' as const, name };
+		player === seat
+			? { kind: 'human' as const, name }
+			: { kind: 'remote' as const, name };
 	store.dispatch(
 		configureSession( {
 			players: {
-				[ PlayerType.PLAYER_ONE ]: seatOf( PlayerType.PLAYER_ONE, options.hostName ),
-				[ PlayerType.PLAYER_TWO ]: seatOf( PlayerType.PLAYER_TWO, options.guestName ),
+				[ PlayerType.PLAYER_ONE ]: seatOf(
+					PlayerType.PLAYER_ONE,
+					options.hostName
+				),
+				[ PlayerType.PLAYER_TWO ]: seatOf(
+					PlayerType.PLAYER_TWO,
+					options.guestName
+				),
 			},
 			matchTarget: options.matchTarget,
 		} )
 	);
-	store.dispatch( restoreMatch( {
+	// The snapshot first: a finished game reports its result to the session,
+	// then the server's scores (which already include it) replace that.
+	store.dispatch( loadSnapshot( { snapshot: loaded.snapshot } ) );
+	store.dispatch(
+		restoreMatch( {
 			scores: loaded.scores,
 			gameNumber: loaded.number,
 			crawfordPlayed: loaded.crawfordPlayed,
-		} ) );
-	store.dispatch( loadSnapshot( { snapshot: loaded.snapshot } ) );
+		} )
+	);
 	store.dispatch(
 		joinedRoom( {
 			roomCode: options.roomCode,
@@ -101,6 +117,7 @@ export const connectGame = async (
 		acked: loaded.version,
 		queue: Promise.resolve(),
 		rollRequested: null,
+		generation: 0,
 	} as unknown as OnlineGame;
 	game.sync = createSync( {
 		snapshot: loaded.snapshot,
@@ -114,10 +131,38 @@ export const connectGame = async (
 		},
 	} );
 	holder.current = game;
-	const stopLive = await transport.subscribe( options.gameId, ( move ) => game.sync.receive( move ) );
+	const catchUp = async () => {
+		try {
+			const seen = game.sync.current().version;
+			for ( const move of await transport.movesAfter(
+				options.gameId,
+				seen
+			) )
+				game.sync.receive( move );
+		} catch {
+			// Offline: the next tick tries again.
+		}
+	};
+	// Live delivery, plus a reload whenever it resumes after an interruption.
+	const stopLive = await transport.subscribe(
+		options.gameId,
+		( move ) => game.sync.receive( move ),
+		() => void game.sync.resync()
+	);
 	// Moves written between loading and subscribing.
-	for ( const move of await transport.movesAfter( options.gameId, loaded.version ) ) game.sync.receive( move );
+	await catchUp();
+	// Backstops for a connection that silently stopped delivering: a slow
+	// poll, and a check whenever the player comes back to the tab.
+	const poll = setInterval( () => void catchUp(), pollMs );
+	const onVisible = () => {
+		if ( document.visibilityState === 'visible' ) void game.sync.resync();
+	};
+	if ( typeof document !== 'undefined' )
+		document.addEventListener( 'visibilitychange', onVisible );
 	game.stop = () => {
+		clearInterval( poll );
+		if ( typeof document !== 'undefined' )
+			document.removeEventListener( 'visibilitychange', onVisible );
 		stopLive();
 		game.sync.close();
 		if ( holder.current === game ) holder.current = null;

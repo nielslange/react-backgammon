@@ -47,6 +47,8 @@ export const useRoom = ( code: string, deps: RoomDeps ) => {
 		let stopGame: ( () => void ) | null = null;
 		let leavePresence: ( () => void ) | null = null;
 		let connected: string | null = null;
+		// Whether this page has shown the room (lobby or game) already.
+		let seenRoom = false;
 
 		const refresh = async () => {
 			try {
@@ -88,10 +90,12 @@ export const useRoom = ( code: string, deps: RoomDeps ) => {
 							leavePresence = () => presence.leave();
 						}
 					}
+					seenRoom = true;
 					setState( { kind: 'playing', room } );
 					return;
 				}
 				if ( room.role === 'host' ) {
+					seenRoom = true;
 					setState( { kind: 'lobby', room } );
 					timer = setTimeout( () => {
 						timer = null;
@@ -105,6 +109,16 @@ export const useRoom = ( code: string, deps: RoomDeps ) => {
 			} catch ( error ) {
 				if ( ! live ) return;
 				const errorCode = codeOf( error );
+				// A blip after the room was shown: keep it and try again.
+				if ( seenRoom && errorCode !== 'ROOM_NOT_FOUND' ) {
+					if ( ! timer ) {
+						timer = setTimeout( () => {
+							timer = null;
+							void refresh();
+						}, deps.pollMs ?? 2000 );
+					}
+					return;
+				}
 				setState(
 					errorCode === 'ROOM_NOT_FOUND'
 						? { kind: 'not-found' }

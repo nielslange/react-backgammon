@@ -40,10 +40,15 @@ export interface Transport {
 	submit( gameId: string, move: ClientMove ): Promise< { version: number } >;
 	loadGame( gameId: string ): Promise< LoadedGame >;
 	movesAfter( gameId: string, seq: number ): Promise< LoggedMove[] >;
-	/** Resolves once live delivery has started; call the result to stop. */
+	/**
+	 * Resolves once live delivery has started; call the result to stop.
+	 * `onReconnect` runs whenever delivery resumes after an interruption,
+	 * so the caller can fetch what it missed.
+	 */
 	subscribe(
 		gameId: string,
-		onMove: ( move: LoggedMove ) => void
+		onMove: ( move: LoggedMove ) => void,
+		onReconnect?: () => void
 	): Promise< () => void >;
 	presence( roomId: string, me: string ): Presence;
 }

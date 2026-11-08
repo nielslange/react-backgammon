@@ -39,7 +39,8 @@ export const createSupabaseTransport = (
 	createRoom: async ( input ) => unwrap( await actions.createRoom( input ) ),
 	joinRoom: async ( code, name ) =>
 		unwrap( await actions.joinRoom( { code, name } ) ),
-	describeRoom: async ( code ) => unwrap( await actions.describeRoom( code ) ),
+	describeRoom: async ( code ) =>
+		unwrap( await actions.describeRoom( code ) ),
 	rematch: async ( roomId, after ) =>
 		unwrap( await actions.rematch( { roomId, after } ) ),
 	submit: async ( gameId, move ) =>
@@ -48,7 +49,9 @@ export const createSupabaseTransport = (
 	async loadGame( gameId ): Promise< LoadedGame > {
 		const { data, error } = await client
 			.from( 'games' )
-			.select( 'snapshot, version, number, scores, crawford_played, room_id' )
+			.select(
+				'snapshot, version, number, scores, crawford_played, room_id'
+			)
 			.eq( 'id', gameId )
 			.maybeSingle();
 		if ( error ) throw new ServerError( 'SERVER_ERROR', error.message );
@@ -74,7 +77,7 @@ export const createSupabaseTransport = (
 		return ( data ?? [] ) as LoggedMove[];
 	},
 
-	async subscribe( gameId, onMove ) {
+	async subscribe( gameId, onMove, onReconnect ) {
 		// Row-level security filters live rows by the player's token, so the
 		// realtime socket must carry it.
 		const { data: session } = await client.auth.getSession();
@@ -103,7 +106,9 @@ export const createSupabaseTransport = (
 			);
 		const stop = () => void client.removeChannel( channel );
 		return new Promise< () => void >( ( resolve, reject ) => {
+			let started = false;
 			const timer = setTimeout( () => {
+				if ( started ) return;
 				stop();
 				reject(
 					new ServerError(
@@ -113,22 +118,29 @@ export const createSupabaseTransport = (
 				);
 			}, SUBSCRIBE_TIMEOUT );
 			channel.subscribe( ( status ) => {
-				if ( status === 'SUBSCRIBED' ) {
-					clearTimeout( timer );
-					resolve( stop );
-				} else if (
-					status === 'CHANNEL_ERROR' ||
-					status === 'TIMED_OUT'
-				) {
-					clearTimeout( timer );
-					stop();
-					reject(
-						new ServerError(
-							'SERVER_ERROR',
-							`Live updates failed: ${ status }`
-						)
-					);
+				if ( ! started ) {
+					if ( status === 'SUBSCRIBED' ) {
+						started = true;
+						clearTimeout( timer );
+						resolve( stop );
+					} else if (
+						status === 'CHANNEL_ERROR' ||
+						status === 'TIMED_OUT'
+					) {
+						clearTimeout( timer );
+						stop();
+						reject(
+							new ServerError(
+								'SERVER_ERROR',
+								`Live updates failed: ${ status }`
+							)
+						);
+					}
+					return;
 				}
+				// Later errors are left to realtime-js, which rejoins by itself;
+				// a rejoin may have missed rows, so the caller catches up.
+				if ( status === 'SUBSCRIBED' ) onReconnect?.();
 			} );
 		} );
 	},

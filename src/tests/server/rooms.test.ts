@@ -120,3 +120,23 @@ describe( 'describeRoom', () => {
 		expect( ( await describeRoom( db, 'someone', code ) ).gameId ).toBeNull();
 	} );
 } );
+
+describe( 'a game left before its opening roll', () => {
+	it( 'gets its opening roll on the next join instead of staying stuck', async () => {
+		const { db, rooms, games, code } = await open();
+		// A crash between creating game 1 and rolling its opening.
+		await db.claimGuest( rooms[ 0 ].id, GUEST, 'Guest' );
+		const { createGame } = await import( '../../engine/game' );
+		await db.insertGame( {
+			room_id: rooms[ 0 ].id,
+			number: 1,
+			snapshot: createGame( 'backgammon' ),
+			scores: { [ P1 ]: 0, [ P2 ]: 0 },
+			crawford_played: false,
+		} );
+		const joined = await joinRoom( db, GUEST, { code, name: 'Guest' }, scripted( [ 4, 2 ] ) );
+		expect( games ).toHaveLength( 1 );
+		expect( games[ 0 ] ).toMatchObject( { id: joined.gameId, version: 1 } );
+		expect( games[ 0 ].snapshot ).toMatchObject( { phase: 'moving', player: P1, dice: [ 4, 2 ] } );
+	} );
+} );

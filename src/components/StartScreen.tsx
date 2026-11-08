@@ -10,6 +10,7 @@ import type { AppDispatch } from '../data/store';
 import type { VariantId } from '../engine/types';
 import { PlayerType } from '../types';
 import { appTransport, signIn } from '../net/appRoom';
+import { onlineConfigured } from '../net/config';
 import { Button } from './primitives/Button';
 import { Segmented } from './primitives/Segmented';
 import { Switch } from './primitives/Switch';
@@ -118,6 +119,7 @@ export const StartScreen = () => {
 	const [ perPoint, setPerPoint ] = useState< PerPoint >( '5' );
 	const [ finalTurn, setFinalTurn ] = useState( true );
 	const variantLabel = useId();
+	const online = onlineConfigured();
 
 	const [ creating, setCreating ] = useState( false );
 	const [ createError, setCreateError ] = useState< string | null >( null );
@@ -262,9 +264,19 @@ export const StartScreen = () => {
 				options={ [
 					{ value: 'local', label: 'Local' },
 					{ value: 'ai', label: 'Computer' },
-					{ value: 'online', label: 'Online' },
+					{
+						value: 'online',
+						label: 'Online',
+						disabled: ! online,
+						hint: online ? undefined : 'Not set up yet',
+					},
 				] }
 			/>
+			{ ! online && (
+				<p className="-mt-6 text-sm text-muted">
+					Online play is not set up yet.
+				</p>
+			) }
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<NameField
@@ -396,38 +408,40 @@ export const StartScreen = () => {
 				) }
 			</div>
 
-			<form
-				onSubmit={ join }
-				className="flex flex-col gap-1.5 border-t border-line pt-6"
-			>
-				<label
-					htmlFor="join-code"
-					className="text-xs font-medium uppercase tracking-wide text-muted"
+			{ online && (
+				<form
+					onSubmit={ join }
+					className="flex flex-col gap-1.5 border-t border-line pt-6"
 				>
-					Room code
-				</label>
-				<p className="text-sm text-muted">
-					Got a code from a friend? Enter it to join their game.
-				</p>
-				<div className="flex gap-2">
-					<input
-						id="join-code"
-						value={ joinCode }
-						onChange={ ( e ) => setJoinCode( e.target.value ) }
-						autoCapitalize="characters"
-						autoComplete="off"
-						maxLength={ 12 }
-						className="min-h-11 w-40 rounded-control border border-control bg-surface px-3 font-mono uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-focus"
-					/>
-					<Button
-						type="submit"
-						className="min-h-11"
-						disabled={ ! joinCode.trim() }
+					<label
+						htmlFor="join-code"
+						className="text-xs font-medium uppercase tracking-wide text-muted"
 					>
-						Join
-					</Button>
-				</div>
-			</form>
+						Room code
+					</label>
+					<p className="text-sm text-muted">
+						Got a code from a friend? Enter it to join their game.
+					</p>
+					<div className="flex gap-2">
+						<input
+							id="join-code"
+							value={ joinCode }
+							onChange={ ( e ) => setJoinCode( e.target.value ) }
+							autoCapitalize="characters"
+							autoComplete="off"
+							maxLength={ 12 }
+							className="min-h-11 w-40 rounded-control border border-control bg-surface px-3 font-mono uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-focus"
+						/>
+						<Button
+							type="submit"
+							className="min-h-11"
+							disabled={ ! joinCode.trim() }
+						>
+							Join
+						</Button>
+					</div>
+				</form>
+			) }
 		</section>
 	);
 };
