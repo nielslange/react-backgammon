@@ -13,6 +13,7 @@ import { MessageType } from '../../types';
 import {
 	effectiveDie,
 	onCheckerClick,
+	onDrop,
 	onTargetClick,
 	optionsForChecker,
 	playableDice,
@@ -381,5 +382,41 @@ describe( 'advanced mode', () => {
 		store.dispatch( selectDie( 3 ) );
 		store.dispatch( setMode( 'beginner' ) );
 		expect( store.getState().ui.selectedDie ).toBeNull();
+	} );
+} );
+
+describe( 'onDrop', () => {
+	it( 'plays the step that lands on the dropped lane', () => {
+		const store = withPosition( makeStore(), {
+			checkers: position(),
+			player: P1,
+			dice: [ 3, 5 ],
+		} );
+		expect( onDrop( store.dispatch, store.getState(), 1, 8 ) ).toBe( true );
+		expect( lanesOf( store, [ 1 ] ) ).toEqual( [ 8 ] );
+		expect( store.getState().game.state.dice ).toEqual( [ 3 ] );
+	} );
+	it( 'does nothing on a lane that is not a landing point, or with an opponent checker', () => {
+		const store = withPosition( makeStore(), {
+			checkers: position(),
+			player: P1,
+			dice: [ 3, 5 ],
+		} );
+		expect( onDrop( store.dispatch, store.getState(), 1, 9 ) ).toBe( false );
+		expect( onDrop( store.dispatch, store.getState(), 3, 4 ) ).toBe( false );
+		expect( lanesOf( store, [ 1, 3 ] ) ).toEqual( [ 13, 1 ] );
+	} );
+	it( 'bears off onto the tray with the smaller sufficient die', () => {
+		const store = withPosition( makeStore(), {
+			checkers: [
+				{ id: 1, player: P1, lane: 4 },
+				{ id: 2, player: P1, lane: 2 },
+				{ id: 3, player: P2, lane: 12 },
+			],
+			player: P1,
+			dice: [ 5, 6 ],
+		} );
+		expect( onDrop( store.dispatch, store.getState(), 1, 25 ) ).toBe( true );
+		expect( store.getState().game.state.dice ).toEqual( [ 6 ] );
 	} );
 } );

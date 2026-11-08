@@ -119,3 +119,16 @@ export const laneAt = ( { x, y }: Point ): number | null => {
 
 	return top ? 13 + col : 12 - col;
 };
+
+/**
+ * Convert a pointer position to viewBox units. The board keeps its aspect
+ * ratio (width-driven, height auto), so a linear scale is exact.
+ */
+export const toViewBox = (
+	clientX: number,
+	clientY: number,
+	rect: Pick< DOMRect, 'left' | 'top' | 'width' | 'height' >
+): Point => ( {
+	x: ( ( clientX - rect.left ) * VIEWBOX.w ) / rect.width,
+	y: ( ( clientY - rect.top ) * VIEWBOX.h ) / rect.height,
+} );

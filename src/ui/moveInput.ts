@@ -167,3 +167,21 @@ export const onCheckerClick = (
 		beginnerClick( dispatch, root, checkerId );
 	}
 };
+
+/**
+ * A checker was dropped on `lane`: play the step that lands there, using
+ * the smaller die when two do (bear-off). Returns whether a step was played.
+ */
+export const onDrop = (
+	dispatch: AppDispatch,
+	root: RootState,
+	checkerId: number,
+	lane: number
+): boolean => {
+	const step = optionsForChecker( root, checkerId )
+		.filter( ( o ) => o.to === lane )
+		.sort( ( a, b ) => a.die - b.die )[ 0 ];
+	if ( ! step ) return false;
+	dispatch( playStep( { step: { ...step, checkerId } } ) );
+	return true;
+};
