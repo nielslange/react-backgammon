@@ -108,3 +108,31 @@ test( 'starts a Triktrak game and plays the opening roll', async ( { page } ) =>
 	expect( after.variant ).toBe( 'triktrak' );
 	expect( after.waiting[ player! ] ).toBe( 14 );
 } );
+
+test( 'the computer answers with its own move', async ( { page } ) => {
+	await page.goto( '/' );
+	await page.waitForLoadState( 'networkidle' );
+	await page.getByRole( 'radio', { name: 'Computer' } ).click();
+	await page.getByRole( 'radio', { name: 'Easy' } ).click();
+	await page.getByRole( 'button', { name: 'Start game' } ).click();
+	await page.waitForURL( '**/game' );
+	// Whoever starts, the computer (Dark) must get to move at least once.
+	const darkMoved = async () => {
+		const g = await game( page );
+		return ( g.checkers as Array< { player: string; lane: number } > )
+			.filter( ( c ) => c.player === 'PLAYER_TWO' )
+			.map( ( c ) => c.lane )
+			.sort( ( a, b ) => a - b )
+			.join( ',' );
+	};
+	const startDark = await darkMoved();
+	for ( let i = 0; i < 20 && ( await darkMoved() ) === startDark; i++ ) {
+		const g = await game( page );
+		if ( g.player === 'PLAYER_ONE' && g.phase === 'moving' ) {
+			const move = await previewSomeChecker( page );
+			await move.target.click( { force: true } );
+		}
+		await page.waitForTimeout( 400 );
+	}
+	expect( await darkMoved() ).not.toBe( startDark );
+} );

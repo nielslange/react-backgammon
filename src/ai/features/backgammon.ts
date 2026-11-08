@@ -36,7 +36,7 @@ const gap = ( player: Player, shooter: number, target: number ) => {
 	return player === PlayerType.PLAYER_ONE ? from - target : target - from;
 };
 
-const counts = ( checkers: Checker[], player: Player ) => {
+export const counts = ( checkers: Checker[], player: Player ) => {
 	const byLane = new Map< number, number >();
 	for ( const c of checkers ) {
 		if ( c.player === player ) byLane.set( c.lane, ( byLane.get( c.lane ) ?? 0 ) + 1 );
@@ -45,7 +45,7 @@ const counts = ( checkers: Checker[], player: Player ) => {
 };
 
 /** Points (2+ checkers) on the board, as lanes. */
-const madePoints = ( byLane: Map< number, number > ) =>
+export const madePoints = ( byLane: Map< number, number > ) =>
 	[ ...byLane ].filter( ( [ lane, n ] ) => lane >= 1 && lane <= 24 && n >= 2 ).map( ( [ lane ] ) => lane );
 
 const longestPrime = ( points: number[] ) => {
@@ -61,7 +61,7 @@ const longestPrime = ( points: number[] ) => {
 };
 
 /** Expected cost of `player`'s blots being hit by the opponent. */
-const blotRisk = ( checkers: Checker[], player: Player ) => {
+export const blotRisk = ( checkers: Checker[], player: Player ) => {
 	const other = opponent( player );
 	const mine = counts( checkers, player );
 	const shooters = [ ...counts( checkers, other ).keys() ].filter( ( lane ) => lane !== OFF[ other ] );

@@ -1,9 +1,5 @@
 {
 	"mcpServers": {
-		"backgammon": {
-			"command": "tools/backgammon-mcp/node_modules/.bin/tsx",
-			"args": [ "tools/backgammon-mcp/server.mts" ]
-		},
 		"backgammon-browser": {
 			"command": "npx",
 			"args": [

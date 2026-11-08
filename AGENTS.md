@@ -6,7 +6,8 @@
 - All rules live in `src/engine`: pure TypeScript with no React, Redux, DOM or Node imports (`types.ts`, `RulesEngine.ts`, `game.ts` state machine, `backgammon/` rules). Randomness is injected, never generated there.
 - Game state uses Redux Toolkit slices in `src/data` (`gameSlice.ts` wraps the engine, `sessionSlice.ts` seats and match score, `uiSlice.ts`, `createStore.ts` factory, `store.ts` app store, `selectors.ts`) plus JSON fixtures in `src/data/checkers-*.json`.
 - Dice and turn hand-off come from the listener middleware in `src/runtime` (`turnDriver.ts`, `rng.ts`). A human who may double rolls by hand (`requestRoll` in `src/data/intents.ts`); otherwise the driver rolls automatically. Click and drop handling lives in `src/ui/moveInput.ts`.
-- Types live in `src/types`; tests in `src/tests` (engine, data, runtime, ui, components) and Playwright specs in `e2e/`.
+- The computer player lives in `src/ai`: `shots.ts` (hit chances), `features/` (one evaluator per variant), `search.ts` (one- and two-ply, canonical doubles, a beam for the tric trac), `bot.ts` (levels and cube decisions), and `worker.ts`/`client.ts` (runs it in a Web Worker; `local.ts` runs it in-process for tests).
+- Types live in `src/types`; tests in `src/tests` (engine, data, runtime, ui, components, ai, styles) and Playwright specs in `e2e/`.
 
 ## Build, Test, and Development Commands
 - Install deps: `pnpm install` (pnpm lockfile committed). Use `nvm use` (Node 22.14.0) first. node_modules is managed by pnpm 12; if the Node-bundled pnpm complains about the store, run `npx -y pnpm@12.8.1 <command>`.
@@ -25,7 +26,7 @@
 ## Testing Guidelines
 - Tests live in `src/tests` with `.test.ts` naming: `engine/` (rules, state machine, `fast-check` properties), `data/` (slices, selectors), `runtime/` (turn driver with fake timers and a scripted RNG), `ui/` (click flows). Add new tests alongside the code they cover.
 - Use Vitest globals (`describe/it/expect`) with jsdom environment; build positions with `pos()` and `stateWith()` from `src/tests/engine/fixtures.ts` or the JSON boards in `src/data`.
-- Rule changes go into the engine with a test first; the UI and the bot in `tools/` consume `legalSteps`/`legalTurns` and must not re-implement rules. Include a failing test before fixing regressions.
+- Rule changes go into the engine with a test first; the UI and the computer player in `src/ai` consume `legalSteps`/`legalTurns` and must not re-implement rules. Include a failing test before fixing regressions.
 
 ## Commit & Pull Request Guidelines
 - Commit messages should be concise, present tense, and scoped (e.g., `Add pip count helper`, `Fix dice roll validation`). Avoid WIP in shared branches.

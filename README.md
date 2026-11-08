@@ -1,6 +1,6 @@
 # 🎲 React Backgammon
 
-Backgammon in the browser, built with Next.js 16, React 19, Redux Toolkit and Tailwind 4. Dutch Triktrak, a computer opponent and online rooms are on the way (see `docs/superpowers/plans/`).
+Backgammon in the browser, built with Next.js 16, React 19, Redux Toolkit and Tailwind 4. Play backgammon or Dutch Triktrak against a friend on one screen or against the computer at three levels. Online rooms are on the way (see `docs/superpowers/plans/`).
 
 ## Run it locally
 
@@ -11,6 +11,16 @@ pnpm dev                # http://localhost:5173
 ```
 
 `pnpm test` runs the unit and component tests, `pnpm e2e` the browser smoke tests, `pnpm build` a production build.
+
+## Playing against the computer
+
+Pick **Computer** on the start screen and a difficulty. You play Light.
+
+- **Easy** plays a random legal move.
+- **Medium** plays the move its evaluation likes best, but now and then one of the next best.
+- **Hard** also looks at your best reply to each of the 21 rolls, and decides on the doubling cube: it doubles when it wins about 68 % of the time and takes a double when it still wins at least 25 %.
+
+The computer thinks in a Web Worker, so the board stays responsive.
 
 ## Basic rules
 

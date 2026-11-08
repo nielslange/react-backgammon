@@ -7,12 +7,14 @@ import { opponent } from '../engine/constants';
 import type { GameState, Player, Turn, VariantId } from '../engine/types';
 import type { Rng } from '../runtime/rng';
 import { evaluateBackgammon } from './features/backgammon';
+import { evaluateTriktrak } from './features/triktrak';
 import { LEVELS } from './levels';
 import { ROLLS, candidateTurns, onePly, twoPly } from './search';
 import type { Evaluator, Level } from './types';
 
 const EVALUATORS: Partial< Record< VariantId, Evaluator > > = {
 	backgammon: evaluateBackgammon,
+	triktrak: evaluateTriktrak,
 };
 
 export const evaluatorFor = ( variant: VariantId ): Evaluator => EVALUATORS[ variant ] ?? evaluateBackgammon;
