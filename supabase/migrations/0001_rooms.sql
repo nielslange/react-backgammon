@@ -78,7 +78,8 @@ create function public.apply_move(
 	p_kind text,
 	p_payload jsonb,
 	p_snapshot jsonb,
-	p_scores jsonb default null
+	p_scores jsonb default null,
+	p_crawford_played boolean default null
 ) returns int
 language plpgsql
 security invoker
@@ -89,6 +90,7 @@ begin
 		set snapshot = p_snapshot,
 			version = p_seq,
 			scores = coalesce(p_scores, scores),
+			crawford_played = coalesce(p_crawford_played, crawford_played),
 			updated_at = now()
 		where id = p_game_id and version = p_seq - 1;
 	if not found then
