@@ -171,3 +171,92 @@ describe( 'Triktrak entry and options', () => {
 		expect( after.checkers.filter( ( c ) => c.player === P2 && c.lane === 25 ) ).toHaveLength( 15 );
 	} );
 } );
+
+/** Play the first legal step until the turn or sequence ends. */
+const playOut = ( state: GameState ): GameState => {
+	let s = state;
+	while ( s.phase === 'moving' && s.player === state.player && s.dice.length ) {
+		const step = triktrak.legalSteps( s )[ 0 ];
+		if ( ! step ) break;
+		s = triktrak.afterStep( triktrak.applyStep( s, step ) );
+	}
+	return s;
+};
+
+const rolled = ( checkers: ReturnType< typeof pos >, roll: [ number, number ], extra: Partial< GameState > = {} ) =>
+	triktrak.onRoll( tt( { checkers, player: P1, phase: 'awaiting-roll', ...extra } ), roll );
+
+/** P1: one checker on 13, the rest borne off; P2 waits on its bar. */
+const lone = ( p2Points: number[] ) =>
+	pos( [
+		{ player: P1, lane: 13, count: 1 },
+		{ player: P1, lane: 25, count: 14 },
+		...p2Points.map( ( lane ) => ( { player: P2, lane, count: 2 } ) ),
+		{ player: P2, lane: 25, count: 15 - 2 * p2Points.length },
+	] );
+
+describe( 'Triktrak forfeits and re-rolls', () => {
+	it( 'passes the whole turn when the high die cannot be played, even if the low one could', () => {
+		const checkers = lone( [ 7 ] ); // 13-6 = 7 is held; 13-2 = 11 is open
+		const s = rolled( checkers, [ 6, 2 ] );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+		expect( s.checkers ).toEqual( checkers );
+	} );
+
+	it( 'forfeits the low die when it is blocked after the high one', () => {
+		const s = playOut( rolled( lone( [ 5 ] ), [ 6, 2 ] ) ); // 13→7, then 7-2 = 5 is held
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+		expect( s.checkers.find( ( c ) => c.player === P1 && c.lane < 25 )?.lane ).toBe( 7 );
+	} );
+
+	it( 'a blocked step in a double forfeits the rest and earns no re-roll', () => {
+		// 2-2 plays 2, 2, 5, 5: 13→11→9, then 9-5 = 4 is held.
+		const s = playOut( rolled( lone( [ 4 ] ), [ 2, 2 ] ) );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+		expect( s.rerolls ).toBe( 0 );
+	} );
+
+	it( 'a completed double earns another roll for the same player', () => {
+		const s = playOut( rolled( lone( [] ), [ 2, 2 ] ) );
+		expect( s.player ).toBe( P1 );
+		expect( s.phase ).toBe( 'awaiting-roll' );
+		expect( s.lastEvent ).toBe( 'reroll' );
+		expect( s.rerolls ).toBe( 1 );
+		expect( s.dice ).toEqual( [] );
+	} );
+
+	it( 'a completed tric trac earns another roll', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 24, count: 3 },
+			{ player: P1, lane: 0, count: 12 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const s = playOut( rolled( checkers, [ 1, 2 ] ) );
+		expect( s.player ).toBe( P1 );
+		expect( s.lastEvent ).toBe( 'reroll' );
+	} );
+
+	it( 'rerollLimit stops further bonus rolls and resets the count on hand-off', () => {
+		const options = { ...DEFAULT_OPTIONS, rerollLimit: 1 };
+		const s = playOut( rolled( lone( [] ), [ 2, 2 ], { options, rerolls: 1 } ) );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'hand-off' );
+		expect( s.rerolls ).toBe( 0 );
+	} );
+
+	it( 'without rerollOnlyIfCompleted a blocked double still earns a re-roll', () => {
+		const options = { ...DEFAULT_OPTIONS, rerollOnlyIfCompleted: false };
+		const s = playOut( rolled( lone( [ 4 ] ), [ 2, 2 ], { options } ) );
+		expect( s.player ).toBe( P1 );
+		expect( s.lastEvent ).toBe( 'reroll' );
+	} );
+
+	it( 'a normal roll played in full hands the turn over', () => {
+		const s = playOut( rolled( lone( [] ), [ 5, 3 ] ) );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'hand-off' );
+	} );
+} );

@@ -27,6 +27,30 @@ const stepsFor = ( state: GameState ): StepsFn => {
 	return ( checkers, player, die ) => stepsForDie( checkers, player, die, rules );
 };
 
+/**
+ * The dice of this roll are done (`completed`) or blocked. A double or a
+ * tric trac earns the same player another roll, within the options;
+ * otherwise the turn passes.
+ */
+const endSequence = ( state: GameState, completed: boolean ): GameState => {
+	const { options, roll, rerolls } = state;
+	const special = roll !== null && ( isDouble( roll ) || isTricTrac( roll ) );
+	const earned = completed || ! options.rerollOnlyIfCompleted;
+	const allowed = options.rerollLimit === null || rerolls < options.rerollLimit;
+	if ( special && earned && allowed ) {
+		return {
+			...state,
+			phase: 'awaiting-roll',
+			roll: null,
+			dice: [],
+			turnSteps: [],
+			rerolls: rerolls + 1,
+			lastEvent: 'reroll',
+		};
+	}
+	return handOff( state, ! completed );
+};
+
 export const triktrak: RulesEngine = {
 	id: 'triktrak',
 	supportsCube: false,
@@ -60,8 +84,8 @@ export const triktrak: RulesEngine = {
 	applyStep: ( state, step ) => applyLegalStep( state, step, triktrak.legalSteps( state ) ),
 
 	afterStep: ( state ) => {
-		if ( state.dice.length === 0 ) return handOff( state, false );
-		if ( triktrak.legalSteps( state ).length === 0 ) return handOff( state, true );
+		if ( state.dice.length === 0 ) return endSequence( state, true );
+		if ( triktrak.legalSteps( state ).length === 0 ) return endSequence( state, false );
 		return state;
 	},
 
@@ -74,7 +98,7 @@ export const triktrak: RulesEngine = {
 			turnSteps: [],
 			lastEvent: null,
 		};
-		return triktrak.legalSteps( rolled ).length === 0 ? handOff( rolled, true ) : rolled;
+		return triktrak.legalSteps( rolled ).length === 0 ? endSequence( rolled, false ) : rolled;
 	},
 
 	result: ( state ) => state.result,
