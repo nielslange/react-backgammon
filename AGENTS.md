@@ -3,9 +3,10 @@
 ## Project Structure & Module Organization
 - Frontend is Vite + React + TypeScript. Entry is `src/main.tsx`, global styles live in `src/index.scss`.
 - UI is split into `src/components` (board, dice, players, notices) with shared exports in `src/components/index.ts`.
-- Game state uses Redux Toolkit-esque patterns in `src/data` (`actions.ts`, `reducer.ts`, `selectors.ts`, `store.ts`) plus JSON fixtures in `src/data/checkers-*.json`.
-- Game logic utilities sit in `src/helpers` (click handling, move validation, win checks).
-- Types live in `src/types`; SVG assets in `src/icons`; tests in `src/tests` (integration, helpers, data).
+- All rules live in `src/engine`: pure TypeScript with no React, Redux, DOM or Node imports (`types.ts`, `RulesEngine.ts`, `game.ts` state machine, `backgammon/` rules). Randomness is injected, never generated there.
+- Game state uses Redux Toolkit slices in `src/data` (`gameSlice.ts` wraps the engine, `sessionSlice.ts` seats and match score, `uiSlice.ts`, `createStore.ts` factory, `store.ts` app store, `selectors.ts`) plus JSON fixtures in `src/data/checkers-*.json`.
+- Dice and turn hand-off come from the listener middleware in `src/runtime` (`turnDriver.ts`, `rng.ts`); click handling lives in `src/ui/moveInput.ts`. `src/helpers` holds only presentation helpers.
+- Types live in `src/types`; SVG assets in `src/icons`; tests in `src/tests` (engine, data, runtime, ui).
 - Built assets output to `dist/`; public HTML shell is `index.html`.
 
 ## Build, Test, and Development Commands
@@ -24,9 +25,9 @@
 - Co-locate small styles in `index.scss`; avoid inline global overrides unless necessary for board layout.
 
 ## Testing Guidelines
-- Tests live in `src/tests` with `.test.ts` naming; integration suites cover game flow, rules, and dice behavior. Add new tests alongside the code they cover.
-- Use Vitest globals (`describe/it/expect`) with jsdom environment; prefer deterministic fixtures using the JSON boards in `src/data`.
-- Aim to extend coverage (v8 reporter) for new reducers, helpers, and components; include a failing test before fixing regressions when possible.
+- Tests live in `src/tests` with `.test.ts` naming: `engine/` (rules, state machine, `fast-check` properties), `data/` (slices, selectors), `runtime/` (turn driver with fake timers and a scripted RNG), `ui/` (click flows). Add new tests alongside the code they cover.
+- Use Vitest globals (`describe/it/expect`) with jsdom environment; build positions with `pos()` and `stateWith()` from `src/tests/engine/fixtures.ts` or the JSON boards in `src/data`.
+- Rule changes go into the engine with a test first; the UI and the bot in `tools/` consume `legalSteps`/`legalTurns` and must not re-implement rules. Include a failing test before fixing regressions.
 
 ## Commit & Pull Request Guidelines
 - Commit messages should be concise, present tense, and scoped (e.g., `Add pip count helper`, `Fix dice roll validation`). Avoid WIP in shared branches.

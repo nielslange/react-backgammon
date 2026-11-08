@@ -31,28 +31,15 @@ React implementation of Backgammon.
 
 ![initial-position](https://user-images.githubusercontent.com/3323310/131032082-7167a1de-bf4d-4b20-a94e-88b677642aa5.png)
 
-## Checker states
+## Architecture
 
-- PROGRESS: Indicates that the game is in progress and players are actively making moves.
-- WAITING: Indicates that the dice have been rolled and the results have been determined.
-- BEAR_OFF: Indicates that a player is in the process of bearing off, or removing, their pieces from the board.
+- **Engine** (`src/engine`): every rule, as pure TypeScript. `RulesEngine` is the per-variant interface (`backgammon` today); `game.ts` is the shared state machine (opening roll, roll, play, undo, resign, doubling cube, snapshot). A `GameState` is plain JSON and is the format for saving and for online play.
+- **Store** (`src/data`): Redux Toolkit slices. `game` holds the engine state and the last error code, `session` the seats, match target and score, `ui` the input mode, die selection and move preview. Reducers call the engine and never decide rules themselves.
+- **Turn driver** (`src/runtime/turnDriver.ts`): listener middleware that performs the opening roll, rolls for the player to act after a short pause, and reports a finished game to the session. Dice come from an injectable RNG.
+- **Input** (`src/ui/moveInput.ts`): turns clicks into `playStep` dispatches using the engine's legal steps, in beginner mode (checker, then highlighted point) or advanced mode (die, then checker).
 
-## Actions types
+### Game actions
 
-- ROLL_DICE: This action type would be used when the dice are rolled.
-- FLIP_DICE: Allows the player to flip the positions of the two dice after they have been rolled.
-- SET_DICE: Allows the player to set the dice to a specific value.
-- TOGGLE_CURRENT_PLAYER: Allows the game to switch the current player from one player to another, typically after a move has been made.
-- MOVE_CHECKER: This action type would be used when a piece is moved to or on the board.
-- UNDO_MOVE: This action type would be used when the player wants to undo the last move.
-- REDO_MOVE: Reverses the previous move and allows the player to make a different move.
-- SURRENDER_GAME: This action type would be used when the player wants to surrender the game.
-- RESTART_GAME: Begins a new game with the same players and settings as the previous game.
-- SAVE_GAME: This action type would be used when the player wants to save the current game state.
-- LOAD_GAME: This action type would be used when the player wants to load a previously saved game state.
-- SHOW_GAME_HISTORY: This action type would be used when the player wants to see the history of moves that have been made in the game.
-- SHOW_GAME_STATISTICS: This action type would be used when the player wants to see statistics such as the number of moves made, the number of pieces hit, etc.
-- SHOW_PLAYER_STATISTICS: Provides information about a player's performance in past games, such as win-loss record and average score.
-- SHOW_PIP_COUNT: Displays the number of points (also known as "pips") that each player has accumulated on the board.
-- UPDATE_PIP_COUNT: Allows the game to update the pip count for each player, typically after a move has been made or a piece has been borne off.
-- OFFER_DOUBLING_CUBE: A cube with the numbers 2, 4, 8, 16, 32, and 64 on its faces. It is used in the game of Backgammon to increase the stakes of the game. A player can offer to double the .stakes of the game by turning the cube to the next number and presenting it to their opponent. If the opponent accepts, the cube is placed on the board with the number facing up, indicating the new stakes of the game. If the opponent declines, they forfeit the game.
+`newGame`, `openingRoll`, `roll`, `playStep`, `undoStep`, `resign`, `offerDouble`, `acceptDouble`, `dropDouble`, `loadSnapshot` on the `game` slice; `configureSession`, `gameEnded`, `nextGame` on the `session` slice; `setMode`, `selectDie`, `setPreview`, `setHint`, `setTheme` on the `ui` slice.
+
+In development the store is exposed as `window.__backgammonStore` so tools can load positions with `game/loadSnapshot`.
