@@ -71,11 +71,12 @@ export const DiceTray = () => {
 							blocked={ blocked }
 							selected={ advanced && ! face.used && ! ordered && chosen === face.value }
 							next={ isNext }
-							decorative={ advanced && ! face.used }
+							decorative={ advanced && ! face.used && ! ordered }
 							className="animate-die-roll"
 						/>
 					);
-					if ( ! advanced || face.used ) {
+					// Ordered dice leave nothing to choose: show them, never as buttons.
+					if ( ! advanced || face.used || ordered ) {
 						return <span key={ index }>{ die }</span>;
 					}
 					return (

@@ -24,6 +24,8 @@ export type Step = {
 	hit: boolean;
 	/** Triktrak: this step was a checker's first entry (undo counts it back). */
 	firstEntry?: boolean;
+	/** Id of the opponent checker this step hit, so undo returns exactly it. */
+	victimId?: number;
 };
 
 export type Turn = Step[];
@@ -36,7 +38,9 @@ export type ResultKind =
 	| 'backgammon'
 	| 'draw'
 	| 'resign'
-	| 'drop';
+	| 'drop'
+	/** Neither player can ever move again (Triktrak). */
+	| 'stalemate';
 
 export type GameResult = {
 	winner: Player | null;

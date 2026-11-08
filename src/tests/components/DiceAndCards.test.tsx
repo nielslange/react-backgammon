@@ -119,6 +119,14 @@ describe( 'DiceTray in Triktrak', () => {
 		// Later dice are waiting their turn, not blocked.
 		expect( dice.filter( ( d ) => d.getAttribute( 'aria-disabled' ) === 'true' ) ).toHaveLength( 0 );
 	} );
+
+	it( 'in advanced mode offers no die buttons, since the order is fixed', () => {
+		const store = triktrakMoving( [ 1, 1, 2, 2, 5, 5, 6, 6 ], [ 1, 2 ] );
+		store.dispatch( setMode( 'advanced' ) );
+		withProvider( store, <DiceTray /> );
+		expect( screen.queryAllByRole( 'button', { name: /play the/i } ) ).toHaveLength( 0 );
+		expect( screen.getAllByRole( 'img', { name: /^Die showing/ } )[ 0 ] ).toHaveAccessibleName( 'Die showing 1, next' );
+	} );
 } );
 
 describe( 'PlayerCard', () => {

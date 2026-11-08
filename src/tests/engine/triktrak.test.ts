@@ -649,3 +649,53 @@ describe( 'Triktrak quarter gates', () => {
 		expect( steps.every( ( s ) => s.from === 25 ) ).toBe( true );
 	} );
 } );
+
+describe( 'Triktrak review fixes', () => {
+	it( 'ends a position where neither player can ever move again as a draw', () => {
+		const options = { ...DEFAULT_OPTIONS, maxCheckersPerPoint: 3 };
+		const checkers = pos( [
+			{ player: P1, lane: 4, count: 3 },
+			{ player: P1, lane: 6, count: 3 },
+			{ player: P1, lane: 7, count: 3 },
+			{ player: P1, lane: 8, count: 3 },
+			{ player: P1, lane: 9, count: 3 },
+			{ player: P2, lane: 1, count: 3 },
+			{ player: P2, lane: 2, count: 3 },
+			{ player: P2, lane: 3, count: 3 },
+			{ player: P2, lane: 5, count: 3 },
+			{ player: P2, lane: 11, count: 2 },
+			{ player: P2, lane: 25, count: 1 },
+		] );
+		const state = tt( {
+			checkers,
+			player: P2,
+			phase: 'awaiting-roll',
+			options,
+			waiting: { [ P1 ]: 0, [ P2 ]: 0 },
+		} );
+		const s = triktrak.onRoll( state, [ 4, 2 ] );
+		expect( s.phase ).toBe( 'over' );
+		expect( s.result ).toEqual( { winner: null, points: 0, kind: 'stalemate' } );
+	} );
+
+	it( 'undo of a hit brings back exactly the checker that was hit', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 15, count: 1 },
+			{ player: P1, lane: 18, count: 14 },
+			// The waiting checkers come first in the list, the blot last.
+			{ player: P2, lane: 25, count: 14 },
+			{ player: P2, lane: 10, count: 1 },
+		] );
+		const before = tt( { checkers, player: P1, dice: [ 5, 1 ], roll: [ 5, 1 ], waiting: { [ P1 ]: 0, [ P2 ]: 14 } } );
+		const step = triktrak.legalSteps( before ).find( ( s ) => s.from === 15 )!;
+		const after = undoStep( play( before, step ) );
+		expect( after.checkers ).toEqual( before.checkers );
+	} );
+
+	it( 'a forfeited opening roll leaves no roll behind', () => {
+		const g = openingRoll( createGame( 'triktrak', { enterOnlyOnDoubles: true } ), 5, 3 );
+		expect( g.phase ).toBe( 'awaiting-roll' );
+		expect( g.lastEvent ).toBe( 'forfeit' );
+		expect( g.roll ).toBeNull();
+	} );
+} );

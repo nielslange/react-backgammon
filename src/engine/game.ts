@@ -75,7 +75,8 @@ export const openingRoll = (
 		{ ...state, player: winner, firstMover: winner, phase: 'awaiting-roll' },
 		[ high, low ]
 	);
-	return { ...rolled, roll: [ p1Die, p2Die ] };
+	// A forfeited opening already handed the turn over: keep its roll cleared.
+	return rolled.phase === 'moving' ? { ...rolled, roll: [ p1Die, p2Die ] } : rolled;
 };
 
 export const roll = ( state: GameState, dice: Roll ): GameState => {
@@ -109,9 +110,10 @@ export const undoStep = ( state: GameState ): GameState => {
 	mover.lane = last.from;
 	if ( last.hit ) {
 		const other = opponent( state.player );
-		const victim = checkers.find(
-			( c ) => c.player === other && c.lane === BAR[ other ]
-		);
+		// Prefer the recorded victim: the bar may also hold other checkers.
+		const victim =
+			checkers.find( ( c ) => c.id === last.victimId && c.lane === BAR[ other ] ) ??
+			checkers.find( ( c ) => c.player === other && c.lane === BAR[ other ] );
 		if ( ! victim ) {
 			throw new EngineError( 'NOTHING_TO_UNDO', 'hit checker is not on the bar' );
 		}
@@ -209,7 +211,7 @@ type Raw = Record< string, unknown >;
 
 const PHASES: GameState[ 'phase' ][] = [ 'idle', 'opening', 'awaiting-roll', 'moving', 'over' ];
 const EVENTS: Array< GameState[ 'lastEvent' ] > = [ null, 'hit', 'hand-off', 'forfeit', 'reroll', 'game-over', 'undo', 'final-turn' ];
-const KINDS = [ 'single', 'gammon', 'backgammon', 'draw', 'resign', 'drop' ];
+const KINDS = [ 'single', 'gammon', 'backgammon', 'draw', 'resign', 'drop', 'stalemate' ];
 
 const isObject = ( v: unknown ): v is Raw => typeof v === 'object' && v !== null && ! Array.isArray( v );
 const isInt = ( v: unknown, min: number, max: number ): v is number =>
@@ -280,12 +282,14 @@ const readStep = ( value: unknown, ids: Set< number > ): Step => {
 		! isInt( value.to, 0, 25 ) ||
 		! isDie( value.die ) ||
 		typeof value.hit !== 'boolean' ||
-		( value.firstEntry !== undefined && typeof value.firstEntry !== 'boolean' )
+		( value.firstEntry !== undefined && typeof value.firstEntry !== 'boolean' ) ||
+		( value.victimId !== undefined && ! ( isInt( value.victimId, 0, Number.MAX_SAFE_INTEGER ) && ids.has( value.victimId ) ) )
 	) {
 		return invalid( 'malformed step' );
 	}
 	const step: Step = { checkerId: value.checkerId, from: value.from, to: value.to, die: value.die, hit: value.hit };
 	if ( value.firstEntry ) step.firstEntry = true;
+	if ( value.victimId !== undefined ) step.victimId = value.victimId as number;
 	return step;
 };
 

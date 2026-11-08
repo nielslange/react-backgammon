@@ -43,14 +43,27 @@ const stepsFor = ( state: GameState ): StepsFn => {
 const allOff = ( checkers: Checker[], player: Player ) =>
 	checkers.every( ( c ) => c.player !== player || c.lane === OFF[ player ] );
 
-const finish = ( state: GameState, winner: Player | null ): GameState => ( {
+const finish = ( state: GameState, winner: Player | null, stalemate = false ): GameState => ( {
 	...state,
 	phase: 'over',
 	roll: null,
 	dice: [],
-	result: winner === null ? { winner: null, points: 0, kind: 'draw' } : { winner, points: 1, kind: 'single' },
+	result:
+		winner === null
+			? { winner: null, points: 0, kind: stalemate ? 'stalemate' : 'draw' }
+			: { winner, points: 1, kind: 'single' },
 	lastEvent: 'game-over',
 } );
+
+const ROLLS: Roll[] = [];
+for ( let a = 1; a <= 6; a++ ) for ( let b = a; b <= 6; b++ ) ROLLS.push( [ a, b ] );
+
+/** Some roll would give `player` a legal step in this position. */
+const canEverMove = ( state: GameState, player: Player ): boolean =>
+	ROLLS.some(
+		( roll ) =>
+			triktrak.legalSteps( { ...state, player, roll, dice: expandRoll( roll ), phase: 'moving' } ).length > 0
+	);
 
 /** The second player is taking the one roll they get after the first mover finished. */
 const inFinalTurn = ( state: GameState ): boolean =>
@@ -70,6 +83,13 @@ const endSequence = ( state: GameState, completed: boolean ): GameState => {
 	const special = roll !== null && ( isDouble( roll ) || isTricTrac( roll ) );
 	const earned = completed || ! options.rerollOnlyIfCompleted;
 	const allowed = options.rerollLimit === null || rerolls < options.rerollLimit;
+	// A frozen board (possible with a per-point limit): nobody can ever move.
+	if ( ! completed && state.player !== null ) {
+		const other = opponent( state.player );
+		if ( ! canEverMove( state, state.player ) && ! canEverMove( state, other ) ) {
+			return finish( state, null, true );
+		}
+	}
 	if ( special && earned && allowed ) {
 		return {
 			...state,

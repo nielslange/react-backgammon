@@ -58,7 +58,7 @@ export const moveOne = (
 	checkerId: number | null,
 	from: number,
 	to: number
-): { checkers: Checker[]; hit: boolean; moverId: number } => {
+): { checkers: Checker[]; hit: boolean; moverId: number; victimId?: number } => {
 	const next = checkers.map( ( c ) => ( { ...c } ) );
 	let mover = next.find(
 		( c ) =>
@@ -72,15 +72,17 @@ export const moveOne = (
 	}
 
 	let hit = false;
+	let victimId: number | undefined;
 	if ( isOnBoard( to ) ) {
 		const victims = next.filter(
 			( c ) => c.player !== player && c.lane === to
 		);
 		if ( victims.length === 1 ) {
 			victims[ 0 ].lane = BAR[ opponent( player ) ];
+			victimId = victims[ 0 ].id;
 			hit = true;
 		}
 	}
 	mover.lane = to;
-	return { checkers: next, hit, moverId: mover.id };
+	return { checkers: next, hit, moverId: mover.id, victimId };
 };

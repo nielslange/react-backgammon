@@ -26,7 +26,7 @@ export const applyLegalStep = ( state: GameState, step: Step, legal: Step[] ): G
 	if ( state.player === null ) throw new EngineError( 'NOT_YOUR_TURN' );
 	const match = legal.find( ( s ) => s.from === step.from && s.die === step.die );
 	if ( ! match ) throw new EngineError( 'ILLEGAL_STEP' );
-	const { checkers, hit, moverId } = moveOne(
+	const { checkers, hit, moverId, victimId } = moveOne(
 		state.checkers,
 		state.player,
 		step.checkerId,
@@ -39,7 +39,10 @@ export const applyLegalStep = ( state: GameState, step: Step, legal: Step[] ): G
 		...state,
 		checkers,
 		dice,
-		turnSteps: [ ...state.turnSteps, { ...match, checkerId: moverId, hit } ],
+		turnSteps: [
+			...state.turnSteps,
+			{ ...match, checkerId: moverId, hit, ...( victimId !== undefined ? { victimId } : {} ) },
+		],
 		lastEvent: hit ? 'hit' : null,
 	};
 };

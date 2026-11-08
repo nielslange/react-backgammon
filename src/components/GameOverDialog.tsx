@@ -12,6 +12,7 @@ import { Button } from './primitives/Button';
 import { Dialog } from './primitives/Dialog';
 
 const describeResult = ( result: GameResult, names: Record< string, string > ): string => {
+	if ( result.kind === 'stalemate' ) return 'Neither player can move any more.';
 	if ( result.winner === null ) return 'Both players finished on the last turn.';
 	const loser = names[ opponent( result.winner ) ];
 	switch ( result.kind ) {
