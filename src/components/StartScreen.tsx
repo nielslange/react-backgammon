@@ -82,17 +82,17 @@ const NameField = ( {
 export const StartScreen = () => {
 	const dispatch = useDispatch< AppDispatch >();
 	const router = useRouter();
-	const [ variant, setVariant ] = useState< VariantId >( 'backgammon' );
-	const [ opponent, setOpponent ] = useState< Opponent >( 'local' );
-	const [ difficulty, setDifficulty ] = useState< Difficulty >( 'medium' );
-	const [ blue, setBlue ] = useState( 'Light' );
+	const [ variant, setVariant ] = useState< VariantId >( 'triktrak' );
+	const [ opponent, setOpponent ] = useState< Opponent >( 'ai' );
+	const [ difficulty, setDifficulty ] = useState< Difficulty >( 'easy' );
+	const [ blue, setBlue ] = useState( 'Niels' );
 	const [ red, setRed ] = useState( 'Dark' );
 	const [ length, setLength ] = useState< Length >( '1' );
 	const [ cube, setCube ] = useState( true );
 	const [ rerolls, setRerolls ] = useState< Rerolls >( 'unlimited' );
 	const [ onlyIfCompleted, setOnlyIfCompleted ] = useState( true );
 	const [ enterOnDoubles, setEnterOnDoubles ] = useState( false );
-	const [ perPoint, setPerPoint ] = useState< PerPoint >( 'none' );
+	const [ perPoint, setPerPoint ] = useState< PerPoint >( '5' );
 	const [ finalTurn, setFinalTurn ] = useState( true );
 	const variantLabel = useId();
 
