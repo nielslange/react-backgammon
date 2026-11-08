@@ -5,8 +5,8 @@ import type { Checker, GameState, Player } from '../../engine/types';
 import { DEFAULT_OPTIONS } from '../../engine/types';
 import { PlayerType } from '../../types/PlayerType';
 
-export const P1: Player = PlayerType.PLAYER_ONE;
-export const P2: Player = PlayerType.PLAYER_TWO;
+export const P1 = PlayerType.PLAYER_ONE;
+export const P2 = PlayerType.PLAYER_TWO;
 
 /**
  * Build a checker array from `{ player, lane, count }` specs. Ids run

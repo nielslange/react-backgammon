@@ -17,7 +17,7 @@ import {
 	snapshot,
 	undoStep,
 } from '../../engine/game';
-import type { GameState, Step } from '../../engine/types';
+import type { GameState, Player, Step } from '../../engine/types';
 import { P1, P2, pos, stateWith } from './fixtures';
 
 const code = ( fn: () => unknown ): string | undefined => {
@@ -184,7 +184,7 @@ describe( 'resign', () => {
 } );
 
 describe( 'doubling cube', () => {
-	const awaiting = ( cube = { value: 1, owner: null as typeof P1 | null, offered: false } ) =>
+	const awaiting = ( cube = { value: 1, owner: null as Player | null, offered: false } ) =>
 		stateWith( {
 			checkers: backgammon.initialCheckers(),
 			player: P1,

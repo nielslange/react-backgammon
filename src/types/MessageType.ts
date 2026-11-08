@@ -27,4 +27,8 @@ export enum MessageType {
 	INVALID_POSITION = 'Position rejected: a point cannot hold checkers of both players.',
 	MOVE_UNDONE = 'Last move has been undone.',
 	NO_MOVES_TO_UNDO = 'There are no moves to undo.',
+	TURN_FORFEITED = 'No playable dice — the turn passes to the opponent.',
+	ROLL_AGAIN = 'Roll again!',
+	GAME_DRAWN = 'The game is a draw.',
+	CUBE_NOT_ALLOWED = 'You cannot double right now.',
 }
