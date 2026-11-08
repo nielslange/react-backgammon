@@ -1,6 +1,6 @@
 # 🎲 React Backgammon
 
-Backgammon in the browser, built with Next.js 16, React 19, Redux Toolkit and Tailwind 4. Play backgammon or Dutch Triktrak against a friend on one screen or against the computer at three levels. Online rooms are on the way (see `docs/superpowers/plans/`).
+Backgammon in the browser, built with Next.js 16, React 19, Redux Toolkit and Tailwind 4. Play backgammon or Dutch Triktrak against a friend on one screen, against the computer at three levels, or online: create a room and send the link.
 
 ## Run it locally
 
@@ -11,6 +11,20 @@ pnpm dev                # http://localhost:5173
 ```
 
 `pnpm test` runs the unit and component tests, `pnpm e2e` the browser smoke tests, `pnpm build` a production build.
+
+For online play you also need a local Supabase stack (Docker, for example OrbStack):
+
+```sh
+npx supabase start      # database, auth, realtime on http://127.0.0.1:54321
+npx supabase status -o env   # copy API_URL, ANON_KEY, SERVICE_ROLE_KEY into .env.local (see .env.example)
+npx supabase test db    # row-level security and apply_move tests
+```
+
+Tests that need the stack (the Supabase adapter, realtime, the two-player e2e test) skip themselves when it is not running.
+
+## Playing online
+
+Pick **Online** on the start screen and **Create room**. You get a six-letter code and a link; your friend opens the link, enters a name and plays Dark. The server rolls every die and checks every move, both players see each move live, a dot on the card shows whether the other player is online, and opening the link again continues the game. After a game, **Next game** carries the match score (and the Crawford rule) into the next one.
 
 ## Playing against the computer
 
@@ -74,8 +88,20 @@ Pick **Triktrak** on the start screen. It is played on the same board with these
 - **Input** (`src/ui/moveInput.ts`, `src/components/board/useBoardInteraction.ts`): turns clicks and drags into `playStep` dispatches using the engine's legal steps, in beginner mode (checker, then highlighted point) or advanced mode (die, then checker).
 - **UI** (`src/app`, `src/components`): start screen, SVG board, dice tray, player cards, action bar with Roll and Double, cube and game-over dialogs. Design tokens and light/dark themes live in `src/styles/globals.css`.
 
+- **Online** (`supabase/`, `src/server`, `src/app/actions`, `src/net`): Supabase holds rooms, games and the move log; clients may only read their own rooms (row-level security). Every write is a Server Action: `src/server` rolls the dice with `crypto`, validates moves with the same engine, and stores them through the `apply_move` Postgres function, which fails on a stale version. Browsers receive moves through Supabase Realtime and replay them with `src/net/protocol.ts`; `sync.ts` applies them by sequence number and reloads the snapshot when one goes missing. `onlineDriver.ts` sends a player's own moves (shown at once, rolled back if refused).
+
 ### Game actions
 
 `newGame`, `openingRoll`, `roll`, `playStep`, `undoStep`, `resign`, `offerDouble`, `acceptDouble`, `dropDouble`, `loadSnapshot` on the `game` slice; `configureSession`, `gameEnded`, `nextGame` on the `session` slice; `setMode`, `selectDie`, `setPreview`, `setHint`, `setTheme` on the `ui` slice.
 
 In development the store is exposed as `window.__backgammonStore` so tools can load positions with `game/loadSnapshot`.
+
+## Deploy
+
+Production runs on Vercel (from `trunk`, a preview per pull request) with a Supabase project as the backend.
+
+1. Create a Supabase project and push the schema: `npx supabase link --project-ref <ref>` and `npx supabase db push`. In Authentication → Sign In / Providers, enable **anonymous sign-ins**.
+2. In the Vercel project settings, add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (server only, never `NEXT_PUBLIC_`). `vercel.json` pins the Next.js build.
+3. Push to `trunk`; check that a room can be created on the live site.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, type check, tests and the build on every pull request.

@@ -15,9 +15,8 @@ import { sessionReducer } from './sessionSlice';
 import { isCubeAllowed } from './sessionSlice';
 import { setHint, uiReducer } from './uiSlice';
 
-export type NetState = null;
-
-const netReducer = ( state: NetState = null ): NetState => state;
+import { netReducer } from './netSlice';
+export type { NetState } from './netSlice';
 
 export const rootReducer = combineReducers( {
 	game: gameReducer,

@@ -1,19 +1,30 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { newGame } from '../data/gameSlice';
 import { configureSession, isMatchOver, nextGame } from '../data/sessionSlice';
-import type { AppDispatch, RootState } from '../data/store';
+import {
+	onlineHolderOf,
+	type AppDispatch,
+	type AppStore,
+	type RootState,
+} from '../data/store';
 import { opponent } from '../engine/constants';
 import type { GameResult } from '../engine/types';
 import { PlayerType } from '../types/PlayerType';
 import { Button } from './primitives/Button';
 import { Dialog } from './primitives/Dialog';
 
-const describeResult = ( result: GameResult, names: Record< string, string > ): string => {
-	if ( result.kind === 'stalemate' ) return 'Neither player can move any more.';
-	if ( result.winner === null ) return 'Both players finished on the last turn.';
+const describeResult = (
+	result: GameResult,
+	names: Record< string, string >
+): string => {
+	if ( result.kind === 'stalemate' )
+		return 'Neither player can move any more.';
+	if ( result.winner === null )
+		return 'Both players finished on the last turn.';
 	const loser = names[ opponent( result.winner ) ];
 	switch ( result.kind ) {
 		case 'resign':
@@ -29,17 +40,67 @@ const describeResult = ( result: GameResult, names: Record< string, string > ): 
 	}
 };
 
+/**
+ * Online, the server starts the next game (or a new match) for both
+ * players; whoever clicks first starts it, the other tab follows.
+ */
+const OnlineNext = ( { matchOver }: { matchOver: boolean } ) => {
+	const store = useStore() as AppStore;
+	const roomId = useSelector(
+		( root: RootState ) => root.net?.roomId ?? null
+	);
+	const gameNumber = useSelector(
+		( root: RootState ) => root.session.gameNumber
+	);
+	const [ busy, setBusy ] = useState( false );
+	const [ error, setError ] = useState< string | null >( null );
+	const start = async () => {
+		const holder = onlineHolderOf( store );
+		if ( ! holder.current || ! roomId ) return;
+		setBusy( true );
+		setError( null );
+		try {
+			await holder.current.transport.rematch( roomId, gameNumber );
+			holder.refresh?.();
+		} catch {
+			setError( 'The next game could not be started. Please try again.' );
+			setBusy( false );
+		}
+	};
+	return (
+		<>
+			<Button
+				variant="primary"
+				className="flex-1"
+				disabled={ busy }
+				onClick={ start }
+			>
+				{ busy ? 'Starting…' : matchOver ? 'New match' : 'Next game' }
+			</Button>
+			{ error && (
+				<p role="alert" className="w-full text-sm text-danger">
+					{ error }
+				</p>
+			) }
+		</>
+	);
+};
+
 /** Result, points and match score, with the way forward. */
 export const GameOverDialog = () => {
 	const dispatch = useDispatch< AppDispatch >();
 	const router = useRouter();
 	const game = useSelector( ( root: RootState ) => root.game.state );
 	const session = useSelector( ( root: RootState ) => root.session );
+	// Online, the server starts the next game (rematch), never this tab alone.
+	const online = useSelector( ( root: RootState ) => root.net !== null );
 	if ( game.phase !== 'over' || ! game.result ) return null;
 
 	const names = {
-		[ PlayerType.PLAYER_ONE ]: session.players[ PlayerType.PLAYER_ONE ].name,
-		[ PlayerType.PLAYER_TWO ]: session.players[ PlayerType.PLAYER_TWO ].name,
+		[ PlayerType.PLAYER_ONE ]:
+			session.players[ PlayerType.PLAYER_ONE ].name,
+		[ PlayerType.PLAYER_TWO ]:
+			session.players[ PlayerType.PLAYER_TWO ].name,
 	};
 	const result = game.result;
 	const matchOver = isMatchOver( session.scores, session.matchTarget );
@@ -52,22 +113,32 @@ export const GameOverDialog = () => {
 	return (
 		// A decision is required: Escape does not dismiss this dialog.
 		<Dialog open title={ title } onClose={ () => {} }>
-			<p className="text-sm text-muted">{ describeResult( result, names ) }</p>
+			<p className="text-sm text-muted">
+				{ describeResult( result, names ) }
+			</p>
 			{ result.winner !== null && (
 				<p className="mt-1 text-sm">
 					+{ result.points } point{ result.points === 1 ? '' : 's' }
 				</p>
 			) }
 			<div className="my-5 flex items-center justify-between rounded-control bg-canvas px-4 py-3 tabular-nums">
-				<span className="truncate">{ names[ PlayerType.PLAYER_ONE ] }</span>
-				<span className="px-3 text-xl font-semibold">
-					{ session.scores[ PlayerType.PLAYER_ONE ] } – { session.scores[ PlayerType.PLAYER_TWO ] }
+				<span className="truncate">
+					{ names[ PlayerType.PLAYER_ONE ] }
 				</span>
-				<span className="truncate text-right">{ names[ PlayerType.PLAYER_TWO ] }</span>
+				<span className="px-3 text-xl font-semibold">
+					{ session.scores[ PlayerType.PLAYER_ONE ] } –{ ' ' }
+					{ session.scores[ PlayerType.PLAYER_TWO ] }
+				</span>
+				<span className="truncate text-right">
+					{ names[ PlayerType.PLAYER_TWO ] }
+				</span>
 			</div>
-			<p className="mb-4 text-xs text-muted">Match to { session.matchTarget }</p>
+			<p className="mb-4 text-xs text-muted">
+				Match to { session.matchTarget }
+			</p>
 			<div className="flex flex-wrap gap-2">
-				{ ! matchOver && (
+				{ online && <OnlineNext matchOver={ matchOver } /> }
+				{ ! online && ! matchOver && (
 					<Button
 						variant="primary"
 						className="flex-1"
@@ -79,16 +150,23 @@ export const GameOverDialog = () => {
 						Next game
 					</Button>
 				) }
-				<Button
-					variant={ matchOver ? 'primary' : 'secondary' }
-					className="flex-1"
-					onClick={ () => {
-						dispatch( configureSession( { players: session.players, matchTarget: session.matchTarget } ) );
-						dispatch( newGame( restart ) );
-					} }
-				>
-					New match
-				</Button>
+				{ ! online && (
+					<Button
+						variant={ matchOver ? 'primary' : 'secondary' }
+						className="flex-1"
+						onClick={ () => {
+							dispatch(
+								configureSession( {
+									players: session.players,
+									matchTarget: session.matchTarget,
+								} )
+							);
+							dispatch( newGame( restart ) );
+						} }
+					>
+						New match
+					</Button>
+				) }
 				<Button variant="ghost" onClick={ () => router.push( '/' ) }>
 					Start screen
 				</Button>

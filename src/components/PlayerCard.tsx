@@ -65,6 +65,9 @@ export const PlayerCard = ( {
 	);
 	const pips = useSelector( selectPipCounts )[ player ];
 	const cube = useSelector( ( root: RootState ) => root.game.state.cube );
+	const online = useSelector(
+		( root: RootState ) => root.net?.opponentOnline ?? false
+	);
 	const toMove = useSelector(
 		( root: RootState ) =>
 			root.game.state.player === player &&
@@ -90,6 +93,20 @@ export const PlayerCard = ( {
 					<span className="max-w-full truncate font-semibold">
 						{ seat.name }
 					</span>
+					{ seat.kind === 'remote' && (
+						<span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted">
+							<span
+								aria-hidden="true"
+								className={ clsx(
+									'size-2 rounded-full',
+									online
+										? 'bg-success'
+										: 'border border-control'
+								) }
+							/>
+							{ online ? 'online' : 'offline' }
+						</span>
+					) }
 					{ toMove && (
 						<span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-ink">
 							To move

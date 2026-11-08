@@ -55,6 +55,20 @@ export const isCubeAllowed = (
 	crawfordPlayed: boolean
 ): boolean => ! isCrawfordPending( scores, matchTarget ) || crawfordPlayed;
 
+/** Scores and Crawford state after a game: the same rule online and offline. */
+export const afterGame = (
+	scores: Scores,
+	matchTarget: number,
+	crawfordPlayed: boolean,
+	winner: Player | null,
+	points: number
+): { scores: Scores; crawfordPlayed: boolean } => {
+	const wasCrawford = isCrawfordPending( scores, matchTarget ) && ! crawfordPlayed;
+	const next = { ...scores };
+	if ( winner !== null ) next[ winner ] += points;
+	return { scores: next, crawfordPlayed: crawfordPlayed || wasCrawford };
+};
+
 export const sessionSlice = createSlice( {
 	name: 'session',
 	initialState,
@@ -76,12 +90,19 @@ export const sessionSlice = createSlice( {
 			s,
 			{ payload }: PayloadAction< { winner: Player | null; points: number } >
 		) => {
-			const wasCrawford =
-				isCrawfordPending( s.scores, s.matchTarget ) && ! s.crawfordPlayed;
-			if ( payload.winner !== null ) {
-				s.scores[ payload.winner ] += payload.points;
-			}
-			if ( wasCrawford ) s.crawfordPlayed = true;
+			const next = afterGame( s.scores, s.matchTarget, s.crawfordPlayed, payload.winner, payload.points );
+			s.scores = next.scores;
+			s.crawfordPlayed = next.crawfordPlayed;
+		},
+
+		/** Scores and game number of an online match, as stored on the server. */
+		restoreMatch: (
+			s,
+			{ payload }: PayloadAction< { scores: Scores; gameNumber: number; crawfordPlayed?: boolean } >
+		) => {
+			s.scores = payload.scores;
+			s.gameNumber = payload.gameNumber;
+			if ( payload.crawfordPlayed !== undefined ) s.crawfordPlayed = payload.crawfordPlayed;
 		},
 
 		nextGame: ( s ) => {
@@ -90,5 +111,5 @@ export const sessionSlice = createSlice( {
 	},
 } );
 
-export const { configureSession, gameEnded, nextGame } = sessionSlice.actions;
+export const { configureSession, gameEnded, nextGame, restoreMatch } = sessionSlice.actions;
 export const sessionReducer = sessionSlice.reducer;

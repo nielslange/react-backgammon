@@ -30,6 +30,7 @@ export enum MessageType {
 	BONUS_ROLL = 'All dice played: a bonus roll.',
 	COMPUTER_TURN = 'The computer is moving. Your turn comes next.',
 	COMPUTER_THINKING = 'The computer is thinking…',
+	ONLINE_REFUSED = 'The server did not accept that move, so the board shows the game as stored.',
 	HOME_BOARD_LOCKED = 'Checkers in your home board cannot move there any more; they can only bear off.',
 	BEAR_OFF_EXACT = 'Bearing off needs the exact number on the die.',
 	ALL_CHECKERS_IN_FIRST = 'All your checkers must be on the board before checkers in your first quarter move or one enters your home board.',
