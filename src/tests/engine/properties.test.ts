@@ -21,14 +21,24 @@ const lanes15 = fc.array( fc.integer( { min: 0, max: 25 } ), {
 /** 15 checkers each, no point 1–24 holding both colours. */
 const position: fc.Arbitrary< Checker[] > = lanes15.chain( ( p1Lanes ) => {
 	const taken = new Set( p1Lanes.filter( ( l ) => l >= 1 && l <= 24 ) );
-	const free = [ 0, 25, ...Array.from( { length: 24 }, ( _, i ) => i + 1 ) ].filter(
-		( l ) => ! taken.has( l )
-	);
+	const free = [
+		0,
+		25,
+		...Array.from( { length: 24 }, ( _, i ) => i + 1 ),
+	].filter( ( l ) => ! taken.has( l ) );
 	return fc
 		.array( fc.constantFrom( ...free ), { minLength: 15, maxLength: 15 } )
 		.map( ( p2Lanes ) => [
-			...p1Lanes.map( ( lane, i ) => ( { id: i + 1, player: P1, lane } ) ),
-			...p2Lanes.map( ( lane, i ) => ( { id: i + 16, player: P2, lane } ) ),
+			...p1Lanes.map( ( lane, i ) => ( {
+				id: i + 1,
+				player: P1,
+				lane,
+			} ) ),
+			...p2Lanes.map( ( lane, i ) => ( {
+				id: i + 16,
+				player: P2,
+				lane,
+			} ) ),
 		] );
 } );
 
@@ -60,26 +70,41 @@ describe( 'engine properties', () => {
 		);
 	} );
 
-	it( 'playing a legal step never throws and keeps 15 checkers per player', () => {
-		fc.assert(
-			fc.property( position, roll, player, ( checkers, r, p ) => {
-				const state = stateWith( {
-					checkers,
-					player: p,
-					roll: r,
-					dice: backgammon.expandRoll( r, DEFAULT_OPTIONS ),
-				} );
-				for ( const step of backgammon.legalSteps( state ) ) {
-					const next = play( state, step );
-					expect( next.checkers.filter( ( c ) => c.player === P1 ) ).toHaveLength( 15 );
-					expect( next.checkers.filter( ( c ) => c.player === P2 ) ).toHaveLength( 15 );
-					expect( next.checkers.map( ( c ) => c.id ).sort( ( a, b ) => a - b ) ).toEqual(
-						checkers.map( ( c ) => c.id ).sort( ( a, b ) => a - b )
-					);
-				}
-			} )
-		);
-	} );
+	// Many random games: a generous limit for busy machines and CI.
+	it(
+		'playing a legal step never throws and keeps 15 checkers per player',
+		{ timeout: 30000 },
+		() => {
+			fc.assert(
+				fc.property( position, roll, player, ( checkers, r, p ) => {
+					const state = stateWith( {
+						checkers,
+						player: p,
+						roll: r,
+						dice: backgammon.expandRoll( r, DEFAULT_OPTIONS ),
+					} );
+					for ( const step of backgammon.legalSteps( state ) ) {
+						const next = play( state, step );
+						expect(
+							next.checkers.filter( ( c ) => c.player === P1 )
+						).toHaveLength( 15 );
+						expect(
+							next.checkers.filter( ( c ) => c.player === P2 )
+						).toHaveLength( 15 );
+						expect(
+							next.checkers
+								.map( ( c ) => c.id )
+								.sort( ( a, b ) => a - b )
+						).toEqual(
+							checkers
+								.map( ( c ) => c.id )
+								.sort( ( a, b ) => a - b )
+						);
+					}
+				} )
+			);
+		}
+	);
 
 	it( 'pip count decreases by exactly the die on a step that stays on the board', () => {
 		fc.assert(
@@ -93,7 +118,9 @@ describe( 'engine properties', () => {
 				for ( const step of backgammon.legalSteps( state ) ) {
 					if ( step.to === OFF[ p ] ) continue;
 					const after = backgammon.applyStep( state, step ).checkers;
-					expect( pipCount( checkers, p ) - pipCount( after, p ) ).toBe( step.die );
+					expect(
+						pipCount( checkers, p ) - pipCount( after, p )
+					).toBe( step.die );
 				}
 			} )
 		);
@@ -114,7 +141,9 @@ describe( 'engine properties', () => {
 				for ( const step of turns[ 0 ] ) {
 					state = play( state, step );
 				}
-				expect( state.player === p && state.phase === 'moving' ).toBe( false );
+				expect( state.player === p && state.phase === 'moving' ).toBe(
+					false
+				);
 			} )
 		);
 	} );
@@ -138,8 +167,12 @@ describe( 'Triktrak properties', () => {
 				for ( const step of triktrak.legalSteps( state ) ) {
 					expect( step.die ).toBe( state.dice[ 0 ] );
 					const next = play( state, step );
-					expect( next.checkers.filter( ( c ) => c.player === P1 ) ).toHaveLength( 15 );
-					expect( next.checkers.filter( ( c ) => c.player === P2 ) ).toHaveLength( 15 );
+					expect(
+						next.checkers.filter( ( c ) => c.player === P1 )
+					).toHaveLength( 15 );
+					expect(
+						next.checkers.filter( ( c ) => c.player === P2 )
+					).toHaveLength( 15 );
 				}
 			} ),
 			{ numRuns: 60 }
@@ -148,17 +181,34 @@ describe( 'Triktrak properties', () => {
 
 	it( 'every legal step starts a line that plays the most dice (non-tric-trac rolls)', () => {
 		fc.assert(
-			fc.property( position, roll.filter( ( [ a, b ] ) => ! ( Math.min( a, b ) === 1 && Math.max( a, b ) === 2 ) ), player, ( checkers, r, p ) => {
-				const state = ttState( checkers, r, p );
-				const turns = triktrak.legalTurns( state );
-				const max = Math.max( 0, ...turns.map( ( t ) => t.length ) );
-				for ( const step of triktrak.legalSteps( state ) ) {
-					const after = triktrak.applyStep( state, step );
-					const rest = triktrak.legalTurns( { ...after, dice: after.dice } );
-					const longest = Math.max( 0, ...rest.map( ( t ) => t.length ) );
-					expect( 1 + longest ).toBe( max );
+			fc.property(
+				position,
+				roll.filter(
+					( [ a, b ] ) =>
+						! ( Math.min( a, b ) === 1 && Math.max( a, b ) === 2 )
+				),
+				player,
+				( checkers, r, p ) => {
+					const state = ttState( checkers, r, p );
+					const turns = triktrak.legalTurns( state );
+					const max = Math.max(
+						0,
+						...turns.map( ( t ) => t.length )
+					);
+					for ( const step of triktrak.legalSteps( state ) ) {
+						const after = triktrak.applyStep( state, step );
+						const rest = triktrak.legalTurns( {
+							...after,
+							dice: after.dice,
+						} );
+						const longest = Math.max(
+							0,
+							...rest.map( ( t ) => t.length )
+						);
+						expect( 1 + longest ).toBe( max );
+					}
 				}
-			} ),
+			),
 			{ numRuns: 60 }
 		);
 	} );

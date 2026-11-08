@@ -76,6 +76,15 @@ export const Board = ( {
 		if ( id !== null ) interaction.onCheckerClick( id );
 	};
 
+	// Like on a real board, a stack is taken from the top: whichever of its
+	// checkers is clicked or grabbed, the top one moves and the rest stay.
+	const topOf = ( id: number ) => {
+		const checker = checkers.find( ( c ) => c.id === id );
+		return checker
+			? ( topChecker( checkers, checker.player, checker.lane ) ?? id )
+			: id;
+	};
+
 	return (
 		<BoardSvg
 			height={ height }
@@ -88,8 +97,12 @@ export const Board = ( {
 			drag={ interaction.drag }
 			movable={ movableIds( checkers, steps ) }
 			targetLabels={ targetLabels }
-			onCheckerPointerDown={ interaction.onCheckerPointerDown }
-			onCheckerClick={ interaction.onCheckerClick }
+			onCheckerPointerDown={ ( id, event ) =>
+				interaction.onCheckerPointerDown( topOf( id ), event )
+			}
+			onCheckerClick={ ( id ) =>
+				interaction.onCheckerClick( topOf( id ) )
+			}
 			onLaneClick={ interaction.onLaneClick }
 		/>
 	);

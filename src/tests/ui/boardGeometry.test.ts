@@ -149,3 +149,22 @@ describe( 'a tall board (phones in portrait)', () => {
 		expect( toViewBox( 250, 200, wide, viewBox ) ).toEqual( { x: 500, y: 800 } );
 	} );
 } );
+
+describe( 'a tall stack on the bar', () => {
+	it( 'keeps every remaining checker in place when one leaves', async () => {
+		const { barCenter, makeGeometry } = await import( '../../ui/boardGeometry' );
+		// Above what fits uncompressed (5 on the standard board, 12 on a tall one).
+		for ( const [ g, fits ] of [ [ { barCenter }, 5 ], [ makeGeometry( 1600 ), 12 ] ] as const ) {
+			for ( let total = 15; total - 1 > fits; total-- ) {
+				for ( let i = 0; i < total - 1; i++ ) {
+					expect( g.barCenter( P1, i, total - 1 ) ).toEqual( g.barCenter( P1, i, total ) );
+				}
+			}
+		}
+	} );
+
+	it( 'still spreads a short stack out fully', async () => {
+		const { barCenter, CHECKER_R } = await import( '../../ui/boardGeometry' );
+		expect( Math.abs( barCenter( P2, 1, 3 ).y - barCenter( P2, 0, 3 ).y ) ).toBe( 2 * CHECKER_R );
+	} );
+} );
