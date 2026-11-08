@@ -10,7 +10,7 @@ import { useStore } from 'react-redux';
 import type { AppStore } from '../data/createStore';
 import { leftRoom, opponentPresence } from '../data/netSlice';
 import type { RoomView } from '../server/rooms';
-import { connectGame, type OnlineHolder } from './onlineGame';
+import { connectGame, setRefresh, type OnlineHolder } from './onlineGame';
 import type { Transport } from './transport';
 
 export type RoomDeps = {
@@ -73,25 +73,30 @@ export const useRoom = ( code: string, deps: RoomDeps ) => {
 						);
 						if ( ! live ) return stop();
 						stopGame = stop;
-						const presence = deps.transport.presence(
-							room.roomId,
-							me
-						);
-						presence.onChange( ( online ) =>
-							store.dispatch(
-								opponentPresence(
-									online.some( ( id ) => id !== me )
+						if ( ! leavePresence ) {
+							const presence = deps.transport.presence(
+								room.roomId,
+								me
+							);
+							presence.onChange( ( online ) =>
+								store.dispatch(
+									opponentPresence(
+										online.some( ( id ) => id !== me )
+									)
 								)
-							)
-						);
-						leavePresence = () => presence.leave();
+							);
+							leavePresence = () => presence.leave();
+						}
 					}
 					setState( { kind: 'playing', room } );
 					return;
 				}
 				if ( room.role === 'host' ) {
 					setState( { kind: 'lobby', room } );
-					timer = setTimeout( refresh, deps.pollMs ?? 2000 );
+					timer = setTimeout( () => {
+						timer = null;
+						void refresh();
+					}, deps.pollMs ?? 2000 );
 				} else if ( room.status === 'waiting' ) {
 					setState( { kind: 'join', room } );
 				} else {
@@ -108,9 +113,26 @@ export const useRoom = ( code: string, deps: RoomDeps ) => {
 			}
 		};
 		void refresh();
+		const clearRefresh = setRefresh( deps.holder, () => void refresh() );
+
+		// After a game ends, look for the next one the other player may start.
+		const watchForRematch = () => {
+			const over =
+				connected !== null &&
+				store.getState().game.state.phase === 'over';
+			if ( over && ! timer ) {
+				timer = setTimeout( () => {
+					timer = null;
+					void refresh().then( watchForRematch );
+				}, deps.pollMs ?? 2000 );
+			}
+		};
+		const unsubscribe = store.subscribe( watchForRematch );
 
 		return () => {
 			live = false;
+			unsubscribe();
+			clearRefresh();
 			if ( timer ) clearTimeout( timer );
 			leavePresence?.();
 			stopGame?.();

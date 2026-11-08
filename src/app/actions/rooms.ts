@@ -6,6 +6,7 @@ import {
 	createRoom as create,
 	describeRoom as describe,
 	joinRoom as join,
+	rematch as nextGame,
 	type CreateRoomInput,
 	type JoinResult,
 	type RoomView,
@@ -21,3 +22,9 @@ export const joinRoom = async ( input: { code: string; name: string } ): Promise
 
 export const describeRoom = async ( code: string ): Promise< Result< RoomView > > =>
 	toResult( async () => describe( supabaseDb( createServiceClient() ), await currentUserId(), code ) );
+
+export const rematch = async ( input: {
+	roomId: string;
+	after: number;
+} ): Promise< Result< { gameId: string; number: number } > > =>
+	toResult( async () => nextGame( supabaseDb( createServiceClient() ), await currentUserId(), input ) );

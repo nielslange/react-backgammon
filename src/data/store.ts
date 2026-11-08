@@ -21,6 +21,11 @@ export const onlineHolderOf = ( store: AppStore ): OnlineHolder => {
 	return holder;
 };
 
+/** Tests that build their own store and driver register the holder here. */
+export const registerOnlineHolder = ( store: AppStore, holder: OnlineHolder ) => {
+	holders.set( store, holder );
+};
+
 export const makeAppStore = () => {
 	const holder = createOnlineHolder();
 	const store = makeStore( {

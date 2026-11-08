@@ -59,7 +59,8 @@ describe( 'online details', () => {
 			</Provider>
 		);
 		expect( screen.getByRole( 'dialog' ) ).toBeInTheDocument();
-		expect( screen.queryByRole( 'button', { name: 'Next game' } ) ).toBeNull();
+		// Only the server-backed button: no local game, no local new match.
+		expect( screen.getAllByRole( 'button', { name: 'Next game' } ) ).toHaveLength( 1 );
 		expect( screen.queryByRole( 'button', { name: 'New match' } ) ).toBeNull();
 	} );
 } );

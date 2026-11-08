@@ -1,10 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { newGame } from '../data/gameSlice';
 import { configureSession, isMatchOver, nextGame } from '../data/sessionSlice';
-import type { AppDispatch, RootState } from '../data/store';
+import {
+	onlineHolderOf,
+	type AppDispatch,
+	type AppStore,
+	type RootState,
+} from '../data/store';
 import { opponent } from '../engine/constants';
 import type { GameResult } from '../engine/types';
 import { PlayerType } from '../types/PlayerType';
@@ -32,6 +38,52 @@ const describeResult = (
 		default:
 			return `${ names[ result.winner ] } bore off all checkers first.`;
 	}
+};
+
+/**
+ * Online, the server starts the next game (or a new match) for both
+ * players; whoever clicks first starts it, the other tab follows.
+ */
+const OnlineNext = ( { matchOver }: { matchOver: boolean } ) => {
+	const store = useStore() as AppStore;
+	const roomId = useSelector(
+		( root: RootState ) => root.net?.roomId ?? null
+	);
+	const gameNumber = useSelector(
+		( root: RootState ) => root.session.gameNumber
+	);
+	const [ busy, setBusy ] = useState( false );
+	const [ error, setError ] = useState< string | null >( null );
+	const start = async () => {
+		const holder = onlineHolderOf( store );
+		if ( ! holder.current || ! roomId ) return;
+		setBusy( true );
+		setError( null );
+		try {
+			await holder.current.transport.rematch( roomId, gameNumber );
+			holder.refresh?.();
+		} catch {
+			setError( 'The next game could not be started. Please try again.' );
+			setBusy( false );
+		}
+	};
+	return (
+		<>
+			<Button
+				variant="primary"
+				className="flex-1"
+				disabled={ busy }
+				onClick={ start }
+			>
+				{ busy ? 'Starting…' : matchOver ? 'New match' : 'Next game' }
+			</Button>
+			{ error && (
+				<p role="alert" className="w-full text-sm text-danger">
+					{ error }
+				</p>
+			) }
+		</>
+	);
 };
 
 /** Result, points and match score, with the way forward. */
@@ -85,6 +137,7 @@ export const GameOverDialog = () => {
 				Match to { session.matchTarget }
 			</p>
 			<div className="flex flex-wrap gap-2">
+				{ online && <OnlineNext matchOver={ matchOver } /> }
 				{ ! online && ! matchOver && (
 					<Button
 						variant="primary"

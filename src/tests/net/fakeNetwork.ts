@@ -6,7 +6,7 @@
 import type { LoggedMove } from '../../net/protocol';
 import type { Transport } from '../../net/transport';
 import { submitMove } from '../../server/moves';
-import { createRoom, describeRoom, joinRoom } from '../../server/rooms';
+import { createRoom, describeRoom, joinRoom, rematch } from '../../server/rooms';
 import type { Rng } from '../../runtime/rng';
 import { memoryDb } from '../server/memoryDb';
 
@@ -31,6 +31,7 @@ export const fakeNetwork = ( rng?: Rng ) => {
 			createRoom: ( input ) => createRoom( db, userId, input ),
 			joinRoom: ( code, name ) => joinRoom( db, userId, { code, name }, rng ),
 			describeRoom: ( code ) => describeRoom( db, userId, code ),
+			rematch: ( roomId, after ) => rematch( db, userId, { roomId, after }, rng ),
 			async submit( gameId, move ) {
 				if ( fail ) {
 					fail = false;
@@ -40,7 +41,7 @@ export const fakeNetwork = ( rng?: Rng ) => {
 			},
 			async loadGame( gameId ) {
 				const game = ( await db.gameById( gameId ) )!;
-				return { snapshot: game.snapshot, version: game.version, number: game.number, scores: game.scores, roomId: game.room_id };
+				return { snapshot: game.snapshot, version: game.version, number: game.number, scores: game.scores, crawfordPlayed: game.crawford_played, roomId: game.room_id };
 			},
 			async movesAfter( gameId, seq ) {
 				return ( await db.movesAfter( gameId, seq ) ).map( ( m ) => ( { seq: m.seq, kind: m.kind, payload: m.payload } ) );

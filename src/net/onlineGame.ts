@@ -29,9 +29,21 @@ export type OnlineGame = {
 };
 
 /** The online game of one tab, shared by the room page and the driver. */
-export type OnlineHolder = { current: OnlineGame | null };
+export type OnlineHolder = {
+	current: OnlineGame | null;
+	/** Ask the room page to look for a newer game (after a rematch). */
+	refresh?: () => void;
+};
 
 export const createOnlineHolder = (): OnlineHolder => ( { current: null } );
+
+/** Lets the room page be asked to refresh; returns the way to stop. */
+export const setRefresh = ( holder: OnlineHolder, refresh: () => void ) => {
+	holder.refresh = refresh;
+	return () => {
+		if ( holder.refresh === refresh ) holder.refresh = undefined;
+	};
+};
 
 export type ConnectOptions = {
 	gameId: string;
@@ -63,7 +75,11 @@ export const connectGame = async (
 			matchTarget: options.matchTarget,
 		} )
 	);
-	store.dispatch( restoreMatch( { scores: loaded.scores, gameNumber: loaded.number } ) );
+	store.dispatch( restoreMatch( {
+			scores: loaded.scores,
+			gameNumber: loaded.number,
+			crawfordPlayed: loaded.crawfordPlayed,
+		} ) );
 	store.dispatch( loadSnapshot( { snapshot: loaded.snapshot } ) );
 	store.dispatch(
 		joinedRoom( {

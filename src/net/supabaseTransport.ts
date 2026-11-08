@@ -18,6 +18,10 @@ export type RoomActions = {
 		name: string;
 	} ): Promise< Result< JoinResult > >;
 	describeRoom( code: string ): Promise< Result< RoomView > >;
+	rematch( input: {
+		roomId: string;
+		after: number;
+	} ): Promise< Result< { gameId: string; number: number } > >;
 	submitMove( input: SubmitInput ): Promise< Result< { version: number } > >;
 };
 
@@ -36,13 +40,15 @@ export const createSupabaseTransport = (
 	joinRoom: async ( code, name ) =>
 		unwrap( await actions.joinRoom( { code, name } ) ),
 	describeRoom: async ( code ) => unwrap( await actions.describeRoom( code ) ),
+	rematch: async ( roomId, after ) =>
+		unwrap( await actions.rematch( { roomId, after } ) ),
 	submit: async ( gameId, move ) =>
 		unwrap( await actions.submitMove( { gameId, ...move } ) ),
 
 	async loadGame( gameId ): Promise< LoadedGame > {
 		const { data, error } = await client
 			.from( 'games' )
-			.select( 'snapshot, version, number, scores, room_id' )
+			.select( 'snapshot, version, number, scores, crawford_played, room_id' )
 			.eq( 'id', gameId )
 			.maybeSingle();
 		if ( error ) throw new ServerError( 'SERVER_ERROR', error.message );
@@ -52,6 +58,7 @@ export const createSupabaseTransport = (
 			version: data.version,
 			number: data.number,
 			scores: data.scores,
+			crawfordPlayed: data.crawford_played,
 			roomId: data.room_id,
 		};
 	},

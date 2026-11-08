@@ -5,11 +5,16 @@
  */
 import { createGame, openingRoll } from '../engine/game';
 import { hasEngine } from '../engine';
-import { DEFAULT_OPTIONS, type VariantId, type VariantOptions } from '../engine/types';
+import {
+	DEFAULT_OPTIONS,
+	type VariantId,
+	type VariantOptions,
+} from '../engine/types';
 import { rollDie, type Rng } from '../runtime/rng';
 import { PlayerType } from '../types/PlayerType';
 import { generateCode, normaliseCode } from './codes';
 import type { Db, GameRow, RoomRow } from './db';
+import { isMatchOver, type Scores } from '../data/sessionSlice';
 import { cryptoRng } from './dice';
 import { requireUser, ServerError } from './errors';
 
@@ -20,12 +25,17 @@ export type CreateRoomInput = {
 	name: string;
 };
 
-export type JoinResult = { roomId: string; gameId: string; seat: typeof PlayerType.PLAYER_TWO };
+export type JoinResult = {
+	roomId: string;
+	gameId: string;
+	seat: typeof PlayerType.PLAYER_TWO;
+};
 
 const MAX_NAME = 24;
 
 export const cleanName = ( name: unknown, fallback: string ): string => {
-	const trimmed = typeof name === 'string' ? name.trim().slice( 0, MAX_NAME ) : '';
+	const trimmed =
+		typeof name === 'string' ? name.trim().slice( 0, MAX_NAME ) : '';
 	return trimmed || fallback;
 };
 
@@ -34,14 +44,23 @@ export const cleanOptions = ( options: unknown ): Partial< VariantOptions > => {
 	const out: Partial< VariantOptions > = {};
 	if ( ! options || typeof options !== 'object' ) return out;
 	const given = options as Record< string, unknown >;
-	for ( const key of Object.keys( DEFAULT_OPTIONS ) as Array< keyof VariantOptions > ) {
+	for ( const key of Object.keys( DEFAULT_OPTIONS ) as Array<
+		keyof VariantOptions
+	> ) {
 		const value = given[ key ];
 		if ( value === undefined ) continue;
-		const nullableCount = key === 'rerollLimit' || key === 'maxCheckersPerPoint';
+		const nullableCount =
+			key === 'rerollLimit' || key === 'maxCheckersPerPoint';
 		if ( nullableCount ) {
-			if ( value === null || ( Number.isInteger( value ) && ( value as number ) >= 0 && ( value as number ) <= 15 ) ) {
+			if (
+				value === null ||
+				( Number.isInteger( value ) &&
+					( value as number ) >= 0 &&
+					( value as number ) <= 15 )
+			) {
 				( out as Record< string, unknown > )[ key ] = value;
-			} else throw new ServerError( 'BAD_REQUEST', `Bad option ${ key }` );
+			} else
+				throw new ServerError( 'BAD_REQUEST', `Bad option ${ key }` );
 		} else if ( typeof value === 'boolean' ) {
 			( out as Record< string, unknown > )[ key ] = value;
 		} else throw new ServerError( 'BAD_REQUEST', `Bad option ${ key }` );
@@ -56,8 +75,13 @@ export const createRoom = async (
 	rng: Rng = cryptoRng
 ): Promise< { code: string } > => {
 	const host = requireUser( userId );
-	if ( ! hasEngine( input.variant ) ) throw new ServerError( 'UNKNOWN_VARIANT' );
-	if ( ! Number.isInteger( input.matchTarget ) || input.matchTarget < 1 || input.matchTarget > 25 ) {
+	if ( ! hasEngine( input.variant ) )
+		throw new ServerError( 'UNKNOWN_VARIANT' );
+	if (
+		! Number.isInteger( input.matchTarget ) ||
+		input.matchTarget < 1 ||
+		input.matchTarget > 25
+	) {
 		throw new ServerError( 'BAD_REQUEST', 'Match length must be 1 to 25.' );
 	}
 	const options = cleanOptions( input.options );
@@ -73,28 +97,40 @@ export const createRoom = async (
 			} );
 			return { code: room.code };
 		} catch ( error ) {
-			if ( ! ( error instanceof ServerError && error.code === 'CODE_TAKEN' ) ) throw error;
+			if ( ! (
+				error instanceof ServerError && error.code === 'CODE_TAKEN'
+			) )
+				throw error;
 		}
 	}
 	throw new ServerError( 'SERVER_ERROR', 'No free room code.' );
 };
 
-/** Game 1 with the opening roll, created once; a second caller gets the same game. */
-const startFirstGame = async ( db: Db, room: RoomRow, rng: Rng ): Promise< GameRow > => {
+/**
+ * Game `number` with the opening roll, created once: a second caller (the
+ * other player, or a repeated click) gets the same game.
+ */
+const openGame = async (
+	db: Db,
+	room: RoomRow,
+	number: number,
+	carried: { scores: Scores; crawfordPlayed: boolean },
+	rng: Rng
+): Promise< GameRow > => {
 	const existing = await db.latestGame( room.id );
-	if ( existing ) return existing;
+	if ( existing && existing.number >= number ) return existing;
 	let game: GameRow;
 	try {
 		game = await db.insertGame( {
 			room_id: room.id,
-			number: 1,
+			number,
 			snapshot: createGame( room.variant, room.options ),
-			scores: { [ PlayerType.PLAYER_ONE ]: 0, [ PlayerType.PLAYER_TWO ]: 0 },
-			crawford_played: false,
+			scores: carried.scores,
+			crawford_played: carried.crawfordPlayed,
 		} );
 	} catch ( error ) {
 		const raced = await db.latestGame( room.id );
-		if ( raced ) return raced;
+		if ( raced && raced.number >= number ) return raced;
 		throw error;
 	}
 	let state = game.snapshot;
@@ -104,9 +140,21 @@ const startFirstGame = async ( db: Db, room: RoomRow, rng: Rng ): Promise< GameR
 		rolls.push( pair );
 		state = openingRoll( state, pair[ 0 ], pair[ 1 ] );
 	}
-	await db.applyMove( { gameId: game.id, seq: 1, actor: null, kind: 'opening', payload: { rolls }, snapshot: state } );
+	await db.applyMove( {
+		gameId: game.id,
+		seq: 1,
+		actor: null,
+		kind: 'opening',
+		payload: { rolls },
+		snapshot: state,
+	} );
 	await db.setRoomStatus( room.id, 'playing' );
 	return { ...game, snapshot: state, version: 1 };
+};
+
+const ZERO: Scores = {
+	[ PlayerType.PLAYER_ONE ]: 0,
+	[ PlayerType.PLAYER_TWO ]: 0,
 };
 
 export const joinRoom = async (
@@ -121,11 +169,23 @@ export const joinRoom = async (
 	if ( room.host === guest ) throw new ServerError( 'OWN_ROOM' );
 	if ( room.guest !== guest ) {
 		if ( room.guest !== null ) throw new ServerError( 'ROOM_FULL' );
-		if ( ! ( await db.claimGuest( room.id, guest, cleanName( input.name, 'Dark' ) ) ) ) {
+		if (
+			! ( await db.claimGuest(
+				room.id,
+				guest,
+				cleanName( input.name, 'Dark' )
+			) )
+		) {
 			throw new ServerError( 'ROOM_FULL' );
 		}
 	}
-	const game = await startFirstGame( db, room, rng );
+	const game = await openGame(
+		db,
+		room,
+		1,
+		{ scores: ZERO, crawfordPlayed: false },
+		rng
+	);
 	return { roomId: room.id, gameId: game.id, seat: PlayerType.PLAYER_TWO };
 };
 
@@ -144,7 +204,11 @@ export type RoomView = {
 };
 
 /** What the room page needs to know about a room, from this visitor's side. */
-export const describeRoom = async ( db: Db, userId: string | null, code: string ): Promise< RoomView > => {
+export const describeRoom = async (
+	db: Db,
+	userId: string | null,
+	code: string
+): Promise< RoomView > => {
 	const room = await db.roomByCode( normaliseCode( code ) );
 	if ( ! room ) throw new ServerError( 'ROOM_NOT_FOUND' );
 	let role: RoomView[ 'role' ] = null;
@@ -162,4 +226,35 @@ export const describeRoom = async ( db: Db, userId: string | null, code: string 
 		role,
 		gameId: game?.id ?? null,
 	};
+};
+
+/**
+ * The next game of the match once the current one is over: scores and the
+ * Crawford state carry over; after the last game of a match a new match
+ * starts from 0-0. `after` is the game the player saw end, so a second
+ * request (the other player, a repeated click) returns the same new game.
+ */
+export const rematch = async (
+	db: Db,
+	userId: string | null,
+	{ roomId, after }: { roomId: string; after?: number },
+	rng: Rng = cryptoRng
+): Promise< { gameId: string; number: number } > => {
+	const user = requireUser( userId );
+	const room = await db.roomById( roomId );
+	if ( ! room ) throw new ServerError( 'ROOM_NOT_FOUND' );
+	if ( user !== room.host && user !== room.guest )
+		throw new ServerError( 'NOT_A_PLAYER' );
+	const last = await db.latestGame( room.id );
+	if ( ! last ) throw new ServerError( 'GAME_NOT_FOUND' );
+	if ( after !== undefined && last.number > after )
+		return { gameId: last.id, number: last.number };
+	if ( last.snapshot.phase !== 'over' )
+		throw new ServerError( 'GAME_NOT_OVER' );
+	const newMatch = isMatchOver( last.scores, room.match_target );
+	const carried = newMatch
+		? { scores: ZERO, crawfordPlayed: false }
+		: { scores: last.scores, crawfordPlayed: last.crawford_played };
+	const game = await openGame( db, room, last.number + 1, carried, rng );
+	return { gameId: game.id, number: game.number };
 };

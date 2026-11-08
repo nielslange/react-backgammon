@@ -46,6 +46,10 @@ describe.skipIf( ! stack )(
 				ok: false as const,
 				code: 'SERVER_ERROR' as const,
 			} ),
+			rematch: async () => ( {
+				ok: false as const,
+				code: 'SERVER_ERROR' as const,
+			} ),
 			describeRoom: async () => ( {
 				ok: false as const,
 				code: 'SERVER_ERROR' as const,

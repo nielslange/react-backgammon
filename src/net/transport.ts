@@ -20,6 +20,7 @@ export type LoadedGame = {
 	version: number;
 	number: number;
 	scores: Scores;
+	crawfordPlayed: boolean;
 	roomId: string;
 };
 
@@ -34,6 +35,8 @@ export interface Transport {
 	joinRoom( code: string, name: string ): Promise< JoinResult >;
 	/** The room as this visitor sees it (their role, its status, the current game). */
 	describeRoom( code: string ): Promise< RoomView >;
+	/** The next game (or a new match) after game `after` ended; the same for both players. */
+	rematch( roomId: string, after: number ): Promise< { gameId: string; number: number } >;
 	submit( gameId: string, move: ClientMove ): Promise< { version: number } >;
 	loadGame( gameId: string ): Promise< LoadedGame >;
 	movesAfter( gameId: string, seq: number ): Promise< LoggedMove[] >;
