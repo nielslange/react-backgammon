@@ -14,22 +14,34 @@ import {
 	targetLane,
 } from './movement';
 
+export type StepRules = {
+	/** A checker on the bar must enter before anything else moves. */
+	barFirst?: boolean;
+	/** Most own checkers allowed on one point, null = no limit. */
+	maxPerPoint?: number | null;
+	/** Checkers on the bar may enter with this roll. */
+	canEnter?: boolean;
+};
+
 /**
- * One step per lane the player may move from with `die`. Bar first when a
- * bar checker exists. `checkerId` is the highest id on the lane so the UI
- * moves the top of the stack.
+ * One step per lane the player may move from with `die`. With the
+ * backgammon defaults a bar checker must enter first. `checkerId` is the
+ * highest id on the lane so the UI moves the top of the stack.
  */
 export const stepsForDie = (
 	checkers: Checker[],
 	player: Player,
-	die: number
+	die: number,
+	{ barFirst = true, maxPerPoint = null, canEnter = true }: StepRules = {}
 ): Step[] => {
 	const own = checkers.filter(
 		( c ) => c.player === player && c.lane !== OFF[ player ]
 	);
-	const lanes = hasBarChecker( checkers, player )
-		? [ BAR[ player ] ]
-		: [ ...new Set( own.map( ( c ) => c.lane ) ) ];
+	const lanes = (
+		barFirst && hasBarChecker( checkers, player )
+			? [ BAR[ player ] ]
+			: [ ...new Set( own.map( ( c ) => c.lane ) ) ]
+	).filter( ( lane ) => canEnter || lane !== BAR[ player ] );
 	const home = allInHome( checkers, player );
 
 	const steps: Step[] = [];
@@ -40,6 +52,8 @@ export const stepsForDie = (
 				continue;
 			}
 		} else if ( ! isOnBoard( to ) || isBlocked( checkers, player, to ) ) {
+			continue;
+		} else if ( maxPerPoint !== null && countOn( checkers, to, player ) >= maxPerPoint ) {
 			continue;
 		}
 		const checkerId = Math.max(

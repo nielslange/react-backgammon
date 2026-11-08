@@ -10,11 +10,22 @@ import { orderedLegalSteps, orderedLegalTurns, type StepsFn } from '../ordered';
 import type { RulesEngine } from '../RulesEngine';
 import type { Checker, GameState, Roll } from '../types';
 import { PlayerType } from '../../types/PlayerType';
-import { expandRoll } from './rolls';
+import { expandRoll, isDouble, isTricTrac } from './rolls';
 
-/** Step generation under this game's options. */
-const stepsFor = (): StepsFn => ( checkers, player, die ) =>
-	stepsForDie( checkers, player, die );
+/**
+ * Step generation under this game's options. Waiting checkers do not have
+ * to enter before others move; with enterOnlyOnDoubles they enter only on
+ * a double or a tric trac.
+ */
+const stepsFor = ( state: GameState ): StepsFn => {
+	const special = state.roll !== null && ( isDouble( state.roll ) || isTricTrac( state.roll ) );
+	const rules = {
+		barFirst: false,
+		maxPerPoint: state.options.maxCheckersPerPoint,
+		canEnter: ! state.options.enterOnlyOnDoubles || special,
+	};
+	return ( checkers, player, die ) => stepsForDie( checkers, player, die, rules );
+};
 
 export const triktrak: RulesEngine = {
 	id: 'triktrak',
@@ -39,12 +50,12 @@ export const triktrak: RulesEngine = {
 	legalSteps: ( state ) =>
 		state.player === null
 			? []
-			: orderedLegalSteps( state.checkers, state.player, state.dice, stepsFor() ),
+			: orderedLegalSteps( state.checkers, state.player, state.dice, stepsFor( state ) ),
 
 	legalTurns: ( state ) =>
 		state.player === null
 			? []
-			: orderedLegalTurns( state.checkers, state.player, state.dice, stepsFor() ),
+			: orderedLegalTurns( state.checkers, state.player, state.dice, stepsFor( state ) ),
 
 	applyStep: ( state, step ) => applyLegalStep( state, step, triktrak.legalSteps( state ) ),
 
