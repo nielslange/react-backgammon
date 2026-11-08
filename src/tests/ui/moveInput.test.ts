@@ -160,16 +160,15 @@ describe( 'beginner mode', () => {
 		expect( store.getState().ui.preview?.checkerId ).toBe( 1 );
 	} );
 
-	it( 'a second click on the checker moves it when only one option exists', () => {
+	it( 'one tap moves the checker when it has only one landing point', () => {
 		const store = withPosition( makeStore(), {
 			checkers: position(),
 			player: P1,
 			dice: [ 5 ],
 		} );
 		click( store, 1 );
-		expect( store.getState().ui.preview?.options.map( ( o ) => o.to ) ).toEqual( [ 8 ] );
-		click( store, 1 );
 		expect( lanesOf( store, [ 1 ] ) ).toEqual( [ 8 ] );
+		expect( store.getState().ui.preview ).toBeNull();
 		// Last die used: the turn was handed over.
 		expect( store.getState().game.state.player ).toBe( P2 );
 		expect( store.getState().game.state.phase ).toBe( 'awaiting-roll' );
@@ -254,12 +253,8 @@ describe( 'beginner mode', () => {
 			player: P1,
 			dice: [ 5, 6 ],
 		} );
+		// Both dice bear it off: one landing point, so one tap plays the smaller die.
 		click( store, 1 );
-		expect( store.getState().ui.preview?.options.map( ( o ) => [ o.die, o.to ] ) ).toEqual( [
-			[ 6, 25 ],
-			[ 5, 25 ],
-		] );
-		target( store, 25 );
 		expect( lanesOf( store, [ 1 ] ) ).toEqual( [ 25 ] );
 		expect( store.getState().game.state.dice ).toEqual( [ 6 ] );
 	} );

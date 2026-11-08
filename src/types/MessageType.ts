@@ -10,7 +10,7 @@ export enum MessageType {
 	ROLL_DICE_FIRST = 'You need to roll the dice first.',
 	SELECT_DIE_FIRST = 'Select the die you want to play first.',
 	DIE_NOT_PLAYABLE = 'This die cannot be played right now.',
-	PREVIEW_MOVE = 'Click a highlighted point to move the checker there.',
+	PREVIEW_MOVE = 'Choose a highlighted point to move the checker there.',
 	NO_MOVE_FOR_CHECKER = 'This checker has no legal move with the remaining dice.',
 	WAITING_CHECKER = 'You need to move the waiting checker first.',
 	WELCOME = 'Welcome to Backgammon!',

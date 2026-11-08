@@ -101,3 +101,51 @@ describe( 'boardGeometry', () => {
 		expect( laneAt( { x: -10, y: 300 } ) ).toBeNull();
 	} );
 } );
+
+describe( 'a tall board (phones in portrait)', () => {
+	it( 'keeps the standard board when no height is given', async () => {
+		const { makeGeometry, VIEWBOX: standard, POINT_H } = await import( '../../ui/boardGeometry' );
+		const g = makeGeometry();
+		expect( g.VIEWBOX ).toEqual( standard );
+		expect( g.POINT_H ).toBe( POINT_H );
+	} );
+
+	it( 'stretches the points into long columns with room for the dice in the middle', async () => {
+		const { makeGeometry, CHECKER_R } = await import( '../../ui/boardGeometry' );
+		const g = makeGeometry( 1600 );
+		expect( g.VIEWBOX ).toEqual( { w: 1000, h: 1600 } );
+		expect( g.POINT_H ).toBeGreaterThan( 500 );
+		const band = g.VIEWBOX.h - 2 * g.FRAME - 2 * g.POINT_H;
+		expect( band ).toBeGreaterThanOrEqual( 300 );
+		// Five checkers sit side by side without overlapping, as on the standard board.
+		const a = g.checkerCenter( 6, 0, 5 );
+		const b = g.checkerCenter( 6, 1, 5 );
+		expect( Math.abs( a.y - b.y ) ).toBe( 2 * CHECKER_R );
+		for ( let lane = 1; lane <= 24; lane++ ) {
+			const c = g.checkerCenter( lane, 2, 5 );
+			expect( g.laneAt( c ) ).toBe( lane );
+		}
+	} );
+
+	it( 'maps a tap anywhere in a column, up to the middle, to that point', async () => {
+		const { makeGeometry } = await import( '../../ui/boardGeometry' );
+		const g = makeGeometry( 1600 );
+		const r = g.pointRect( 13 );
+		// Below the tip of the triangle but above the middle: still point 13.
+		expect( g.laneAt( { x: r.x + r.w / 2, y: g.VIEWBOX.h / 2 - 10 } ) ).toBe( 13 );
+		expect( g.laneAt( { x: r.x + r.w / 2, y: g.VIEWBOX.h / 2 + 10 } ) ).toBe( 12 );
+		expect( g.columnRect( 13 ) ).toEqual( { x: r.x, y: g.FRAME, w: r.w, h: g.VIEWBOX.h / 2 - g.FRAME } );
+	} );
+
+	it( 'converts screen positions when the board is letterboxed in its box', async () => {
+		const { toViewBox } = await import( '../../ui/boardGeometry' );
+		// A 1000x1600 board drawn in a 400x800 box: scale 0.4, 80 px empty above and below.
+		const viewBox = { w: 1000, h: 1600 };
+		const rect = { left: 0, top: 0, width: 400, height: 800 };
+		expect( toViewBox( 200, 400, rect, viewBox ) ).toEqual( { x: 500, y: 800 } );
+		expect( toViewBox( 0, 80, rect, viewBox ) ).toEqual( { x: 0, y: 0 } );
+		expect( toViewBox( 400, 720, rect, viewBox ) ).toEqual( { x: 1000, y: 1600 } );
+		const wide = { left: 0, top: 0, width: 500, height: 400 };
+		expect( toViewBox( 250, 200, wide, viewBox ) ).toEqual( { x: 500, y: 800 } );
+	} );
+} );
