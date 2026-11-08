@@ -143,14 +143,14 @@ describe( 'Triktrak entry and options', () => {
 
 	it( 'respects maxCheckersPerPoint', () => {
 		const checkers = pos( [
-			{ player: P1, lane: 0, count: 13 },
-			{ player: P1, lane: 20, count: 2 },
+			{ player: P1, lane: 13, count: 2 },
+			{ player: P1, lane: 18, count: 13 },
 			{ player: P2, lane: 25, count: 15 },
 		] );
 		const options = { ...DEFAULT_OPTIONS, maxCheckersPerPoint: 2 };
-		const state = tt( { checkers, player: P1, dice: [ 5, 2 ], roll: [ 5, 2 ], options } );
-		// 0→20 would put a third checker on 20; 20→15 is fine.
-		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 20, 15 ] ] );
+		const state = tt( { checkers, player: P1, dice: [ 5 ], roll: [ 5, 5 ], options } );
+		// 18→13 would put a third checker on 13; 13→8 is fine.
+		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 13, 8 ] ] );
 	} );
 
 	it( 'with enterOnlyOnDoubles, enters only on a double or a tric trac', () => {
@@ -171,12 +171,12 @@ describe( 'Triktrak entry and options', () => {
 	it( 'still sends a hit checker to the bar', () => {
 		const checkers = pos( [
 			{ player: P1, lane: 0, count: 14 },
-			{ player: P1, lane: 9, count: 1 },
+			{ player: P1, lane: 15, count: 1 },
 			{ player: P2, lane: 25, count: 14 },
-			{ player: P2, lane: 4, count: 1 },
+			{ player: P2, lane: 10, count: 1 },
 		] );
 		const state = tt( { checkers, player: P1, dice: [ 5, 1 ], roll: [ 5, 1 ] } );
-		const step = triktrak.legalSteps( state ).find( ( s ) => s.from === 9 )!;
+		const step = triktrak.legalSteps( state ).find( ( s ) => s.from === 15 )!;
 		expect( step.hit ).toBe( true );
 		const after = triktrak.applyStep( state, step );
 		expect( after.checkers.filter( ( c ) => c.player === P2 && c.lane === 25 ) ).toHaveLength( 15 );
@@ -466,7 +466,8 @@ describe( 'Triktrak hit checkers enter first', () => {
 		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ) ).toEqual( [ 0 ] );
 		state = triktrak.afterStep( triktrak.applyStep( state, triktrak.legalSteps( state )[ 0 ] ) );
 		expect( state.waiting[ P1 ] ).toBe( 10 );
-		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ).sort( ( a, b ) => a - b ) ).toEqual( [ 0, 18, 21 ] );
+		// 21 is in the first quarter and must wait while ten checkers are still out.
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ).sort( ( a, b ) => a - b ) ).toEqual( [ 0, 18 ] );
 	} );
 
 	it( 'a first entry counts down the waiting checkers, and undo counts it back', () => {
@@ -578,5 +579,73 @@ describe( 'Triktrak home-board refusal messages', () => {
 		] );
 		const state = tt( { checkers, player: P1, dice: [ 4, 5 ], roll: [ 4, 5 ] } );
 		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.BEAR_OFF_EXACT );
+	} );
+} );
+
+describe( 'Triktrak quarter gates', () => {
+	it( 'checkers in the first quarter may not move at all while any checker is out of the game', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 1 },
+			{ player: P1, lane: 22, count: 14 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 2, 6 ], roll: [ 2, 6 ] } );
+		// Only entering is possible: 22→20 and 22→16 must wait.
+		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 0, 23 ] ] );
+		const later = tt( { checkers, player: P1, dice: [ 6 ], roll: [ 6, 6 ] } );
+		expect( triktrak.legalSteps( later ).every( ( s ) => s.from === 0 ) ).toBe( true );
+		expect( triktrak.explainRefusal( later, 2 ) ).toBe( MessageType.ALL_CHECKERS_IN_FIRST );
+	} );
+
+	it( 'once all checkers are in the game they may leave the first quarter', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 22, count: 15 },
+			{ player: P2, lane: 25, count: 15 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 6 ], roll: [ 6, 6 ] } ) );
+		expect( steps.map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 22, 16 ] ] );
+	} );
+
+	it( 'nothing may enter the home board while the first quarter still holds a checker', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 20, count: 1 },
+			{ player: P1, lane: 9, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 4 ], roll: [ 4, 4 ] } );
+		// 9→5 would enter the home board; only 20→16 is allowed.
+		expect( triktrak.legalSteps( state ).map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 20, 16 ] ] );
+		expect( triktrak.explainRefusal( state, 2 ) ).toBe( MessageType.FIRST_QUARTER_NOT_EMPTY );
+		const cleared = pos( [
+			{ player: P1, lane: 16, count: 1 },
+			{ player: P1, lane: 9, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		// Dark holds 12, so 16→12 is blocked; 9→5 may now enter the home board.
+		const ok = triktrak.legalSteps( tt( { checkers: cleared, player: P1, dice: [ 4 ], roll: [ 4, 4 ] } ) );
+		expect( ok.map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 9, 5 ] ] );
+	} );
+
+	it( 'nothing may enter the home board while a checker is out of the game', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 0, count: 1 },
+			{ player: P1, lane: 9, count: 14 },
+			{ player: P2, lane: 23, count: 2 },
+			{ player: P2, lane: 25, count: 13 },
+		] );
+		// The 2 cannot enter (23 is held), and 9→7 stays outside the home board; 9→5 with a 4 may not.
+		const state = tt( { checkers, player: P1, dice: [ 4 ], roll: [ 4, 4 ], waiting: { [ P1 ]: 1, [ P2 ]: 13 } } );
+		expect( triktrak.legalSteps( state ).map( ( s ) => s.from ) ).toEqual( [ 0 ] );
+	} );
+
+	it( 'applies the same gates to the dark player in the mirrored quarters', () => {
+		const checkers = pos( [
+			{ player: P2, lane: 25, count: 1 },
+			{ player: P2, lane: 3, count: 14 },
+			{ player: P1, lane: 0, count: 15 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P2, dice: [ 6 ], roll: [ 6, 6 ] } ) );
+		// 3→9 would leave the first quarter while a checker is still out.
+		expect( steps.every( ( s ) => s.from === 25 ) ).toBe( true );
 	} );
 } );

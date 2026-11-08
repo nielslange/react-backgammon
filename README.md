@@ -42,7 +42,8 @@ pnpm dev                # http://localhost:5173
 Pick **Triktrak** on the start screen. It is played on the same board with these rules:
 
 - **Start:** all fifteen checkers of each player start off the board and enter by die value into the opponent's home board, like a checker coming off the bar.
-- **Entering:** checkers that have never entered do not have to come in before others move. A checker that was hit must enter before any checker on the board moves.
+- **Entering:** while any checker is still off the board (not yet entered, or hit), checkers in your first quarter cannot move, and a hit checker must enter before any checker on the board moves. In practice, all fifteen checkers come in first.
+- **Quarter gates:** a checker may only move into your home board (the fourth quarter) once your first quarter is empty and all checkers are on the board.
 - **Dice order:** the dice are played in a fixed order. A normal roll plays the lower die first. A double n-n plays n, n, 7−n, 7−n. The roll 1-2, the "tric trac", plays 1, 1, 2, 2, 5, 5, 6, 6.
 - **Blocked dice:** if the lower die of a normal roll cannot be played, the whole turn passes. A blocked die in a fixed sequence forfeits the rest of it.
 - **Bonus rolls:** a double or a tric trac played in full earns another roll.

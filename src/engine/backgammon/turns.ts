@@ -29,6 +29,8 @@ export type StepRules = {
 	homeLocked?: boolean;
 	/** Bearing off needs the exact number; a larger die does not do. */
 	exactBearOff?: boolean;
+	/** Extra variant rule: return false to forbid moving from `from` to `to`. */
+	allow?: ( checkers: Checker[], player: Player, from: number, to: number ) => boolean;
 };
 
 /**
@@ -46,6 +48,7 @@ export const stepsForDie = (
 		canEnter = true,
 		homeLocked = false,
 		exactBearOff = false,
+		allow,
 	}: StepRules = {}
 ): Step[] => {
 	const own = checkers.filter(
@@ -74,6 +77,7 @@ export const stepsForDie = (
 		} else if ( maxPerPoint !== null && countOn( checkers, to, player ) >= maxPerPoint ) {
 			continue;
 		}
+		if ( allow && ! allow( checkers, player, from, to ) ) continue;
 		const checkerId = Math.max(
 			...own.filter( ( c ) => c.lane === from ).map( ( c ) => c.id )
 		);

@@ -14,6 +14,7 @@ import type { RulesEngine } from '../RulesEngine';
 import type { Checker, GameState, Player, Roll } from '../types';
 import { PlayerType } from '../../types/PlayerType';
 import { expandRoll, isDouble, isTricTrac } from './rolls';
+import { quarterGate } from './quarters';
 
 /**
  * Step generation under this game's options. Waiting checkers do not have
@@ -25,6 +26,8 @@ const stepsFor = ( state: GameState ): StepsFn => {
 	const rules = {
 		homeLocked: true,
 		exactBearOff: true,
+		allow: ( checkers: Checker[], player: Player, from: number, to: number ) =>
+			quarterGate( checkers, player, from, to ) === null,
 		maxPerPoint: state.options.maxCheckersPerPoint,
 		canEnter: ! state.options.enterOnlyOnDoubles || special,
 	};
@@ -185,6 +188,9 @@ export const triktrak: RulesEngine = {
 		if ( HOME[ player ].includes( checker.lane ) && to !== OFF[ player ] ) {
 			return MessageType.HOME_BOARD_LOCKED;
 		}
+		const gate = quarterGate( state.checkers, player, checker.lane, to );
+		if ( gate === 'all-in-first' ) return MessageType.ALL_CHECKERS_IN_FIRST;
+		if ( gate === 'first-quarter-not-empty' ) return MessageType.FIRST_QUARTER_NOT_EMPTY;
 		if ( isBlocked( state.checkers, player, to ) ) return MessageType.TARGET_OCCUPIED_BY_OPPONENT;
 		const limit = state.options.maxCheckersPerPoint;
 		if ( limit !== null && to !== OFF[ player ] && countOn( state.checkers, to, player ) >= limit ) {

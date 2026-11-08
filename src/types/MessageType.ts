@@ -30,6 +30,8 @@ export enum MessageType {
 	BONUS_ROLL = 'All dice played: a bonus roll.',
 	HOME_BOARD_LOCKED = 'Checkers in your home board cannot move there any more; they can only bear off.',
 	BEAR_OFF_EXACT = 'Bearing off needs the exact number on the die.',
+	ALL_CHECKERS_IN_FIRST = 'All your checkers must be on the board before checkers in your first quarter move or one enters your home board.',
+	FIRST_QUARTER_NOT_EMPTY = 'Your first quarter must be empty before a checker may enter your home board.',
 	FINAL_TURN = 'All checkers of the first player are off: the other player gets one final roll to draw level.',
 	CUBE_NOT_ALLOWED = 'You cannot double right now.',
 }
