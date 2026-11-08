@@ -3,7 +3,11 @@
  * as many dice as possible, and when exactly one die of a non-double can
  * be played it must be the larger. Both rules fall out of `legalTurns`.
  */
-import { BAR, OFF, isOnBoard, opponent } from '../constants';
+import { BAR, HOME, OFF, isOnBoard, opponent } from '../constants';
+import { PlayerType } from '../../types/PlayerType';
+
+/** PLAYER_ONE bears off past lane 1, so a lane number is its distance to the edge. */
+const OFF_FAR = PlayerType.PLAYER_ONE;
 import type { Checker, Player, Step, Turn } from '../types';
 import { allInHome, canBearOffFrom } from './bearOff';
 import {
@@ -21,6 +25,10 @@ export type StepRules = {
 	maxPerPoint?: number | null;
 	/** Checkers on the bar may enter with this roll. */
 	canEnter?: boolean;
+	/** Checkers in the home board may only bear off, not move within it. */
+	homeLocked?: boolean;
+	/** Bearing off needs the exact number; a larger die does not do. */
+	exactBearOff?: boolean;
 };
 
 /**
@@ -32,7 +40,13 @@ export const stepsForDie = (
 	checkers: Checker[],
 	player: Player,
 	die: number,
-	{ barFirst = true, maxPerPoint = null, canEnter = true }: StepRules = {}
+	{
+		barFirst = true,
+		maxPerPoint = null,
+		canEnter = true,
+		homeLocked = false,
+		exactBearOff = false,
+	}: StepRules = {}
 ): Step[] => {
 	const own = checkers.filter(
 		( c ) => c.player === player && c.lane !== OFF[ player ]
@@ -51,6 +65,10 @@ export const stepsForDie = (
 			if ( ! home || ! canBearOffFrom( checkers, player, from, die ) ) {
 				continue;
 			}
+			const distance = player === OFF_FAR ? from : 25 - from;
+			if ( exactBearOff && die !== distance ) continue;
+		} else if ( homeLocked && HOME[ player ].includes( from ) ) {
+			continue;
 		} else if ( ! isOnBoard( to ) || isBlocked( checkers, player, to ) ) {
 			continue;
 		} else if ( maxPerPoint !== null && countOn( checkers, to, player ) >= maxPerPoint ) {

@@ -58,8 +58,9 @@ describe( 'Triktrak rolls', () => {
 		expect( expandRoll( [ 2, 1 ] ) ).toEqual( [ 1, 1, 2, 2, 5, 5, 6, 6 ] );
 	} );
 
-	it( 'plays other rolls high die first', () => {
-		expect( expandRoll( [ 3, 5 ] ) ).toEqual( [ 5, 3 ] );
+	it( 'plays other rolls low die first', () => {
+		expect( expandRoll( [ 5, 3 ] ) ).toEqual( [ 3, 5 ] );
+		expect( expandRoll( [ 1, 6 ] ) ).toEqual( [ 1, 6 ] );
 	} );
 
 	it( 'is wired as an engine with ordered dice and no cube', () => {
@@ -206,19 +207,19 @@ const lone = ( p2Points: number[], from = 13 ) =>
 	] );
 
 describe( 'Triktrak forfeits and re-rolls', () => {
-	it( 'passes the whole turn when the high die cannot be played, even if the low one could', () => {
-		const checkers = lone( [ 7 ] ); // 13-6 = 7 is held; 13-2 = 11 is open
+	it( 'passes the whole turn when the low die cannot be played, even if the high one could', () => {
+		const checkers = lone( [ 11 ] ); // 13-2 = 11 is held; 13-6 = 7 is open
 		const s = rolled( checkers, [ 6, 2 ] );
 		expect( s.player ).toBe( P2 );
 		expect( s.lastEvent ).toBe( 'forfeit' );
 		expect( s.checkers ).toEqual( checkers );
 	} );
 
-	it( 'forfeits the low die when it is blocked after the high one', () => {
-		const s = playOut( rolled( lone( [ 5 ] ), [ 6, 2 ] ) ); // 13→7, then 7-2 = 5 is held
+	it( 'forfeits the high die when it is blocked after the low one', () => {
+		const s = playOut( rolled( lone( [ 5 ] ), [ 6, 2 ] ) ); // 13→11, then 11-6 = 5 is held
 		expect( s.player ).toBe( P2 );
 		expect( s.lastEvent ).toBe( 'forfeit' );
-		expect( s.checkers.find( ( c ) => c.player === P1 && c.lane < 25 )?.lane ).toBe( 7 );
+		expect( s.checkers.find( ( c ) => c.player === P1 && c.lane < 25 )?.lane ).toBe( 11 );
 	} );
 
 	it( 'a blocked step in a double forfeits the rest and earns no re-roll', () => {
@@ -284,8 +285,8 @@ describe( 'Triktrak final turn and draw', () => {
 			] ),
 			player: P1,
 			firstMover: P1,
-			roll: [ 3, 1 ],
-			dice: [ 3, 1 ],
+			roll: [ 2, 5 ],
+			dice: [ 2, 5 ],
 			...extra,
 		} );
 
@@ -301,7 +302,8 @@ describe( 'Triktrak final turn and draw', () => {
 	} );
 
 	it( 'is a draw when the second player also bears off everything', () => {
-		const final = bearOffLast( endgame( [ { lane: 23, count: 2 } ] ) );
+		// 2 takes 23 off, 3 takes 22 off: exact numbers for both.
+		const final = bearOffLast( endgame( [ { lane: 23, count: 1 }, { lane: 22, count: 1 } ] ) );
 		const s = playOut( triktrak.onRoll( final, [ 3, 2 ] ) );
 		expect( s.phase ).toBe( 'over' );
 		expect( s.result ).toEqual( { winner: null, points: 0, kind: 'draw' } );
@@ -334,8 +336,8 @@ describe( 'Triktrak final turn and draw', () => {
 			] ),
 			player: P1,
 			firstMover: P1,
-			roll: [ 3, 1 ],
-			dice: [ 3, 1 ],
+			roll: [ 2, 5 ],
+			dice: [ 2, 5 ],
 			options,
 		} );
 		const final = bearOffLast( state );
@@ -356,8 +358,8 @@ describe( 'Triktrak final turn and draw', () => {
 				] ),
 				player: P2,
 				firstMover: P1,
-				roll: [ 3, 1 ],
-				dice: [ 3, 1 ],
+				roll: [ 2, 5 ],
+				dice: [ 2, 5 ],
 			} )
 		);
 		expect( s.phase ).toBe( 'over' );
@@ -480,5 +482,101 @@ describe( 'Triktrak hit checkers enter first', () => {
 		const old: Partial< GameState > = { ...g };
 		delete old.waiting;
 		expect( restore( JSON.parse( JSON.stringify( old ) ) ).waiting ).toEqual( { [ P1 ]: 15, [ P2 ]: 15 } );
+	} );
+} );
+
+describe( 'Triktrak home board and bear-off', () => {
+	/** P1 has one checker left on `lane`; P2 still has work to do, so the game goes on. */
+	const lastChecker = ( lane: number ) =>
+		pos( [
+			{ player: P1, lane, count: 1 },
+			{ player: P1, lane: 25, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+	const options = { ...DEFAULT_OPTIONS, finalTurnForSecondPlayer: false };
+	const clears = ( lane: number, roll: [ number, number ] ) => {
+		const s = playOut( rolled( lastChecker( lane ), roll, { options, firstMover: P2 } ) );
+		return s.phase === 'over' && s.result?.winner === P1;
+	};
+
+	it( 'a lone checker three points from the edge leaves only with 3/3, 3/4, 3/5 or 3/6', () => {
+		for ( const roll of [ [ 3, 3 ], [ 3, 4 ], [ 3, 5 ], [ 3, 6 ] ] as const ) {
+			expect( clears( 3, [ ...roll ] ) ).toBe( true );
+		}
+		for ( const roll of [ [ 3, 1 ], [ 3, 2 ], [ 4, 4 ], [ 4, 5 ], [ 5, 6 ], [ 6, 6 ] ] as const ) {
+			expect( clears( 3, [ ...roll ] ) ).toBe( false );
+		}
+	} );
+
+	it( 'a lone checker on field 1 leaves with 1/1, 1/2, 1/3, 1/4, 1/5 and 1/6', () => {
+		for ( let other = 1; other <= 6; other++ ) {
+			expect( clears( 1, [ 1, other ] ) ).toBe( true );
+		}
+		expect( clears( 1, [ 2, 2 ] ) ).toBe( false );
+	} );
+
+	it( 'a lone checker six points from the edge leaves only with 6-6', () => {
+		expect( clears( 6, [ 6, 6 ] ) ).toBe( true );
+		for ( const roll of [ [ 6, 1 ], [ 6, 5 ], [ 5, 5 ], [ 1, 1 ] ] as const ) {
+			expect( clears( 6, [ ...roll ] ) ).toBe( false );
+		}
+	} );
+
+	it( 'with checkers on 3 and 4 a 3/5 bears off the 3, then the turn ends', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 3, count: 1 },
+			{ player: P1, lane: 4, count: 1 },
+			{ player: P1, lane: 25, count: 13 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const s = playOut( rolled( checkers, [ 3, 5 ], { options, firstMover: P2 } ) );
+		expect( s.checkers.filter( ( c ) => c.player === P1 && c.lane !== 25 ).map( ( c ) => c.lane ) ).toEqual( [ 4 ] );
+		expect( s.player ).toBe( P2 );
+		expect( s.lastEvent ).toBe( 'forfeit' );
+	} );
+
+	it( 'checkers inside the home board cannot move within it', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 5, count: 2 },
+			{ player: P1, lane: 9, count: 1 },
+			{ player: P1, lane: 25, count: 12 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const steps = triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 3, 4 ], roll: [ 3, 4 ] } ) );
+		// 9→6 enters the home board; 5→2 would move inside it.
+		expect( steps.map( ( s ) => [ s.from, s.to ] ) ).toEqual( [ [ 9, 6 ] ] );
+	} );
+
+	it( 'bears off only with the exact number', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 2, count: 1 },
+			{ player: P1, lane: 25, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		expect( triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 2 ], roll: [ 2, 2 ] } ) ) ).toHaveLength( 1 );
+		expect( triktrak.legalSteps( tt( { checkers, player: P1, dice: [ 4 ], roll: [ 4, 4 ] } ) ) ).toHaveLength( 0 );
+	} );
+} );
+
+describe( 'Triktrak home-board refusal messages', () => {
+	it( 'explains that home-board checkers can only bear off', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 5, count: 2 },
+			{ player: P1, lane: 9, count: 1 },
+			{ player: P1, lane: 25, count: 12 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 3, 4 ], roll: [ 3, 4 ] } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.HOME_BOARD_LOCKED );
+	} );
+
+	it( 'explains that bearing off needs the exact number', () => {
+		const checkers = pos( [
+			{ player: P1, lane: 2, count: 1 },
+			{ player: P1, lane: 25, count: 14 },
+			{ player: P2, lane: 12, count: 15 },
+		] );
+		const state = tt( { checkers, player: P1, dice: [ 4, 5 ], roll: [ 4, 5 ] } );
+		expect( triktrak.explainRefusal( state, 1 ) ).toBe( MessageType.BEAR_OFF_EXACT );
 	} );
 } );

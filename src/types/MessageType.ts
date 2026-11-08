@@ -28,6 +28,8 @@ export enum MessageType {
 	PLAY_DICE_IN_ORDER = 'The dice are played in order: this checker cannot use the next die.',
 	POINT_FULL = 'That point already holds the most checkers allowed.',
 	BONUS_ROLL = 'All dice played: a bonus roll.',
+	HOME_BOARD_LOCKED = 'Checkers in your home board cannot move there any more; they can only bear off.',
+	BEAR_OFF_EXACT = 'Bearing off needs the exact number on the die.',
 	FINAL_TURN = 'All checkers of the first player are off: the other player gets one final roll to draw level.',
 	CUBE_NOT_ALLOWED = 'You cannot double right now.',
 }

@@ -8,7 +8,7 @@ import { countOn, isBlocked, targetLane } from '../backgammon/movement';
 import { MessageType } from '../../types/MessageType';
 import { pipCount } from '../backgammon/pips';
 import { applyLegalStep, handOff } from '../common';
-import { BAR, OFF, opponent } from '../constants';
+import { BAR, HOME, OFF, opponent } from '../constants';
 import { orderedLegalSteps, orderedLegalTurns, type StepsFn } from '../ordered';
 import type { RulesEngine } from '../RulesEngine';
 import type { Checker, GameState, Player, Roll } from '../types';
@@ -23,6 +23,8 @@ import { expandRoll, isDouble, isTricTrac } from './rolls';
 const stepsFor = ( state: GameState ): StepsFn => {
 	const special = state.roll !== null && ( isDouble( state.roll ) || isTricTrac( state.roll ) );
 	const rules = {
+		homeLocked: true,
+		exactBearOff: true,
 		maxPerPoint: state.options.maxCheckersPerPoint,
 		canEnter: ! state.options.enterOnlyOnDoubles || special,
 	};
@@ -176,6 +178,13 @@ export const triktrak: RulesEngine = {
 			return MessageType.PLAY_DICE_IN_ORDER;
 		}
 		const to = targetLane( player, checker.lane, next );
+		const distance = player === PlayerType.PLAYER_ONE ? checker.lane : 25 - checker.lane;
+		if ( to === OFF[ player ] && allInHome( state.checkers, player ) && next !== distance ) {
+			return MessageType.BEAR_OFF_EXACT;
+		}
+		if ( HOME[ player ].includes( checker.lane ) && to !== OFF[ player ] ) {
+			return MessageType.HOME_BOARD_LOCKED;
+		}
 		if ( isBlocked( state.checkers, player, to ) ) return MessageType.TARGET_OCCUPIED_BY_OPPONENT;
 		const limit = state.options.maxCheckersPerPoint;
 		if ( limit !== null && to !== OFF[ player ] && countOn( state.checkers, to, player ) >= limit ) {
