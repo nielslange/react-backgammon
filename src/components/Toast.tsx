@@ -38,13 +38,17 @@ export const Toast = ( { className }: { className?: string } ) => {
 			className={ clsx( 'min-h-10', className ) }
 		>
 			{ visible && (
-				<div
-					className={ clsx(
-						'rounded-control border px-3 py-2 text-sm transition-opacity',
-						STATUS_CLASSES[ notice.status ]
-					) }
-				>
-					{ notice.message }
+				// The tints are translucent: an opaque surface keeps the text
+				// readable where the notice lies on the board (phones).
+				<div className="rounded-control bg-surface">
+					<div
+						className={ clsx(
+							'rounded-control border px-3 py-2 text-sm transition-opacity',
+							STATUS_CLASSES[ notice.status ]
+						) }
+					>
+						{ notice.message }
+					</div>
 				</div>
 			) }
 		</div>
