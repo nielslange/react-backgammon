@@ -25,6 +25,9 @@ type Props = {
 
 /** One die drawn as SVG, ivory with dark pips. */
 export const Die = ( { value, used, blocked, selected, decorative, className }: Props ) => {
+	// Played and unplayable dice are drawn as outlines instead of being faded,
+	// so they stay legible (3:1) while reading as inactive.
+	const inactive = used || blocked;
 	const label = `Die showing ${ value }${ used ? ', used' : '' }${ blocked && ! used ? ', cannot be played' : '' }`;
 	return (
 		<svg
@@ -34,8 +37,7 @@ export const Die = ( { value, used, blocked, selected, decorative, className }: 
 			aria-label={ decorative ? undefined : label }
 			aria-disabled={ ! decorative && ( used || blocked ) ? true : undefined }
 			className={ clsx(
-				'size-12 shrink-0 transition-opacity',
-				( used || blocked ) && 'opacity-35',
+				'size-12 shrink-0',
 				className
 			) }
 		>
@@ -45,9 +47,10 @@ export const Die = ( { value, used, blocked, selected, decorative, className }: 
 				width="44"
 				height="44"
 				rx="10"
-				fill="var(--color-checker-light)"
-				stroke={ selected ? 'var(--color-accent)' : 'var(--color-checker-light-edge)' }
-				strokeWidth={ selected ? 4 : 1.5 }
+				fill={ inactive ? 'none' : 'var(--color-checker-light)' }
+				stroke={ selected ? 'var(--color-focus)' : inactive ? 'var(--color-control)' : 'var(--color-die-edge)' }
+				strokeWidth={ selected ? 4 : 2 }
+				strokeDasharray={ used ? '5 4' : undefined }
 			/>
 			{ PIPS[ value ]?.map( ( [ col, row ], i ) => (
 				<circle
@@ -56,7 +59,7 @@ export const Die = ( { value, used, blocked, selected, decorative, className }: 
 					cx={ 12 + col * 12 }
 					cy={ 12 + row * 12 }
 					r="4.2"
-					fill="var(--color-checker-dark)"
+					fill={ inactive ? 'var(--color-control)' : 'var(--color-checker-dark)' }
 				/>
 			) ) }
 		</svg>

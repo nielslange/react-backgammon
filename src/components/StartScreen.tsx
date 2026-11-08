@@ -38,9 +38,9 @@ const VARIANTS: Array< {
 
 /** Two stacked checkers as a tiny emblem for a variant card. */
 const Emblem = ( { muted }: { muted: boolean } ) => (
-	<svg aria-hidden="true" viewBox="0 0 40 40" className={ clsx( 'size-10 shrink-0', muted && 'opacity-50' ) }>
-		<circle cx="15" cy="24" r="11" className="fill-checker-dark stroke-checker-dark-edge" strokeWidth="1.5" />
-		<circle cx="25" cy="16" r="11" className="fill-checker-light stroke-checker-light-edge" strokeWidth="1.5" />
+	<svg aria-hidden="true" viewBox="0 0 40 40" className={ clsx( 'size-10 shrink-0', muted && 'grayscale' ) }>
+		<circle cx="15" cy="24" r="11" className="fill-checker-dark stroke-checker-dark-rim" strokeWidth="1.5" />
+		<circle cx="25" cy="16" r="11" className="fill-checker-light stroke-checker-light-rim" strokeWidth="1.5" />
 	</svg>
 );
 
@@ -61,7 +61,7 @@ const NameField = ( {
 			<label htmlFor={ id } className="text-xs font-medium uppercase tracking-wide text-muted">
 				{ label }
 			</label>
-			<div className="flex items-center gap-2 rounded-control border border-line bg-surface px-3 focus-within:outline-2 focus-within:outline-accent">
+			<div className="flex items-center gap-2 rounded-control border border-control bg-surface px-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus">
 				<span aria-hidden="true" className={ clsx( 'size-3.5 rounded-full border', swatch ) } />
 				<input
 					id={ id }
@@ -131,7 +131,9 @@ export const StartScreen = () => {
 								onClick={ () => setVariant( v.id ) }
 								className={ clsx(
 									'flex items-start gap-3 rounded-card border bg-surface p-4 text-left transition-shadow disabled:cursor-not-allowed',
-									checked ? 'border-accent shadow-raised' : 'border-line hover:shadow-raised'
+									checked
+										? 'border-2 border-focus shadow-raised'
+										: 'border-2 border-control enabled:hover:shadow-raised disabled:border-dashed disabled:border-line'
 								) }
 							>
 								<Emblem muted={ ! v.available } />
@@ -158,8 +160,8 @@ export const StartScreen = () => {
 				onChange={ setOpponent }
 				options={ [
 					{ value: 'local', label: 'Local' },
-					{ value: 'ai', label: 'Computer', disabled: true, hint: 'Coming soon' },
-					{ value: 'online', label: 'Online', disabled: true, hint: 'Coming soon' },
+					{ value: 'ai', label: 'Computer (soon)', disabled: true, hint: 'Coming soon' },
+					{ value: 'online', label: 'Online (soon)', disabled: true, hint: 'Coming soon' },
 				] }
 			/>
 
@@ -168,13 +170,13 @@ export const StartScreen = () => {
 					label="Light player"
 					value={ blue }
 					onChange={ setBlue }
-					swatch="bg-checker-light border-checker-light-edge"
+					swatch="bg-checker-light border-checker-light-rim"
 				/>
 				<NameField
 					label="Dark player"
 					value={ red }
 					onChange={ setRed }
-					swatch="bg-checker-dark border-checker-dark-edge"
+					swatch="bg-checker-dark border-checker-dark-rim"
 				/>
 			</div>
 

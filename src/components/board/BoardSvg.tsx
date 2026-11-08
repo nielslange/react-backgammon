@@ -129,7 +129,7 @@ export const BoardSvg = ( {
 		>
 			<defs>
 				<linearGradient id={ id( 'frame' ) } x1="0" y1="0" x2="0" y2="1">
-					<stop offset="0" stopColor="#7a5233" />
+					<stop offset="0" stopColor="var(--color-frame)" />
 					<stop offset="1" stopColor="var(--color-frame)" />
 				</linearGradient>
 				<radialGradient id={ id( 'felt' ) } cx="0.5" cy="0.45" r="0.75">
@@ -196,10 +196,12 @@ export const BoardSvg = ( {
 						{ lane >= 1 && lane <= 24 ? (
 							<polygon
 								points={ pointPolygon( lane ) }
-								fill="var(--color-accent)"
-								fillOpacity="0.4"
-								stroke="var(--color-accent)"
-								strokeWidth="3"
+								fill="var(--color-target-outer)"
+								fillOpacity="0.45"
+								stroke="var(--color-target-inner)"
+								strokeWidth="6"
+								paintOrder="stroke"
+								strokeLinejoin="round"
 							/>
 						) : (
 							<rect
@@ -208,10 +210,10 @@ export const BoardSvg = ( {
 								width={ r.w }
 								height={ r.h }
 								rx="6"
-								fill="var(--color-accent)"
-								fillOpacity="0.35"
-								stroke="var(--color-accent)"
-								strokeWidth="3"
+								fill="var(--color-target-outer)"
+								fillOpacity="0.4"
+								stroke="var(--color-target-inner)"
+								strokeWidth="5"
 							/>
 						) }
 						<rect x={ r.x } y={ r.y } width={ r.w } height={ r.h } fill="transparent" />
@@ -228,8 +230,8 @@ export const BoardSvg = ( {
 				const fill = `url(#${ id( COLOUR_NAME[ checker.player ] ) })`;
 				const edge =
 					checker.player === PlayerType.PLAYER_ONE
-						? 'var(--color-checker-light-edge)'
-						: 'var(--color-checker-dark-edge)';
+						? 'var(--color-checker-light-rim)'
+						: 'var(--color-checker-dark-rim)';
 				return (
 					<g
 						key={ checker.id }
@@ -261,12 +263,15 @@ export const BoardSvg = ( {
 							/>
 						) : (
 							<g filter={ `url(#${ id( 'shadow' ) })` }>
-								<circle r={ CHECKER_R - 1 } fill={ fill } stroke={ edge } strokeWidth="2" />
-								<circle r={ CHECKER_R - 9 } fill="none" stroke={ edge } strokeOpacity="0.45" strokeWidth="1.5" />
+								<circle r={ CHECKER_R - 1.5 } fill={ fill } stroke={ edge } strokeWidth="3" />
+								<circle r={ CHECKER_R - 9 } fill="none" stroke={ edge } strokeOpacity="0.35" strokeWidth="1.5" />
 							</g>
 						) }
 						{ isSelected && (
-							<circle r={ CHECKER_R + 3 } fill="none" stroke="var(--color-accent)" strokeWidth="4" />
+							<g fill="none">
+								<circle r={ CHECKER_R + 4 } stroke="var(--color-target-inner)" strokeWidth="7" />
+								<circle r={ CHECKER_R + 4 } stroke="var(--color-target-outer)" strokeWidth="3.5" />
+							</g>
 						) }
 						{ count !== undefined && (
 							<text
@@ -275,7 +280,11 @@ export const BoardSvg = ( {
 								dominantBaseline="central"
 								fontSize="22"
 								fontWeight="700"
-								fill={ checker.player === PlayerType.PLAYER_ONE ? '#3a2f1f' : '#f3ead8' }
+								fill={
+									checker.player === PlayerType.PLAYER_ONE
+										? 'var(--color-count-on-light)'
+										: 'var(--color-count-on-dark)'
+								}
 							>
 								{ count }
 							</text>

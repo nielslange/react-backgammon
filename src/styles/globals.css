@@ -11,6 +11,11 @@
 	--color-ink: var(--fg-ink);
 	--color-muted: var(--fg-muted);
 	--color-line: var(--border-line);
+	/* Outlines that identify a control (inputs, switches, buttons): 3:1. */
+	--color-control: var(--ui-control);
+	/* Focus rings and selected states: 3:1 on page and cards. */
+	--color-focus: var(--ui-focus);
+	--color-die-edge: var(--ui-die-edge);
 
 	--color-felt: var(--board-felt);
 	--color-felt-dark: var(--board-felt-dark);
@@ -18,10 +23,17 @@
 	--color-point-light: var(--board-point-light);
 	--color-point-dark: var(--board-point-dark);
 
+	/* Checkers: a dark rim on light checkers and a light rim on dark ones
+	   keep 3:1 on the felt and on both point colours. */
 	--color-checker-light: #f3ead8;
-	--color-checker-light-edge: #c9b896;
+	--color-checker-light-rim: #3b2f22;
 	--color-checker-dark: #2f3a46;
-	--color-checker-dark-edge: #141b22;
+	--color-checker-dark-rim: #b8c2cc;
+	--color-count-on-light: #3a2f1f;
+	--color-count-on-dark: #f3ead8;
+	/* Landing points: a two-tone outline readable on any background. */
+	--color-target-outer: #ffd166;
+	--color-target-inner: #1b1408;
 
 	--color-accent: #e0a63a;
 	--color-accent-ink: #3a2705;
@@ -58,11 +70,15 @@
 	--fg-muted: #5f6670;
 	--border-line: #e2d9c8;
 
-	--board-felt: #2f6b4f;
-	--board-felt-dark: #255640;
+	--ui-control: #7d7262;
+	--ui-focus: #9a5f0a;
+	--ui-die-edge: #7a6845;
+
+	--board-felt: #1f4f3a;
+	--board-felt-dark: #1a4331;
 	--board-frame: #5a3b22;
-	--board-point-light: #e8d9b5;
-	--board-point-dark: #9b4a3c;
+	--board-point-light: #ead9b0;
+	--board-point-dark: #d0805f;
 
 	color-scheme: light;
 }
@@ -75,11 +91,15 @@
 		--fg-muted: #a39d92;
 		--border-line: #2e333a;
 
-		--board-felt: #24543e;
-		--board-felt-dark: #1c4331;
+		--ui-control: #8a8378;
+		--ui-focus: #e0a63a;
+		--ui-die-edge: #8a8378;
+
+		--board-felt: #1d4a36;
+		--board-felt-dark: #173b2b;
 		--board-frame: #3e2817;
-		--board-point-light: #cdbf9c;
-		--board-point-dark: #85402f;
+		--board-point-light: #d9c9a2;
+		--board-point-dark: #d0805f;
 
 		color-scheme: dark;
 	}
@@ -92,11 +112,15 @@
 	--fg-muted: #a39d92;
 	--border-line: #2e333a;
 
-	--board-felt: #24543e;
-	--board-felt-dark: #1c4331;
+	--ui-control: #8a8378;
+	--ui-focus: #e0a63a;
+	--ui-die-edge: #8a8378;
+
+	--board-felt: #1d4a36;
+	--board-felt-dark: #173b2b;
 	--board-frame: #3e2817;
-	--board-point-light: #cdbf9c;
-	--board-point-dark: #85402f;
+	--board-point-light: #d9c9a2;
+	--board-point-dark: #d0805f;
 
 	color-scheme: dark;
 }
@@ -111,7 +135,7 @@
 	}
 
 	:focus-visible {
-		outline: 2px solid var( --color-accent );
+		outline: 2px solid var( --color-focus );
 		outline-offset: 2px;
 	}
 

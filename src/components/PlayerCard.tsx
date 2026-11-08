@@ -16,7 +16,7 @@ const Swatch = ( { player }: { player: Player } ) => {
 				cy="12"
 				r="10.5"
 				fill={ light ? 'var(--color-checker-light)' : 'var(--color-checker-dark)' }
-				stroke={ light ? 'var(--color-checker-light-edge)' : 'var(--color-checker-dark-edge)' }
+				stroke={ light ? 'var(--color-checker-light-rim)' : 'var(--color-checker-dark-rim)' }
 				strokeWidth="1.5"
 			/>
 			<circle
@@ -24,7 +24,7 @@ const Swatch = ( { player }: { player: Player } ) => {
 				cy="12"
 				r="6.5"
 				fill="none"
-				stroke={ light ? 'var(--color-checker-light-edge)' : 'var(--color-checker-dark-edge)' }
+				stroke={ light ? 'var(--color-checker-light-rim)' : 'var(--color-checker-dark-rim)' }
 				strokeOpacity="0.5"
 			/>
 		</svg>
@@ -50,7 +50,7 @@ export const PlayerCard = ( { player, className }: { player: Player; className?:
 			data-to-move={ toMove ? 'true' : undefined }
 			className={ clsx(
 				'flex items-center gap-3 rounded-card border bg-surface px-4 py-3 shadow-raised transition-colors',
-				toMove ? 'border-accent' : 'border-line',
+				toMove ? 'border-2 border-focus' : 'border-2 border-line',
 				className
 			) }
 		>
@@ -69,7 +69,7 @@ export const PlayerCard = ( { player, className }: { player: Player; className?:
 			{ cube.owner === player && (
 				<span
 					aria-label={ `Doubling cube at ${ cube.value }` }
-					className="grid size-8 place-items-center rounded-[6px] border border-line bg-canvas text-sm font-bold tabular-nums"
+					className="grid size-8 place-items-center rounded-[6px] border-2 border-control bg-canvas text-sm font-bold tabular-nums"
 				>
 					{ cube.value }
 				</span>

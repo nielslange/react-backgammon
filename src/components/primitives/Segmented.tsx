@@ -62,7 +62,7 @@ export const Segmented = < T extends string >( {
 			<div
 				role="radiogroup"
 				aria-labelledby={ labelId }
-				className="inline-flex flex-wrap gap-1 rounded-control border border-line bg-canvas p-1"
+				className="inline-flex flex-wrap gap-1 rounded-control border border-control bg-canvas p-1"
 			>
 				{ options.map( ( option, index ) => {
 					const checked = option.value === value;
@@ -81,10 +81,10 @@ export const Segmented = < T extends string >( {
 							onClick={ () => onChange( option.value ) }
 							onKeyDown={ ( e ) => onKeyDown( e, index ) }
 							className={ clsx(
-								'min-h-9 flex-1 whitespace-nowrap rounded-[8px] px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+								'min-h-9 flex-1 whitespace-nowrap rounded-[8px] border-2 px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed',
 								checked
-									? 'bg-surface text-ink shadow-raised'
-									: 'text-muted hover:text-ink'
+									? 'border-focus bg-surface text-ink shadow-raised'
+									: 'border-transparent text-muted enabled:hover:text-ink'
 							) }
 						>
 							{ option.label }

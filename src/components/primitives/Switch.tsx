@@ -27,19 +27,19 @@ export const Switch = ( { label, checked, onChange, disabled, id, className }: P
 				disabled={ disabled }
 				onClick={ () => onChange( ! checked ) }
 				className={ clsx(
-					'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border border-line transition-colors disabled:opacity-45',
-					checked ? 'bg-accent' : 'bg-canvas'
+					'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border-2 transition-colors disabled:cursor-not-allowed disabled:border-dashed',
+					checked ? 'border-focus bg-accent' : 'border-control bg-surface'
 				) }
 			>
 				<span
 					aria-hidden="true"
 					className={ clsx(
-						'inline-block size-4 rounded-full bg-surface shadow transition-transform',
-						checked ? 'translate-x-5' : 'translate-x-1'
+						'inline-block size-3.5 rounded-full transition-transform',
+						checked ? 'translate-x-[18px] bg-accent-ink' : 'translate-x-[3px] bg-control'
 					) }
 				/>
 			</button>
-			<span id={ labelId } className="text-sm">
+			<span id={ labelId } className={ clsx( 'text-sm', disabled && 'text-muted' ) }>
 				{ label }
 			</span>
 		</span>
