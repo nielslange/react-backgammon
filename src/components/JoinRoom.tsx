@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import type { RoomView } from '../server/rooms';
 import { Button } from './primitives/Button';
-
-const VARIANT_NAME = {
-	backgammon: 'Backgammon',
-	triktrak: 'Triktrak',
-} as const;
+import { VARIANT_NAME } from '../ui/variantName';
 
 const REFUSALS: Record< string, string > = {
 	ROOM_FULL: 'Someone else took the seat just now.',

@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../data/store';
 import { setTheme, type Theme } from '../data/uiSlice';
+import { VARIANT_NAME } from '../ui/variantName';
 
 const NEXT_THEME: Record< Theme, Theme > = {
 	system: 'light',
@@ -53,6 +54,16 @@ export const AppShell = ( { children }: { children: ReactNode } ) => {
 	const dispatch = useDispatch< AppDispatch >();
 	const theme = useSelector( ( root: RootState ) => root.ui.theme );
 	const pathname = usePathname();
+	const variant = useSelector(
+		( root: RootState ) => root.game.state.variant
+	);
+	// The start screen offers every game; elsewhere name the one in play.
+	const title =
+		pathname === '/' ? VARIANT_NAME.backgammon : VARIANT_NAME[ variant ];
+
+	useEffect( () => {
+		document.title = title;
+	}, [ title ] );
 
 	// Restore the remembered theme once.
 	useEffect( () => {
@@ -84,7 +95,7 @@ export const AppShell = ( { children }: { children: ReactNode } ) => {
 					href="/"
 					className="font-display text-xl font-semibold tracking-tight"
 				>
-					Backgammon
+					{ title }
 				</Link>
 				<div className="flex items-center gap-1">
 					{ pathname !== '/' && (
