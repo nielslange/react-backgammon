@@ -11,13 +11,9 @@ import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { PlayerType } from '../../src/types';
-import {
-	getTargetLane,
-	hasWaitingChecker,
-	hasCheckersOutsideHomeBoard,
-	wouldClearOffChecker,
-	calculatePipCount,
-} from '../../src/data/selectors';
+import { moveOne } from '../../src/engine/backgammon/movement';
+import { pipCount } from '../../src/engine/backgammon/pips';
+import { legalTurns } from '../../src/engine/backgammon/turns';
 
 export type Checker = { id: number; lane: number; player: PlayerType };
 export type Step = { lane: number; die: number; target: number };
@@ -138,52 +134,15 @@ export const readState = async ( page: Page ): Promise< BoardState > => {
 	};
 };
 
-// ---------- rules (mirrors validateMoveHelper.tryMove / applyMove) ----------
-const tryMove = ( checkers: Checker[], player: PlayerType, lane: number, die: number ): number | null => {
-	const onBar = hasWaitingChecker( { checkers, currentPlayer: player } );
-	const barLane = player === OPP ? 0 : 25;
-	if ( onBar && lane !== barLane ) return null;
-	if ( ! checkers.some( ( c ) => c.player === player && c.lane === lane ) ) return null;
-	const target = getTargetLane( { currentPlayer: player, die, lane } );
-	const bearingOff = ( player === OPP && target === 25 ) || ( player === ME && target === 0 );
-	if ( bearingOff ) {
-		if ( hasCheckersOutsideHomeBoard( { checkers, currentPlayer: player } ) ) return null;
-		if ( ! wouldClearOffChecker( { die, lane, currentPlayer: player, checkers } ) ) return null;
-		return target;
-	}
-	if ( target < 1 || target > 24 ) return null;
-	const opp = checkers.filter( ( c ) => c.player !== player && c.lane === target ).length;
-	return opp >= 2 ? null : target;
-};
+// ---------- rules: the app's engine, nothing duplicated ----------
+const applyMove = ( checkers: Checker[], player: PlayerType, lane: number, target: number ): Checker[] =>
+	moveOne( checkers, player, null, lane, target ).checkers;
 
-const applyMove = ( checkers: Checker[], player: PlayerType, lane: number, target: number ): Checker[] => {
-	const next = checkers.map( ( c ) => ( { ...c } ) );
-	const i = next.findIndex( ( c ) => c.player === player && c.lane === lane );
-	const victims = next.filter( ( c ) => c.player !== player && c.lane === target );
-	if ( victims.length === 1 ) victims[ 0 ].lane = player === OPP ? 25 : 0;
-	next[ i ].lane = target;
-	return next;
-};
-
-const enumerate = ( checkers: Checker[], dice: number[] ): Step[][] => {
-	if ( ! dice.length ) return [ [] ];
-	const results: Step[][] = [];
-	const tried = new Set< number >();
-	dice.forEach( ( die, i ) => {
-		if ( tried.has( die ) ) return;
-		tried.add( die );
-		const lanes = [ ...new Set( checkers.filter( ( c ) => c.player === ME ).map( ( c ) => c.lane ) ) ].filter( ( l ) => l !== 0 );
-		for ( const lane of lanes ) {
-			const target = tryMove( checkers, ME, lane, die );
-			if ( target === null ) continue;
-			const rest = [ ...dice.slice( 0, i ), ...dice.slice( i + 1 ) ];
-			for ( const tail of enumerate( applyMove( checkers, ME, lane, target ), rest ) ) {
-				results.push( [ { lane, die, target }, ...tail ] );
-			}
-		}
-	} );
-	return results.length ? results : [ [] ];
-};
+/** Every complete legal turn for Red, in the bot's step shape. */
+const enumerate = ( checkers: Checker[], dice: number[] ): Step[][] =>
+	legalTurns( checkers, ME, dice, false ).map( ( turn ) =>
+		turn.map( ( s ) => ( { lane: s.from, die: s.die, target: s.to } ) )
+	);
 
 const countHits = ( before: Checker[], after: Checker[] ) =>
 	after.filter( ( c ) => c.player === OPP && c.lane === 0 ).length -
@@ -191,7 +150,7 @@ const countHits = ( before: Checker[], after: Checker[] ) =>
 
 /** Normal strength: race + safety + points. */
 const scoreNormal = ( checkers: Checker[] ): number => {
-	let s = calculatePipCount( { checkers, player: OPP } ) - calculatePipCount( { checkers, player: ME } );
+	let s = pipCount( checkers, OPP ) - pipCount( checkers, ME );
 	for ( let lane = 1; lane <= 24; lane++ ) {
 		const mine = checkers.filter( ( c ) => c.player === ME && c.lane === lane ).length;
 		if ( mine === 1 ) {
@@ -209,14 +168,9 @@ const scoreNormal = ( checkers: Checker[] ): number => {
  * safety and structure, and picks randomly among what is left.
  */
 export const chooseTurn = ( checkers: Checker[], dice: number[], strength: Strength = 'normal' ): Step[] => {
-	const all = enumerate( checkers, dice );
-	const maxLen = Math.max( ...all.map( ( s ) => s.length ) );
-	let best = all.filter( ( s ) => s.length === maxLen );
-	if ( maxLen === 1 && dice.length === 2 && dice[ 0 ] !== dice[ 1 ] ) {
-		const larger = Math.max( ...dice );
-		const withLarger = best.filter( ( s ) => s[ 0 ].die === larger );
-		if ( withLarger.length ) best = withLarger;
-	}
+	// The engine already keeps only maximal turns and applies the larger-die rule.
+	const best = enumerate( checkers, dice );
+	if ( ! best.length ) return [];
 	const finalPos = ( seq: Step[] ) => seq.reduce( ( pos, st ) => applyMove( pos, ME, st.lane, st.target ), checkers );
 
 	if ( strength === 'gentle' ) {
@@ -286,8 +240,7 @@ export const playRedTurn = async ( page: Page, strength: Strength = 'normal' ): 
 export const startNewGame = async ( page: Page ) => {
 	await page.reload();
 	await page.waitForSelector( '.board' );
-	await page.click( 'button[aria-label="Restart the game"]' );
-	await page.click( 'button[aria-label="Toggle the current player"]' );
+	await page.click( 'button[aria-label="Start the game"]' );
 };
 
 /**
@@ -335,21 +288,34 @@ export const loadMidgame = async ( page: Page ) => {
 	const d1 = Math.floor( Math.random() * 6 ) + 1;
 	const d2 = Math.floor( Math.random() * 6 ) + 1;
 	const dice = d1 === d2 ? [ d1, d1, d1, d1 ] : [ Math.max( d1, d2 ), Math.min( d1, d2 ) ];
+	const checkers: Checker[] = [];
+	let id = 1;
+	for ( const { player, lane, count } of MIDGAME ) {
+		for ( let i = 0; i < count; i++ ) checkers.push( { id: id++, player, lane } );
+	}
 	await page.evaluate(
-		( { layout, dice } ) => {
-			const checkers: any[] = [];
-			let id = 1;
-			for ( const { player, lane, count } of layout ) {
-				for ( let i = 0; i < count; i++ ) checkers.push( { id: id++, player, lane } );
-			}
-			( window as any ).__backgammonStore.dispatch( {
-				type: 'LOAD_GAME',
-				checkers,
-				currentPlayer: 'PLAYER_ONE',
-				dice,
+		( { checkers, dice, roll } ) => {
+			const store = ( window as any ).__backgammonStore;
+			const base = store.getState().game.state;
+			store.dispatch( {
+				type: 'game/loadSnapshot',
+				payload: {
+					snapshot: {
+						...base,
+						checkers,
+						phase: 'moving',
+						player: 'PLAYER_ONE',
+						firstMover: 'PLAYER_ONE',
+						roll,
+						dice,
+						turnSteps: [],
+						result: null,
+						lastEvent: null,
+					},
+				},
 			} );
 		},
-		{ layout: MIDGAME, dice }
+		{ checkers, dice, roll: [ d1, d2 ] }
 	);
 };
 
