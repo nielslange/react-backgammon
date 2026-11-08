@@ -62,6 +62,17 @@ describe( 'chooseTurn', () => {
 		const easy = new Set( Array.from( { length: 12 }, ( _, i ) => desc( chooseTurn( state, 'easy', seeded( i ) ) ) ) );
 		expect( easy.size ).toBeGreaterThan( 1 );
 	} );
+
+	it( 'hard does not slot a lone checker on the 1- or 2-point in the opening', () => {
+		const rolls: Roll[] = [ [ 5, 1 ], [ 6, 3 ], [ 2, 1 ], [ 4, 4 ], [ 6, 2 ], [ 4, 1 ], [ 3, 2 ], [ 6, 4 ], [ 5, 2 ] ];
+		const buried = rolls.filter( ( roll ) => {
+			const state = moving( backgammon.initialCheckers(), roll );
+			const after = replay( state, chooseTurn( state, 'hard', seeded( 1 ) ) ).checkers;
+			// Making the 2-point (6-4: 8/2 6/2) is a book play; a lone checker there is not.
+			return [ 1, 2 ].some( ( lane ) => after.filter( ( c ) => c.player === P1 && c.lane === lane ).length === 1 );
+		} );
+		expect( buried ).toEqual( [] );
+	} );
 } );
 
 describe( 'cube decisions', () => {

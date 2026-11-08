@@ -14,8 +14,11 @@ const W = {
 	pip: 1,
 	blotBase: 4,
 	blotPerPip: 0.5,
-	homePoint: 4,
+	/** A made point by its number counted from the player's own side: deep points are worth less. */
+	pointValue: [ 0, 1, 2, 4, 5, 5, 3, 4 ] as readonly number[],
 	outerPoint: 3,
+	/** Per checker buried on the 1- or 2-point before the bear-off. */
+	buried: 3,
 	otherPoint: 1,
 	prime: 1,
 	anchor: 2,
@@ -96,10 +99,18 @@ const structure = ( checkers: Checker[], player: Player ) => {
 	const outer = new Set( player === PlayerType.PLAYER_ONE ? [ 7, 8, 9, 10, 11, 12 ] : [ 13, 14, 15, 16, 17, 18 ] );
 	let score = 0;
 	for ( const lane of points ) {
-		if ( home.has( lane ) ) score += W.homePoint;
+		const number = distanceHome( player, lane );
+		if ( number <= 7 ) score += W.pointValue[ number ];
 		else if ( outer.has( lane ) ) score += W.outerPoint;
 		else score += W.otherPoint;
 		if ( otherHome.has( lane ) ) score += W.anchor;
+	}
+	const bearingOff = [ ...byLane ].every( ( [ lane ] ) => lane === OFF[ player ] || home.has( lane ) );
+	if ( ! bearingOff ) {
+		for ( const [ lane, n ] of byLane ) {
+			const number = distanceHome( player, lane );
+			if ( number === 1 || number === 2 ) score -= W.buried * n;
+		}
 	}
 	const prime = longestPrime( points );
 	score += W.prime * prime * prime;
