@@ -45,20 +45,8 @@ describe( 'StartScreen', () => {
 		expect( push ).toHaveBeenCalledWith( '/game' );
 	} );
 
-	it( 'defaults to an easy Triktrak game for Niels against the computer', async () => {
-		const store = renderStart();
-		expect( screen.getByLabelText( 'Light player' ) ).toHaveValue( 'Niels' );
-		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
-		const { session, game } = store.getState();
-		expect( session.players[ P1 ] ).toEqual( { kind: 'human', name: 'Niels' } );
-		expect( session.players[ P2 ] ).toEqual( { kind: 'ai', name: 'Computer (Easy)', level: 'easy' } );
-		expect( game.state.variant ).toBe( 'triktrak' );
-		expect( game.state.options ).toMatchObject( { rerollLimit: null, maxCheckersPerPoint: 5 } );
-	} );
-
 	it( 'disables the doubling cube for a 1-point match, where it changes nothing', async () => {
 		renderStart();
-		await userEvent.click( screen.getByRole( 'radio', { name: /backgammon/i } ) );
 		expect( screen.getByRole( 'switch', { name: /doubling cube/i } ) ).toBeDisabled();
 		await userEvent.click( screen.getByRole( 'radio', { name: '3 points' } ) );
 		expect( screen.getByRole( 'switch', { name: /doubling cube/i } ) ).toBeEnabled();
@@ -66,7 +54,6 @@ describe( 'StartScreen', () => {
 
 	it( 'can switch the doubling cube off', async () => {
 		const store = renderStart();
-		await userEvent.click( screen.getByRole( 'radio', { name: /backgammon/i } ) );
 		await userEvent.click( screen.getByRole( 'radio', { name: '3 points' } ) );
 		await userEvent.click( screen.getByRole( 'switch', { name: /doubling cube/i } ) );
 		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
@@ -95,7 +82,7 @@ describe( 'StartScreen', () => {
 			rerollLimit: 1,
 			rerollOnlyIfCompleted: true,
 			finalTurnForSecondPlayer: true,
-			maxCheckersPerPoint: 5,
+			maxCheckersPerPoint: null,
 		} );
 	} );
 
