@@ -7,7 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServerError } from '../server/errors';
 import type { SubmitInput } from '../server/moves';
 import type { Result } from '../server/result';
-import type { CreateRoomInput, JoinResult } from '../server/rooms';
+import type { CreateRoomInput, JoinResult, RoomView } from '../server/rooms';
 import type { LoggedMove } from './protocol';
 import type { LoadedGame, Presence, Transport } from './transport';
 
@@ -17,6 +17,7 @@ export type RoomActions = {
 		code: string;
 		name: string;
 	} ): Promise< Result< JoinResult > >;
+	describeRoom( code: string ): Promise< Result< RoomView > >;
 	submitMove( input: SubmitInput ): Promise< Result< { version: number } > >;
 };
 
@@ -34,6 +35,7 @@ export const createSupabaseTransport = (
 	createRoom: async ( input ) => unwrap( await actions.createRoom( input ) ),
 	joinRoom: async ( code, name ) =>
 		unwrap( await actions.joinRoom( { code, name } ) ),
+	describeRoom: async ( code ) => unwrap( await actions.describeRoom( code ) ),
 	submit: async ( gameId, move ) =>
 		unwrap( await actions.submitMove( { gameId, ...move } ) ),
 

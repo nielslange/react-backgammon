@@ -128,3 +128,38 @@ export const joinRoom = async (
 	const game = await startFirstGame( db, room, rng );
 	return { roomId: room.id, gameId: game.id, seat: PlayerType.PLAYER_TWO };
 };
+
+export type RoomView = {
+	roomId: string;
+	code: string;
+	variant: VariantId;
+	matchTarget: number;
+	hostName: string;
+	guestName: string | null;
+	status: RoomRow[ 'status' ];
+	/** The visitor's seat in this room, or null for a visitor who has not joined. */
+	role: 'host' | 'guest' | null;
+	/** The current game, for the room's players only. */
+	gameId: string | null;
+};
+
+/** What the room page needs to know about a room, from this visitor's side. */
+export const describeRoom = async ( db: Db, userId: string | null, code: string ): Promise< RoomView > => {
+	const room = await db.roomByCode( normaliseCode( code ) );
+	if ( ! room ) throw new ServerError( 'ROOM_NOT_FOUND' );
+	let role: RoomView[ 'role' ] = null;
+	if ( userId && userId === room.host ) role = 'host';
+	else if ( userId && userId === room.guest ) role = 'guest';
+	const game = role ? await db.latestGame( room.id ) : null;
+	return {
+		roomId: room.id,
+		code: room.code,
+		variant: room.variant,
+		matchTarget: room.match_target,
+		hostName: room.host_name,
+		guestName: room.guest_name,
+		status: room.status,
+		role,
+		gameId: game?.id ?? null,
+	};
+};

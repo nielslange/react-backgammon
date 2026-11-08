@@ -9,6 +9,7 @@ import { configureSession } from '../data/sessionSlice';
 import type { AppDispatch } from '../data/store';
 import type { VariantId } from '../engine/types';
 import { PlayerType } from '../types';
+import { appTransport, signIn } from '../net/appRoom';
 import { Button } from './primitives/Button';
 import { Segmented } from './primitives/Segmented';
 import { Switch } from './primitives/Switch';
@@ -41,9 +42,25 @@ const VARIANTS: Array< {
 
 /** Two stacked checkers as a tiny emblem for a variant card. */
 const Emblem = ( { muted }: { muted: boolean } ) => (
-	<svg aria-hidden="true" viewBox="0 0 40 40" className={ clsx( 'size-10 shrink-0', muted && 'grayscale' ) }>
-		<circle cx="15" cy="24" r="11" className="fill-checker-dark stroke-checker-dark-rim" strokeWidth="1.5" />
-		<circle cx="25" cy="16" r="11" className="fill-checker-light stroke-checker-light-rim" strokeWidth="1.5" />
+	<svg
+		aria-hidden="true"
+		viewBox="0 0 40 40"
+		className={ clsx( 'size-10 shrink-0', muted && 'grayscale' ) }
+	>
+		<circle
+			cx="15"
+			cy="24"
+			r="11"
+			className="fill-checker-dark stroke-checker-dark-rim"
+			strokeWidth="1.5"
+		/>
+		<circle
+			cx="25"
+			cy="16"
+			r="11"
+			className="fill-checker-light stroke-checker-light-rim"
+			strokeWidth="1.5"
+		/>
 	</svg>
 );
 
@@ -61,11 +78,17 @@ const NameField = ( {
 	const id = useId();
 	return (
 		<div className="flex flex-col gap-1.5">
-			<label htmlFor={ id } className="text-xs font-medium uppercase tracking-wide text-muted">
+			<label
+				htmlFor={ id }
+				className="text-xs font-medium uppercase tracking-wide text-muted"
+			>
 				{ label }
 			</label>
 			<div className="flex items-center gap-2 rounded-control border border-control bg-surface px-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus">
-				<span aria-hidden="true" className={ clsx( 'size-3.5 rounded-full border', swatch ) } />
+				<span
+					aria-hidden="true"
+					className={ clsx( 'size-3.5 rounded-full border', swatch ) }
+				/>
 				<input
 					id={ id }
 					value={ value }
@@ -96,33 +119,78 @@ export const StartScreen = () => {
 	const [ finalTurn, setFinalTurn ] = useState( true );
 	const variantLabel = useId();
 
+	const [ creating, setCreating ] = useState( false );
+	const [ createError, setCreateError ] = useState< string | null >( null );
+	const [ joinCode, setJoinCode ] = useState( '' );
+
+	const gameOptions = () =>
+		variant === 'triktrak'
+			? {
+					cube: false,
+					rerollLimit:
+						rerolls === 'unlimited' ? null : Number( rerolls ),
+					rerollOnlyIfCompleted: onlyIfCompleted,
+					enterOnlyOnDoubles: enterOnDoubles,
+					maxCheckersPerPoint:
+						perPoint === 'none' ? null : Number( perPoint ),
+					finalTurnForSecondPlayer: finalTurn,
+				}
+			: // A double cannot change a 1-point match, so it plays without the cube.
+				{ cube: cube && length !== '1' };
+
+	/** Online: the server keeps the game; the friend joins with the link. */
+	const createOnlineRoom = async () => {
+		setCreating( true );
+		setCreateError( null );
+		try {
+			await signIn();
+			const { code } = await appTransport().createRoom( {
+				variant,
+				options: gameOptions(),
+				matchTarget: Number( length ),
+				name: blue.trim() || 'Light',
+			} );
+			router.push( `/room/${ code }` );
+		} catch {
+			setCreateError(
+				'We could not create the room. Please check your connection and try again.'
+			);
+			setCreating( false );
+		}
+	};
+
 	const start = () => {
+		if ( opponent === 'online' ) {
+			void createOnlineRoom();
+			return;
+		}
 		dispatch(
 			configureSession( {
 				players: {
-					[ PlayerType.PLAYER_ONE ]: { kind: 'human', name: blue.trim() || 'Light' },
+					[ PlayerType.PLAYER_ONE ]: {
+						kind: 'human',
+						name: blue.trim() || 'Light',
+					},
 					[ PlayerType.PLAYER_TWO ]:
 						opponent === 'ai'
-							? { kind: 'ai', name: `Computer (${ difficulty[ 0 ].toUpperCase() }${ difficulty.slice( 1 ) })`, level: difficulty }
+							? {
+									kind: 'ai',
+									name: `Computer (${ difficulty[ 0 ].toUpperCase() }${ difficulty.slice( 1 ) })`,
+									level: difficulty,
+								}
 							: { kind: 'human', name: red.trim() || 'Dark' },
 				},
 				matchTarget: Number( length ),
 			} )
 		);
-		const options =
-			variant === 'triktrak'
-				? {
-						cube: false,
-						rerollLimit: rerolls === 'unlimited' ? null : Number( rerolls ),
-						rerollOnlyIfCompleted: onlyIfCompleted,
-						enterOnlyOnDoubles: enterOnDoubles,
-						maxCheckersPerPoint: perPoint === 'none' ? null : Number( perPoint ),
-						finalTurnForSecondPlayer: finalTurn,
-				  }
-				: // A double cannot change a 1-point match, so it plays without the cube.
-				  { cube: cube && length !== '1' };
-		dispatch( newGame( { variant, options } ) );
+		dispatch( newGame( { variant, options: gameOptions() } ) );
 		router.push( '/game' );
+	};
+
+	const join = ( event: React.FormEvent ) => {
+		event.preventDefault();
+		const code = joinCode.trim().toUpperCase();
+		if ( code ) router.push( `/room/${ code }` );
 	};
 
 	return (
@@ -132,15 +200,23 @@ export const StartScreen = () => {
 					Roll the dice.
 				</h1>
 				<p className="mt-2 max-w-prose text-muted">
-					Pick a game, set up the table, and play on one screen with a friend.
+					Pick a game, set up the table, and play on one screen with a
+					friend.
 				</p>
 			</div>
 
 			<div className="flex flex-col gap-2">
-				<span id={ variantLabel } className="text-xs font-medium uppercase tracking-wide text-muted">
+				<span
+					id={ variantLabel }
+					className="text-xs font-medium uppercase tracking-wide text-muted"
+				>
 					Game
 				</span>
-				<div role="radiogroup" aria-labelledby={ variantLabel } className="grid gap-3 sm:grid-cols-2">
+				<div
+					role="radiogroup"
+					aria-labelledby={ variantLabel }
+					className="grid gap-3 sm:grid-cols-2"
+				>
 					{ VARIANTS.map( ( v ) => {
 						const checked = v.id === variant;
 						return (
@@ -169,7 +245,9 @@ export const StartScreen = () => {
 											</span>
 										) }
 									</span>
-									<span className="text-sm text-muted">{ v.blurb }</span>
+									<span className="text-sm text-muted">
+										{ v.blurb }
+									</span>
 								</span>
 							</button>
 						);
@@ -184,7 +262,7 @@ export const StartScreen = () => {
 				options={ [
 					{ value: 'local', label: 'Local' },
 					{ value: 'ai', label: 'Computer' },
-					{ value: 'online', label: 'Online (soon)', disabled: true, hint: 'Coming soon' },
+					{ value: 'online', label: 'Online' },
 				] }
 			/>
 
@@ -206,6 +284,11 @@ export const StartScreen = () => {
 							{ value: 'hard', label: 'Hard' },
 						] }
 					/>
+				) : opponent === 'online' ? (
+					<p className="self-end text-sm text-muted">
+						You play Light. Create the room, then send the link to
+						your friend, who plays Dark.
+					</p>
 				) : (
 					<NameField
 						label="Dark player"
@@ -216,7 +299,9 @@ export const StartScreen = () => {
 				) }
 			</div>
 			{ opponent === 'ai' && (
-				<p className="-mt-2 text-sm text-muted">You play Light; the computer plays Dark.</p>
+				<p className="-mt-2 text-sm text-muted">
+					You play Light; the computer plays Dark.
+				</p>
 			) }
 
 			<div className="flex flex-wrap items-end gap-6">
@@ -275,7 +360,11 @@ export const StartScreen = () => {
 							checked={ onlyIfCompleted }
 							onChange={ setOnlyIfCompleted }
 						/>
-						<Switch label="Enter only on doubles" checked={ enterOnDoubles } onChange={ setEnterOnDoubles } />
+						<Switch
+							label="Enter only on doubles"
+							checked={ enterOnDoubles }
+							onChange={ setEnterOnDoubles }
+						/>
 						<Switch
 							label="Final turn for the second player"
 							checked={ finalTurn }
@@ -285,11 +374,60 @@ export const StartScreen = () => {
 				</fieldset>
 			) }
 
-			<div>
-				<Button variant="primary" onClick={ start } className="min-h-11 px-6 text-base">
-					Start game
-				</Button>
+			<div className="flex flex-col gap-3">
+				<div>
+					<Button
+						variant="primary"
+						onClick={ start }
+						disabled={ creating }
+						className="min-h-11 px-6 text-base"
+					>
+						{ opponent === 'online'
+							? creating
+								? 'Creating room…'
+								: 'Create room'
+							: 'Start game' }
+					</Button>
+				</div>
+				{ createError && (
+					<p role="alert" className="text-sm text-danger">
+						{ createError }
+					</p>
+				) }
 			</div>
+
+			<form
+				onSubmit={ join }
+				className="flex flex-col gap-1.5 border-t border-line pt-6"
+			>
+				<label
+					htmlFor="join-code"
+					className="text-xs font-medium uppercase tracking-wide text-muted"
+				>
+					Room code
+				</label>
+				<p className="text-sm text-muted">
+					Got a code from a friend? Enter it to join their game.
+				</p>
+				<div className="flex gap-2">
+					<input
+						id="join-code"
+						value={ joinCode }
+						onChange={ ( e ) => setJoinCode( e.target.value ) }
+						autoCapitalize="characters"
+						autoComplete="off"
+						maxLength={ 12 }
+						className="min-h-11 w-40 rounded-control border border-control bg-surface px-3 font-mono uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-focus"
+					/>
+					<Button
+						type="submit"
+						className="min-h-11"
+						disabled={ ! joinCode.trim() }
+					>
+						Join
+					</Button>
+				</div>
+			</form>
 		</section>
 	);
 };

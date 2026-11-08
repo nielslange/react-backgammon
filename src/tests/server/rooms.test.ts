@@ -96,3 +96,27 @@ describe( 'joinRoom', () => {
 		expect( games[ 0 ].snapshot.phase ).not.toBe( 'opening' );
 	} );
 } );
+
+describe( 'describeRoom', () => {
+	it( 'tells each visitor their role and what they may do', async () => {
+		const { describeRoom } = await import( '../../server/rooms' );
+		const { db, code } = await open();
+		expect( await describeRoom( db, HOST, code.toLowerCase() ) ).toMatchObject( {
+			code,
+			role: 'host',
+			status: 'waiting',
+			hostName: 'Niels',
+			guestName: null,
+			variant: 'backgammon',
+			matchTarget: 3,
+			gameId: null,
+		} );
+		expect( await describeRoom( db, GUEST, code ) ).toMatchObject( { role: null, status: 'waiting' } );
+		const { gameId } = await joinRoom( db, GUEST, { code, name: 'Guest' } );
+		expect( await describeRoom( db, GUEST, code ) ).toMatchObject( { role: 'guest', status: 'playing', gameId, guestName: 'Guest' } );
+		expect( await describeRoom( db, 'someone', code ) ).toMatchObject( { role: null, status: 'playing' } );
+		await expect( describeRoom( db, HOST, 'ZZZZZZ' ) ).rejects.toMatchObject( { code: 'ROOM_NOT_FOUND' } );
+		// Visitors who are not players never see the internal ids of the game.
+		expect( ( await describeRoom( db, 'someone', code ) ).gameId ).toBeNull();
+	} );
+} );

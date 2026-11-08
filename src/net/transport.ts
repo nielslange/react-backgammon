@@ -6,7 +6,7 @@
 import type { GameState } from '../engine/types';
 import type { Scores } from '../data/sessionSlice';
 import type { ClientMoveKind } from '../server/moves';
-import type { CreateRoomInput, JoinResult } from '../server/rooms';
+import type { CreateRoomInput, JoinResult, RoomView } from '../server/rooms';
 import type { LoggedMove } from './protocol';
 
 export type ClientMove = {
@@ -32,6 +32,8 @@ export type Presence = {
 export interface Transport {
 	createRoom( input: CreateRoomInput ): Promise< { code: string } >;
 	joinRoom( code: string, name: string ): Promise< JoinResult >;
+	/** The room as this visitor sees it (their role, its status, the current game). */
+	describeRoom( code: string ): Promise< RoomView >;
 	submit( gameId: string, move: ClientMove ): Promise< { version: number } >;
 	loadGame( gameId: string ): Promise< LoadedGame >;
 	movesAfter( gameId: string, seq: number ): Promise< LoggedMove[] >;

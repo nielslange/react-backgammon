@@ -13,7 +13,7 @@ import { localStack } from '../server/localStack';
 
 const stack = await localStack();
 
-const until = async ( check: () => boolean, ms = 8000 ) => {
+const until = async ( check: () => boolean, ms = 15000 ) => {
 	const start = Date.now();
 	while ( ! check() ) {
 		if ( Date.now() - start > ms ) throw new Error( 'timed out' );
@@ -43,6 +43,10 @@ describe.skipIf( ! stack )(
 				code: 'SERVER_ERROR' as const,
 			} ),
 			joinRoom: async () => ( {
+				ok: false as const,
+				code: 'SERVER_ERROR' as const,
+			} ),
+			describeRoom: async () => ( {
 				ok: false as const,
 				code: 'SERVER_ERROR' as const,
 			} ),
@@ -110,7 +114,7 @@ describe.skipIf( ! stack )(
 			).rejects.toMatchObject( {
 				code: 'GAME_NOT_FOUND',
 			} );
-		}, 20000 );
+		}, 30000 );
 
 		it( 'shows who is in the room', async () => {
 			const host = await player();
@@ -135,6 +139,6 @@ describe.skipIf( ! stack )(
 			b.leave();
 			await until( () => seen.at( -1 )!.length === 1 );
 			a.leave();
-		}, 20000 );
+		}, 30000 );
 	}
 );

@@ -22,6 +22,8 @@ export type SyncOptions = {
 export type Sync = {
 	receive( move: LoggedMove ): void;
 	current(): { snapshot: GameState; version: number };
+	/** Reload the server's state now (after a refused move). */
+	resync(): Promise< void >;
 	close(): void;
 };
 
@@ -106,6 +108,7 @@ export const createSync = ( {
 			else clearTimer();
 		},
 		current: () => ( { snapshot: state, version: seen } ),
+		resync,
 		close() {
 			closed = true;
 			clearTimer();

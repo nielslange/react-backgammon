@@ -9,6 +9,12 @@ import { P1, P2 } from '../engine/fixtures';
 const push = vi.fn();
 vi.mock( 'next/navigation', () => ( { useRouter: () => ( { push } ) } ) );
 
+const createRoom = vi.fn();
+vi.mock( '../../net/appRoom', () => ( {
+	appTransport: () => ( { createRoom } ),
+	signIn: async () => 'user-1',
+} ) );
+
 const renderStart = () => {
 	const store = makeStore();
 	render(
@@ -110,8 +116,37 @@ describe( 'StartScreen', () => {
 		expect( store.getState().session.players[ P1 ].kind ).toBe( 'human' );
 	} );
 
-	it( 'shows online play as not yet available', () => {
+	it( 'creates an online room with the chosen game and opens it', async () => {
+		createRoom.mockResolvedValueOnce( { code: 'K7QM2X' } );
 		renderStart();
-		expect( screen.getByRole( 'radio', { name: /online/i } ) ).toBeDisabled();
+		await userEvent.click( screen.getByRole( 'radio', { name: /^backgammon/i } ) );
+		await userEvent.click( screen.getByRole( 'radio', { name: 'Online' } ) );
+		expect( screen.queryByLabelText( 'Dark player' ) ).not.toBeInTheDocument();
+		expect( screen.queryByRole( 'radio', { name: 'Hard' } ) ).not.toBeInTheDocument();
+		await userEvent.click( screen.getByRole( 'radio', { name: '3 points' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Create room' } ) );
+		expect( createRoom ).toHaveBeenCalledWith( {
+			variant: 'backgammon',
+			options: { cube: true },
+			matchTarget: 3,
+			name: 'Niels',
+		} );
+		expect( push ).toHaveBeenCalledWith( '/room/K7QM2X' );
+	} );
+
+	it( 'says so when a room cannot be created', async () => {
+		createRoom.mockRejectedValueOnce( Object.assign( new Error( 'x' ), { code: 'SERVER_ERROR' } ) );
+		renderStart();
+		await userEvent.click( screen.getByRole( 'radio', { name: 'Online' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Create room' } ) );
+		expect( await screen.findByRole( 'alert' ) ).toHaveTextContent( /could not create the room/i );
+	} );
+
+	it( 'joins a friend’s room by its code', async () => {
+		push.mockClear();
+		renderStart();
+		await userEvent.type( screen.getByLabelText( 'Room code' ), ' k7qm2x ' );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Join' } ) );
+		expect( push ).toHaveBeenCalledWith( '/room/K7QM2X' );
 	} );
 } );

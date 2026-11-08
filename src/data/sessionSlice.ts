@@ -95,11 +95,21 @@ export const sessionSlice = createSlice( {
 			s.crawfordPlayed = next.crawfordPlayed;
 		},
 
+		/** Scores and game number of an online match, as stored on the server. */
+		restoreMatch: (
+			s,
+			{ payload }: PayloadAction< { scores: Scores; gameNumber: number; crawfordPlayed?: boolean } >
+		) => {
+			s.scores = payload.scores;
+			s.gameNumber = payload.gameNumber;
+			if ( payload.crawfordPlayed !== undefined ) s.crawfordPlayed = payload.crawfordPlayed;
+		},
+
 		nextGame: ( s ) => {
 			s.gameNumber += 1;
 		},
 	},
 } );
 
-export const { configureSession, gameEnded, nextGame } = sessionSlice.actions;
+export const { configureSession, gameEnded, nextGame, restoreMatch } = sessionSlice.actions;
 export const sessionReducer = sessionSlice.reducer;

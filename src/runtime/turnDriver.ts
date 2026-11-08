@@ -112,6 +112,8 @@ export const startTurnDriver = (
 			const root = api.getState();
 			const before = root.game.state;
 			const seat = selectSeatToAct( root );
+			// Online games get their dice from the server (see onlineDriver).
+			if ( root.net !== null ) return;
 			if ( ! seat || seat.kind === 'remote' || before.cube.offered ) return;
 			if ( selectAwaitsHumanRoll( root ) ) return;
 			// The computer may double before it rolls.
@@ -137,7 +139,7 @@ export const startTurnDriver = (
 			const seat = selectSeatToAct( root );
 			const game = root.game.state;
 			if ( game.phase !== 'awaiting-roll' || game.cube.offered ) return;
-			if ( ! seat || seat.kind === 'remote' ) return;
+			if ( root.net !== null || ! seat || seat.kind === 'remote' ) return;
 			doRoll( api, game );
 		},
 	} );
