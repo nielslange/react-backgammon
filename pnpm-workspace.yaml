@@ -1,0 +1,4 @@
+# Native builds Next.js can do without (image optimisation, file watching).
+allowBuilds:
+  "@parcel/watcher": false
+  sharp: false
