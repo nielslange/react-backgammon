@@ -1,0 +1,68 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Provider } from 'react-redux';
+import { StartScreen } from '../../components/StartScreen';
+import { makeStore } from '../../data/createStore';
+import { P1, P2 } from '../engine/fixtures';
+
+const push = vi.fn();
+vi.mock( 'next/navigation', () => ( { useRouter: () => ( { push } ) } ) );
+
+const renderStart = () => {
+	const store = makeStore();
+	render(
+		<Provider store={ store }>
+			<StartScreen />
+		</Provider>
+	);
+	return store;
+};
+
+describe( 'StartScreen', () => {
+	beforeEach( () => push.mockReset() );
+
+	it( 'starts a local backgammon match with the chosen names and length', async () => {
+		const store = renderStart();
+		await userEvent.click( screen.getByRole( 'radio', { name: /backgammon/i } ) );
+		await userEvent.click( screen.getByRole( 'radio', { name: 'Local' } ) );
+		const blue = screen.getByLabelText( 'Blue player' );
+		await userEvent.clear( blue );
+		await userEvent.type( blue, 'Niels' );
+		const red = screen.getByLabelText( 'Red player' );
+		await userEvent.clear( red );
+		await userEvent.type( red, 'Guest' );
+		await userEvent.click( screen.getByRole( 'radio', { name: '5 points' } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
+
+		const { session, game } = store.getState();
+		expect( session.players[ P1 ] ).toEqual( { kind: 'human', name: 'Niels' } );
+		expect( session.players[ P2 ] ).toEqual( { kind: 'human', name: 'Guest' } );
+		expect( session.matchTarget ).toBe( 5 );
+		expect( game.state.variant ).toBe( 'backgammon' );
+		expect( game.state.phase ).toBe( 'opening' );
+		expect( game.state.options.cube ).toBe( true );
+		expect( push ).toHaveBeenCalledWith( '/game' );
+	} );
+
+	it( 'can switch the doubling cube off', async () => {
+		const store = renderStart();
+		await userEvent.click( screen.getByRole( 'switch', { name: /doubling cube/i } ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
+		expect( store.getState().game.state.options.cube ).toBe( false );
+	} );
+
+	it( 'falls back to default names when a field is left empty', async () => {
+		const store = renderStart();
+		await userEvent.clear( screen.getByLabelText( 'Blue player' ) );
+		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
+		expect( store.getState().session.players[ P1 ].name ).toBe( 'Blue' );
+	} );
+
+	it( 'shows Triktrak, the AI and online play as not yet available', () => {
+		renderStart();
+		expect( screen.getByRole( 'radio', { name: /triktrak/i } ) ).toBeDisabled();
+		expect( screen.getByRole( 'radio', { name: /computer/i } ) ).toBeDisabled();
+		expect( screen.getByRole( 'radio', { name: /online/i } ) ).toBeDisabled();
+	} );
+} );
