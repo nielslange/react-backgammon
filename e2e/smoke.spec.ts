@@ -8,53 +8,87 @@ const game = ( page: Page ): Promise< Game > =>
 const startLocalGame = async ( page: Page ) => {
 	await page.goto( '/' );
 	await page.waitForLoadState( 'networkidle' );
+	await page.getByRole( 'radio', { name: /backgammon/i } ).click();
+	await page.getByRole( 'radio', { name: 'Local' } ).click();
 	await page.getByRole( 'button', { name: 'Start game' } ).click();
 	await page.waitForURL( '**/game' );
 	await expect( page.getByRole( 'group', { name: 'Backgammon board' } ) ).toBeVisible();
 	await expect.poll( async () => ( await game( page ) ).phase ).toBe( 'moving' );
 };
 
-/** Click own checkers until one shows a landing point; return both. */
-const previewSomeChecker = async ( page: Page ) => {
+/** Click own checkers until one moves: at once (one landing point) or via a highlighted point. */
+const moveSomeChecker = async ( page: Page ) => {
 	const { player } = await game( page );
 	const own = page.locator( `[data-checker][data-player="${ player }"]:not([data-place="off"])` );
+	const before = JSON.stringify( ( await game( page ) ).checkers );
 	for ( let i = 0; i < ( await own.count() ); i++ ) {
 		await own.nth( i ).click( { force: true } );
+		if ( JSON.stringify( ( await game( page ) ).checkers ) !== before ) return;
 		const target = page.locator( '[data-target]' ).first();
-		if ( await target.count() ) return { checker: own.nth( i ), target };
+		if ( await target.count() ) {
+			await target.click( { force: true } );
+			return;
+		}
 	}
 	throw new Error( 'no checker could move' );
 };
 
-test( 'plays one move by click and one by drag, then the opponent gets dice', async ( { page } ) => {
-	await startLocalGame( page );
-	const mover = ( await game( page ) ).player;
+/** Light to play 5-3 from the starting position. */
+const lightPlays53 = ( page: Page ) =>
+	page.evaluate( () => {
+		const store = ( window as any ).__backgammonStore;
+		const g = store.getState().game.state;
+		store.dispatch( {
+			type: 'game/loadSnapshot',
+			payload: {
+				snapshot: { ...g, phase: 'moving', player: 'PLAYER_ONE', firstMover: 'PLAYER_ONE', roll: [ 5, 3 ], dice: [ 5, 3 ], turnSteps: [] },
+			},
+		} );
+	} );
 
-	const before = JSON.stringify( ( await game( page ) ).checkers );
-	const first = await previewSomeChecker( page );
-	await first.target.click( { force: true } );
-	await expect.poll( async () => JSON.stringify( ( await game( page ) ).checkers ) ).not.toBe( before );
-
-	const afterClick = JSON.stringify( ( await game( page ) ).checkers );
-	const second = await previewSomeChecker( page );
-	// Checkers glide for 180 ms after a move; measure once two samples
-	// 150 ms apart agree.
-	let from = ( await second.checker.boundingBox() )!;
+/** Wait until a checker's glide (180 ms) has finished; return its box. */
+const settledBox = async ( page: Page, selector: string ) => {
+	const el = page.locator( selector );
+	let box = ( await el.boundingBox() )!;
 	for ( let i = 0; i < 20; i++ ) {
 		await page.waitForTimeout( 150 );
-		const now = ( await second.checker.boundingBox() )!;
-		if ( now.x === from.x && now.y === from.y ) break;
-		from = now;
+		const now = ( await el.boundingBox() )!;
+		if ( now.x === box.x && now.y === box.y ) break;
+		box = now;
 	}
-	const to = ( await second.target.boundingBox() )!;
+	return box;
+};
+
+test( 'plays one move by click and one by drag, then the opponent gets dice', async ( { page } ) => {
+	await startLocalGame( page );
+	await lightPlays53( page );
+
+	// A checker on 13 can land on 8 or 10: click it, then choose 8.
+	const top13 = async () =>
+		page.evaluate( () =>
+			Math.max(
+				...( window as any ).__backgammonStore
+					.getState()
+					.game.state.checkers.filter( ( c: { player: string; lane: number } ) => c.player === 'PLAYER_ONE' && c.lane === 13 )
+					.map( ( c: { id: number } ) => c.id )
+			)
+		);
+	await page.locator( `[data-checker="${ await top13() }"]` ).click( { force: true } );
+	await expect( page.locator( '[data-target]' ) ).toHaveCount( 2 );
+	await page.locator( '[data-target="8"]' ).click( { force: true } );
+	await expect.poll( async () => ( await game( page ) ).dice ).toEqual( [ 3 ] );
+
+	// Drag the next checker from 13 to 10 with the 3.
+	const id = await top13();
+	const from = await settledBox( page, `[data-checker="${ id }"]` );
+	const to = ( await page.locator( '[data-point="10"]' ).boundingBox() )!;
 	await page.mouse.click( 2, 2 );
 	await page.mouse.move( from.x + from.width / 2, from.y + from.height / 2 );
 	await page.mouse.down();
 	await page.mouse.move( to.x + to.width / 2, to.y + to.height / 2, { steps: 10 } );
 	await page.mouse.up();
-	await expect.poll( async () => JSON.stringify( ( await game( page ) ).checkers ) ).not.toBe( afterClick );
 
-	await expect.poll( async () => ( await game( page ) ).player ).not.toBe( mover );
+	await expect.poll( async () => ( await game( page ) ).player ).toBe( 'PLAYER_TWO' );
 	await expect.poll( async () => ( await game( page ) ).dice.length ).toBeGreaterThan( 0 );
 	await expect( page.getByRole( 'img', { name: /^Die showing/ } ).first() ).toBeVisible();
 } );
@@ -69,7 +103,10 @@ test( 'fits the viewport without horizontal scrolling', async ( { page } ) => {
 		} ) );
 		expect( scrollWidth ).toBeLessThanOrEqual( innerWidth );
 	}
-	const board = await page.goto( '/game' ).then( () => page.getByRole( 'group', { name: 'Backgammon board' } ).boundingBox() );
+	await page.goto( '/game' );
+	const boardGroup = page.getByRole( 'group', { name: 'Backgammon board' } );
+	await expect( boardGroup ).toBeVisible();
+	const board = await boardGroup.boundingBox();
 	const width = page.viewportSize()!.width;
 	if ( width < 1024 ) {
 		// Phones: the board spans the page minus the 16px gutters.
@@ -95,14 +132,14 @@ test( 'starts a Triktrak game and plays the opening roll', async ( { page } ) =>
 	await page.goto( '/' );
 	await page.waitForLoadState( 'networkidle' );
 	await page.getByRole( 'radio', { name: /triktrak/i } ).click();
+	await page.getByRole( 'radio', { name: 'Local' } ).click();
 	await page.getByRole( 'button', { name: 'Start game' } ).click();
 	await page.waitForURL( '**/game' );
 	await expect.poll( async () => ( await game( page ) ).phase ).toBe( 'moving' );
 	const { player } = await game( page );
 	// Every checker starts on the bar, so the first move is an entry.
 	const before = JSON.stringify( ( await game( page ) ).checkers );
-	const first = await previewSomeChecker( page );
-	await first.target.click( { force: true } );
+	await moveSomeChecker( page );
 	await expect.poll( async () => JSON.stringify( ( await game( page ) ).checkers ) ).not.toBe( before );
 	const after = await page.evaluate( () => ( window as any ).__backgammonStore.getState().game.state );
 	expect( after.variant ).toBe( 'triktrak' );
@@ -112,6 +149,7 @@ test( 'starts a Triktrak game and plays the opening roll', async ( { page } ) =>
 test( 'the computer answers with its own move', async ( { page } ) => {
 	await page.goto( '/' );
 	await page.waitForLoadState( 'networkidle' );
+	await page.getByRole( 'radio', { name: /backgammon/i } ).click();
 	await page.getByRole( 'radio', { name: 'Computer' } ).click();
 	await page.getByRole( 'radio', { name: 'Easy' } ).click();
 	await page.getByRole( 'button', { name: 'Start game' } ).click();
@@ -129,8 +167,7 @@ test( 'the computer answers with its own move', async ( { page } ) => {
 	for ( let i = 0; i < 20 && ( await darkMoved() ) === startDark; i++ ) {
 		const g = await game( page );
 		if ( g.player === 'PLAYER_ONE' && g.phase === 'moving' ) {
-			const move = await previewSomeChecker( page );
-			await move.target.click( { force: true } );
+			await moveSomeChecker( page );
 		}
 		await page.waitForTimeout( 400 );
 	}

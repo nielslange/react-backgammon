@@ -110,8 +110,13 @@ const beginnerClick = ( dispatch: AppDispatch, root: RootState, checkerId: numbe
 		dispatch( setPreview( null ) );
 		return hint( dispatch, rejectionFor( root, checkerId ) );
 	}
-	if ( preview?.checkerId === checkerId && options.length === 1 ) {
-		dispatch( playStep( { step: options[ 0 ] } ) );
+	// One landing point (even if two dice reach it): one tap moves, with the
+	// smaller die, as a drop would. Several: show them and wait for a choice.
+	const landings = new Set( options.map( ( o ) => o.to ) );
+	if ( landings.size === 1 ) {
+		dispatch( setPreview( null ) );
+		const step = [ ...options ].sort( ( a, b ) => a.die - b.die )[ 0 ];
+		dispatch( playStep( { step: { ...step, checkerId } } ) );
 		return;
 	}
 	dispatch( setPreview( { checkerId, options } ) );

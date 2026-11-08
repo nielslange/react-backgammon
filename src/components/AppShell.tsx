@@ -77,8 +77,9 @@ export const AppShell = ( { children }: { children: ReactNode } ) => {
 	}, [ theme ] );
 
 	return (
-		<div className="min-h-dvh">
-			<header className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3">
+		// Phones held sideways: exactly one screen high, so the game never scrolls.
+		<div className="flex min-h-dvh flex-col [@media(orientation:landscape)_and_(max-height:500px)]:h-dvh">
+			<header className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-4 py-3">
 				<Link
 					href="/"
 					className="font-display text-xl font-semibold tracking-tight"
@@ -107,7 +108,9 @@ export const AppShell = ( { children }: { children: ReactNode } ) => {
 					</button>
 				</div>
 			</header>
-			<main className="mx-auto max-w-[1200px] px-4 pb-10">
+			<main
+				className={ `mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-4 [@media(orientation:landscape)_and_(max-height:500px)]:min-h-0 [@media(orientation:landscape)_and_(max-height:500px)]:overflow-y-auto ${ pathname === '/' ? 'pb-10' : 'pb-3 md:pb-10' }` }
+			>
 				{ children }
 			</main>
 		</div>

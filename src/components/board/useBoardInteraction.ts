@@ -1,11 +1,26 @@
 'use client';
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+	useEffect,
+	useRef,
+	useState,
+	type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { useDispatch, useStore } from 'react-redux';
 import type { AppDispatch, RootState } from '../../data/store';
 import { setPreview } from '../../data/uiSlice';
-import { laneAt, toViewBox, type Point } from '../../ui/boardGeometry';
-import { onCheckerClick, onDrop, onTargetClick, optionsForChecker } from '../../ui/moveInput';
+import {
+	makeGeometry,
+	toViewBox,
+	type Geometry,
+	type Point,
+} from '../../ui/boardGeometry';
+import {
+	onCheckerClick,
+	onDrop,
+	onTargetClick,
+	optionsForChecker,
+} from '../../ui/moveInput';
 
 /** Pointer travel in screen pixels before a press counts as a drag. */
 const DRAG_PX = 8;
@@ -23,7 +38,7 @@ type Listeners = {
  * legal moves lights up its landing points and drops onto one of them.
  * Only the pointer that started a drag can move, drop or cancel it.
  */
-export const useBoardInteraction = () => {
+export const useBoardInteraction = ( geometry: Geometry = makeGeometry() ) => {
 	const dispatch = useDispatch< AppDispatch >();
 	const store = useStore< RootState >();
 	const svgRef = useRef< SVGSVGElement >( null );
@@ -41,9 +56,19 @@ export const useBoardInteraction = () => {
 
 	useEffect( () => detach, [] );
 
-	const toPoint = ( event: { clientX: number; clientY: number } ): Point | null => {
+	const toPoint = ( event: {
+		clientX: number;
+		clientY: number;
+	} ): Point | null => {
 		const svg = svgRef.current;
-		return svg ? toViewBox( event.clientX, event.clientY, svg.getBoundingClientRect() ) : null;
+		return svg
+			? toViewBox(
+					event.clientX,
+					event.clientY,
+					svg.getBoundingClientRect(),
+					geometry.VIEWBOX
+				)
+			: null;
 	};
 
 	const swallowNextClick = () => {
@@ -53,7 +78,10 @@ export const useBoardInteraction = () => {
 		}, 0 );
 	};
 
-	const onCheckerPointerDown = ( id: number, event: ReactPointerEvent< SVGGElement > ) => {
+	const onCheckerPointerDown = (
+		id: number,
+		event: ReactPointerEvent< SVGGElement >
+	) => {
 		if ( event.button !== 0 || listeners.current ) return;
 		const options = optionsForChecker( store.getState(), id );
 		if ( options.length === 0 ) return;
@@ -64,7 +92,10 @@ export const useBoardInteraction = () => {
 
 		const move = ( e: PointerEvent ) => {
 			if ( e.pointerId !== pointerId ) return;
-			if ( ! moved && Math.hypot( e.clientX - startX, e.clientY - startY ) > DRAG_PX ) {
+			if (
+				! moved &&
+				Math.hypot( e.clientX - startX, e.clientY - startY ) > DRAG_PX
+			) {
 				moved = true;
 				dispatch( setPreview( { checkerId: id, options } ) );
 			}
@@ -80,8 +111,11 @@ export const useBoardInteraction = () => {
 			// The release also fires a click; it must not count as one.
 			swallowNextClick();
 			const p = toPoint( e );
-			const lane = p ? laneAt( p ) : null;
-			if ( lane === null || ! onDrop( dispatch, store.getState(), id, lane ) ) {
+			const lane = p ? geometry.laneAt( p ) : null;
+			if (
+				lane === null ||
+				! onDrop( dispatch, store.getState(), id, lane )
+			) {
 				dispatch( setPreview( null ) );
 			}
 		};
@@ -109,10 +143,12 @@ export const useBoardInteraction = () => {
 		drag,
 		onCheckerPointerDown,
 		onCheckerClick: ( id: number ) => {
-			if ( ! suppressClick.current ) onCheckerClick( dispatch, store.getState(), id );
+			if ( ! suppressClick.current )
+				onCheckerClick( dispatch, store.getState(), id );
 		},
 		onLaneClick: ( lane: number ) => {
-			if ( ! suppressClick.current ) onTargetClick( dispatch, store.getState(), lane );
+			if ( ! suppressClick.current )
+				onTargetClick( dispatch, store.getState(), lane );
 		},
 	};
 };
