@@ -97,7 +97,8 @@ export const StartScreen = () => {
 				matchTarget: Number( length ),
 			} )
 		);
-		dispatch( newGame( { variant, options: { cube } } ) );
+		// A double cannot change a 1-point match, so it plays without the cube.
+		dispatch( newGame( { variant, options: { cube: cube && length !== '1' } } ) );
 		router.push( '/game' );
 	};
 
@@ -189,7 +190,13 @@ export const StartScreen = () => {
 						{ value: '7', label: '7 points' },
 					] }
 				/>
-				<Switch label="Doubling cube" checked={ cube } onChange={ setCube } className="pb-2" />
+				<Switch
+					label="Doubling cube"
+					checked={ cube && length !== '1' }
+					onChange={ setCube }
+					disabled={ length === '1' }
+					className="pb-2"
+				/>
 			</div>
 
 			<div>

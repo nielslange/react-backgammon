@@ -5,10 +5,12 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../data/store';
 import { PlayerType } from '../types/PlayerType';
 import { Board } from './Board';
+import { ActionBar } from './ActionBar';
+import { CubeDialog } from './CubeDialog';
 import { DiceTray } from './DiceTray';
-import { GameState } from './GameState';
-import { Notice } from './Notice';
+import { GameOverDialog } from './GameOverDialog';
 import { PlayerCard } from './PlayerCard';
+import { Toast } from './Toast';
 
 /**
  * The game screen. On wide screens the board sits left and the right
@@ -34,10 +36,12 @@ export const Game = () => {
 				) : (
 					<DiceTray />
 				) }
-				<Notice />
-				<GameState />
+				<Toast />
+				{ ! idle && <ActionBar /> }
 			</div>
 			<PlayerCard player={ PlayerType.PLAYER_ONE } className="lg:col-start-2 lg:row-start-3" />
+			<CubeDialog />
+			<GameOverDialog />
 		</div>
 	);
 };

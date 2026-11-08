@@ -14,7 +14,8 @@ import {
 	openingRoll,
 	roll,
 } from '../data/gameSlice';
-import { selectSeatToAct } from '../data/selectors';
+import { requestRoll } from '../data/intents';
+import { selectCanDouble, selectSeatToAct } from '../data/selectors';
 import { gameEnded } from '../data/sessionSlice';
 import { setHint } from '../data/uiSlice';
 import { MessageType } from '../types/MessageType';
@@ -50,30 +51,53 @@ export const startTurnDriver = (
 		},
 	} );
 
-	// Auto-roll for a local seat after a short pause.
+	/** Roll for the player to act; keep explaining a forfeited previous roll. */
+	const doRoll = (
+		api: { dispatch: AppDispatch; getState: () => RootState },
+		before: RootState[ 'game' ][ 'state' ]
+	) => {
+		api.dispatch( roll( { roll: rollDice( rng ) } ) );
+		// Unless this roll is itself forfeited (that shows its own notice).
+		const after = api.getState().game.state;
+		if ( before.lastEvent === 'forfeit' && after.lastEvent !== 'forfeit' ) {
+			api.dispatch(
+				setHint( {
+					message: MessageType.OPPONENT_FORFEITED,
+					status: NoticeStatusType.INFO,
+				} )
+			);
+		}
+	};
+
+	// Auto-roll for a local seat after a short pause. A human who could
+	// double rolls by hand (requestRoll), so the cube stays reachable.
 	listener.startListening( {
 		predicate: ( _action, current, previous ) =>
 			current.game.state.phase === 'awaiting-roll' &&
 			current.game.state !== previous.game.state,
 		effect: async ( _action, api ) => {
 			api.cancelActiveListeners();
-			const before = api.getState().game.state;
-			const seat = selectSeatToAct( api.getState() );
+			const root = api.getState();
+			const before = root.game.state;
+			const seat = selectSeatToAct( root );
 			if ( ! seat || seat.kind === 'remote' || before.cube.offered ) return;
+			if ( seat.kind === 'human' && selectCanDouble( root ) ) return;
 			await api.delay( delays.roll );
 			if ( api.getState().game.state !== before ) return;
-			api.dispatch( roll( { roll: rollDice( rng ) } ) );
-			// Keep explaining a forfeited previous roll until the next move,
-			// unless this roll is itself forfeited (that shows its own notice).
-			const after = api.getState().game.state;
-			if ( before.lastEvent === 'forfeit' && after.lastEvent !== 'forfeit' ) {
-				api.dispatch(
-					setHint( {
-						message: MessageType.OPPONENT_FORFEITED,
-						status: NoticeStatusType.INFO,
-					} )
-				);
-			}
+			doRoll( api, before );
+		},
+	} );
+
+	// The player asked to roll.
+	listener.startListening( {
+		actionCreator: requestRoll,
+		effect: ( _action, api ) => {
+			const root = api.getState();
+			const seat = selectSeatToAct( root );
+			const game = root.game.state;
+			if ( game.phase !== 'awaiting-roll' || game.cube.offered ) return;
+			if ( ! seat || seat.kind === 'remote' ) return;
+			doRoll( api, game );
 		},
 	} );
 

@@ -45,8 +45,16 @@ describe( 'StartScreen', () => {
 		expect( push ).toHaveBeenCalledWith( '/game' );
 	} );
 
+	it( 'disables the doubling cube for a 1-point match, where it changes nothing', async () => {
+		renderStart();
+		expect( screen.getByRole( 'switch', { name: /doubling cube/i } ) ).toBeDisabled();
+		await userEvent.click( screen.getByRole( 'radio', { name: '3 points' } ) );
+		expect( screen.getByRole( 'switch', { name: /doubling cube/i } ) ).toBeEnabled();
+	} );
+
 	it( 'can switch the doubling cube off', async () => {
 		const store = renderStart();
+		await userEvent.click( screen.getByRole( 'radio', { name: '3 points' } ) );
 		await userEvent.click( screen.getByRole( 'switch', { name: /doubling cube/i } ) );
 		await userEvent.click( screen.getByRole( 'button', { name: 'Start game' } ) );
 		expect( store.getState().game.state.options.cube ).toBe( false );

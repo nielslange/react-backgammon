@@ -54,6 +54,18 @@ export const selectCubeAllowed = ( root: RootState ): boolean =>
 		root.session.crawfordPlayed
 	);
 
+/** The player to act may offer the cube before rolling. */
+export const selectCanDouble = ( root: RootState ): boolean => {
+	const { phase, player, cube } = root.game.state;
+	return (
+		phase === 'awaiting-roll' &&
+		player !== null &&
+		! cube.offered &&
+		( cube.owner === null || cube.owner === player ) &&
+		selectCubeAllowed( root )
+	);
+};
+
 const notice = ( message: MessageType, status: NoticeStatusType ): NoticeType => ( {
 	message,
 	status,

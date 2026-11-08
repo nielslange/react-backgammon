@@ -8,9 +8,12 @@ import {
 	configureStore,
 	type Middleware,
 } from '@reduxjs/toolkit';
-import { gameReducer } from './gameSlice';
+import { gameReducer, offerDouble } from './gameSlice';
+import { MessageType } from '../types/MessageType';
+import { NoticeStatusType } from '../types/NoticeStatusType';
 import { sessionReducer } from './sessionSlice';
-import { uiReducer } from './uiSlice';
+import { isCubeAllowed } from './sessionSlice';
+import { setHint, uiReducer } from './uiSlice';
 
 export type NetState = null;
 
@@ -25,6 +28,22 @@ export const rootReducer = combineReducers( {
 
 export type RootState = ReturnType< typeof rootReducer >;
 
+/**
+ * Refuses a double in the Crawford game for every dispatcher (UI, bots,
+ * the network). The engine alone cannot know the match score.
+ */
+const cubeGuard: Middleware = ( api ) => ( next ) => ( action ) => {
+	if ( offerDouble.match( action ) ) {
+		const { session } = api.getState() as RootState;
+		if ( ! isCubeAllowed( session.scores, session.matchTarget, session.crawfordPlayed ) ) {
+			return next(
+				setHint( { message: MessageType.CUBE_NOT_ALLOWED, status: NoticeStatusType.ERROR } )
+			);
+		}
+	}
+	return next( action );
+};
+
 export const makeStore = ( {
 	preloadedState,
 	middleware = [],
@@ -38,7 +57,7 @@ export const makeStore = ( {
 		reducer: rootReducer,
 		preloadedState,
 		devTools,
-		middleware: ( getDefault ) => getDefault().prepend( ...middleware ),
+		middleware: ( getDefault ) => getDefault().prepend( cubeGuard, ...middleware ),
 	} );
 
 export type AppStore = ReturnType< typeof makeStore >;
